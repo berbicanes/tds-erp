@@ -39,7 +39,8 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["src/**/*.test.ts"],
+    // *.test.tsx render components in jsdom (set per file with @vitest-environment jsdom).
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     environment: "node",
     // labels.test.ts reads Tailwind's palette (?raw) to check badge contrast.
     css: { include: [/tailwindcss\/theme\.css/] },
