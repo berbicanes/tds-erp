@@ -15,7 +15,9 @@ interface ProxyErrorEmitter {
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    port: 5173,
+    // 5174, not the Vite default 5173: other local projects (Vodostaji BiH) run there and their service worker
+    // would control this origin.
+    port: 5174,
     strictPort: true,
     proxy: {
       // Same origin in the browser: cookie auth works without CORS.

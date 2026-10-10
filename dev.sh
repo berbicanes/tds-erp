@@ -37,7 +37,7 @@ else
   echo "  API spreman"
 fi
 
-echo "▶ Frontend (http://localhost:5173)"
+echo "▶ Frontend (http://localhost:5174)"
 cd web
 [[ -d node_modules ]] || npm install
 npm run dev

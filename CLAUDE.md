@@ -90,7 +90,7 @@ dotnet run --project src/Tds.Api                            # API na :5080 (migr
 dotnet test                                                 # svi testovi (treba pokrenut Docker)
 dotnet tool restore                                         # jednom: dotnet-ef iz .config/dotnet-tools.json
 dotnet ef migrations add <Ime> -p src/Tds.Api -o Data/Migrations   # nova migracija
-cd web && npm run dev                                       # frontend na :5173 (proxy /api → :5080)
+cd web && npm run dev                                       # frontend na :5174 (proxy /api → :5080)
 cd web && npm run build && npm run typecheck && npm test
 ```
 
