@@ -26,8 +26,9 @@ varenje/čelične konstrukcije. ISO 9001:2015 certifikovana (TÜV NORD). Kupci u
 2. **Izvedene vrijednosti se računaju, ne čuvaju se kao unos.** `Odrađeno` na nalogu,
    `Raspoloživo`, `Nivo zalihe`, "prvi komad potvrđen", "završna kontrola prošla" —
    sve se izvodi iz izvornih zapisa (vidi `DOMAIN.md` §3). Nikad editabilno polje u formi.
-3. **Sljedivost je obavezna.** Svaki dnevni zapis proizvodnje veže nalog + lot materijala +
-   opremu. Lot se smije koristiti samo ako je `ReceiptDecision = Prihvacen`.
+3. **Sljedivost je obavezna.** Svaki dnevni zapis veže nalog i opremu. Lot je obavezan čim se
+   reže ili troši materijal (`LaserCutQty > 0` ili `MaterialConsumed > 0`), i taj lot mora biti
+   `Prihvacen`.
 4. **QMS zapisi se ne brišu.** Kontrole, neusaglašenosti, lotovi, dnevni zapisi i dokumenti
    imaju samo soft-delete (`IsVoided` + razlog). Svaka promjena ide u `AuditLog`.
 5. **`DATA_MODEL.md` je ugovor.** Ne dodaji polje, enum vrijednost ni tabelu koja nije tamo.
@@ -116,6 +117,13 @@ cd web && npm run build && npm run typecheck && npm test
   odražava serversku validaciju, ali server je jedini autoritet.
 - **Formatiranje u UI:** datum `dd.MM.yyyy.`, decimale zarezom (`1.234,5`), helperi u `web/src/lib/format.ts`.
   Količine do 3 decimale bez nula na kraju, komadi bez decimala, radni sati do 2 decimale.
+- **Istovremene izmjene:** entiteti koji se uređuju koriste Postgres `xmin` kao concurrency token
+  (bez nove kolone). Sukob → 409 "Zapis je u međuvremenu izmijenjen. Osvježi i pokušaj ponovo.";
+  frontend prikazuje poruku i dugme "Osvježi".
+- **Brisanje:** nema DELETE endpointa za auditovane entitete. Šifrarnici se deaktiviraju
+  (`IsActive`), QMS zapisi se poništavaju (`IsVoided` + razlog).
+- **Dev seed:** primjer podataka samo u okruženju `Development` (provjera `IHostEnvironment` pri
+  pokretanju, ne samo konfiguracija). U produkciji se nikad ne izvršava.
 - **Commit:** mali, jedan logički korak. Poruka na engleskom, imperativ.
 
 ## Prije nego kažeš "gotovo"

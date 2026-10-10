@@ -79,8 +79,8 @@ Relacije:
 | Date | DateOnly, req | N (`Datum`) | default danas, ne u budućnosti |
 | WorkOrderId | FK → WorkOrder, req | N (`Radni nalog`, relation) | |
 | OperatorEmployeeId | FK → Employee, req | N (`Operater`) | |
-| MaterialLotId | FK → MaterialLot? | N (`Korišteni materijalni lot`) | obavezan ako LaserCutQty > 0 (vidi DOMAIN §5) |
-| EquipmentIds | M:N → Equipment | N (`Oprema korištena`) | najmanje jedna |
+| MaterialLotId | FK → MaterialLot? | N (`Korišteni materijalni lot`) | obavezan ako LaserCutQty > 0 ili MaterialConsumed > 0 (vidi DOMAIN §5) |
+| EquipmentIds | M:N → Equipment | N (`Oprema korištena`) | najmanje jedna; samo aktivne mašine (`Kind = Masina`); spojna tabela `production_entry_equipment` |
 | LaserCutQty | int ≥ 0 | N (`Laser — izrezani komadi`) | |
 | PressedQty | int ≥ 0 | N (`Presanje — obrađeni komadi`) | |
 | GoodQty | int ≥ 0 | N (`Gotovi ispravni komadi`) | pravilo DOMAIN §5.3 |
@@ -127,8 +127,10 @@ minimalnom zalihom) i **stanje po lotu**. Ovdje su razdvojeni.
 
 Unique: (`Name`, `Grade`, `ThicknessMm`).
 
-Izvedeno po artiklu: `OnHand` = Σ OnHand lotova sa odlukom `Prihvacen`; `Reserved`;
-`Available`; `StockLevel` (vidi DOMAIN §2.4).
+Izvedeno po artiklu (IZV, vidi DOMAIN §2.4):
+- `OnHand`, `Reserved`, `Available`, `StockLevel` — samo nad lotovima sa odlukom `Prihvacen`
+- `OnHoldQty` ("Na kontroli / karantin") — Σ OnHand lotova sa odlukom `NaKontroli` ili `Karantin`,
+  da materijal koji fizički stoji u hali ne bude nevidljiv. Ne ulazi u `Available` ni `StockLevel`.
 
 ## 6. MaterialLot — Ulazni lot 🔒 (`Ulazni materijal u proizvodnji`)
 
@@ -139,7 +141,7 @@ Izvedeno po artiklu: `OnHand` = Σ OnHand lotova sa odlukom `Prihvacen`; `Reserv
 | SupplierId | FK → Supplier, req | N* (`Dobavljač u registru`) | Notion ima i text `Dobavljač` — duplikat, uklonjeno |
 | ReceivedDate | DateOnly, req | N (`Datum prijema`) | |
 | DimensionsDescription | string(200)? | N (`Dimenzije / količina`) | npr. "3000×1500, 10 tabli" — opis |
-| ReceivedQty | decimal(12,3) > 0, req | **NOVO** | brojčana količina prijema u jedinici artikla; generiše `Prijem` pokret |
+| ReceivedQty | decimal(12,3) > 0, req | **NOVO** | brojčana količina prijema u jedinici artikla; generiše `Prijem` pokret; ne mijenja se nakon kreiranja (ispravka = `Korekcija`) |
 | ReceiptDecision | enum `ReceiptDecision` | N (`Odluka prijema`) | `NaKontroli`, `Prihvacen`, `Karantin`, `Odbijen` |
 | InspectedByEmployeeId | FK → Employee? | N (`Kontrolisao`) | obavezno kad odluka ≠ `NaKontroli` |
 | StorageLocation | string(60)? | N (`Skladišna lokacija`) | |
@@ -201,7 +203,7 @@ Seed (sa tdsproducts.com, potvrditi sa klijentom):
 | Polje | Tip | Izvor | Napomena |
 |---|---|---|---|
 | Number | string(20), unique | N (`Zapis kontrole`, title) | auto, `KK-YYYY-NNNN` |
-| WorkOrderId | FK? | N (`Radni nalog`) | obavezan osim za fazu `UlazniMaterijal` |
+| WorkOrderId | FK? | N (`Radni nalog`) | obavezan osim za fazu `UlazniMaterijal` (ta faza dolazi u Fazi 3) |
 | MaterialLotId | FK? | N* (`Lot materijala`, text → relacija) | obavezan za fazu `UlazniMaterijal` |
 | Phase | enum `InspectionPhase` | N (`Faza`) | `UlazniMaterijal`, `LaserskoRezanje`, `HidraulicnoPresanje`, `ZavrsnaKontrola` |
 | Characteristic | string(300), req | N (`Karakteristika / zahtjev crteža`) | |
@@ -276,6 +278,24 @@ Kratke stavke tipa "Messer plin naručiti", "Hladnjak ispuhati".
 | Sha256 | string(64) | |
 
 Dozvoljeno: `.pdf .dxf .dwg .step .stp .png .jpg .jpeg .xlsx .docx`.
+
+Provjera na serveru pri uploadu (sve mora proći, inače 400 sa razlogom):
+1. ekstenzija je na listi iznad (bez obzira na velika/mala slova);
+2. veličina 1 B … 25 MB (prekida se čitanje čim pređe);
+3. sadržaj odgovara ekstenziji:
+
+| Ekstenzija | Provjera sadržaja |
+|---|---|
+| `.pdf` | počinje sa `%PDF-` |
+| `.png` | potpis `89 50 4E 47 0D 0A 1A 0A` |
+| `.jpg` `.jpeg` | počinje sa `FF D8 FF` |
+| `.xlsx` `.docx` | ZIP potpis `50 4B 03 04` i u arhivi postoji `xl/workbook.xml` odnosno `word/document.xml` |
+| `.dwg` | počinje sa `AC10` (AutoCAD verzijski header, npr. `AC1032`) |
+| `.step` `.stp` | počinje sa `ISO-10303-21;` (dozvoljen BOM i bijeli prostor ispred) |
+| `.dxf` | ASCII DXF: prvih 4 KB je tekst (bez NUL bajtova) i sadrži `SECTION`; binarni DXF: počinje sa `AutoCAD Binary DXF` |
+
+`ContentType` se postavlja na serveru prema ekstenziji, ne prema onome što pošalje browser.
+Ime fajla na disku je Guid, originalno ime se čuva samo u `OriginalName` (za download).
 
 ## 15. AuditLog
 

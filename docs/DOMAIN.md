@@ -39,9 +39,16 @@ pogled, ne ručna kolona. (Za ovu radionicu neće trebati: stotine lotova, hilja
 | Izmjena `MaterialConsumed` na zapisu | postojeći pokret se poništava, kreira se novi | — |
 | Poništen dnevni zapis | njegov pokret se poništava | — |
 | Popis / greška | `Korekcija` (razlog obavezan) | ± razlika |
-| Lot `Odbijen` ili otpis ostatka | `Otpis` (razlog obavezan) | −preostalo |
+| Lot prelazi u `Odbijen` | `Otpis` **automatski**, razlog obavezan (unosi korisnik pri odluci) | −cijelo preostalo stanje |
+| Otpis ostatka / dijela | `Otpis` (razlog obavezan) | −količina, najviše OnHand |
 
 Sve u **istoj transakciji** sa zapisom koji ih izaziva.
+
+Ručni pokreti (Kontrolor/Admin):
+- `Korekcija`: ± količina, razlog obavezan; rezultat ne smije spustiti OnHand ispod 0.
+- `Otpis`: količina > 0 i ≤ OnHand, razlog obavezan.
+- Datum pokreta: danas ili ranije, nikad u budućnosti.
+- `ReceivedQty` na lotu se ne mijenja nakon kreiranja — greška u prijemu se ispravlja `Korekcijom`.
 
 ### 2.3 Rezervacije
 - `Reserved(lot) = Σ WorkOrderMaterial.ReservedQty` za naloge koji nisu `Zavrseno`,
@@ -50,9 +57,17 @@ Sve u **istoj transakciji** sa zapisom koji ih izaziva.
   `max(0, ReservedQty − Σ izdavanja tog lota za taj nalog)`.
 - `Available(lot) = OnHand − efektivne rezervacije`. Smije biti negativno samo kao upozorenje
   (prikaz crveno), ne blokira unos — radionica je stvarnost, sistem je evidencija.
+- Rezervisati se može lot sa odlukom `NaKontroli` ili `Prihvacen` (ne `Karantin`, `Odbijen`).
+  Rezervacija veća od `Available` je dozvoljena uz upozorenje. Utrošak je i dalje samo iz `Prihvacen`.
+- Veza lot–nalog (`WorkOrderMaterial`) se ne uklanja (sljedivost); rezervacija se može smanjiti do 0.
 
 ### 2.4 Nivo zalihe (po artiklu)
-Računa se nad lotovima sa `ReceiptDecision = Prihvacen`:
+`OnHand`, `Reserved`, `Available` i Nivo zalihe po artiklu računaju se **samo** nad lotovima sa
+`ReceiptDecision = Prihvacen`. Posebno se prikazuje **"Na kontroli / karantin"** = Σ OnHand lotova sa
+odlukom `NaKontroli` ili `Karantin` (materijal fizički u hali, ali još nije upotrebljiv) — ne ulazi
+u `Available` ni u Nivo zalihe.
+
+Nivo zalihe:
 - `Available ≤ 0` → **Nema**
 - `MinimumStock` postoji i `Available < MinimumStock` → **Ispod minimuma**
 - `MinimumStock` postoji i `Available < 1.5 × MinimumStock` → **Nisko**
@@ -61,6 +76,19 @@ Računa se nad lotovima sa `ReceiptDecision = Prihvacen`:
 
 Notion formula `Nivo zalihe` nije bila čitljiva iz snimka — ovo je naša definicija.
 Potvrditi pragove sa klijentom (vidi §9).
+
+### 2.5a Odluka prijema — dozvoljeni prelazi
+| Iz | U |
+|---|---|
+| NaKontroli | Prihvacen, Karantin, Odbijen |
+| Karantin | Prihvacen, Odbijen |
+| Prihvacen | Karantin (naknadno uočena greška) |
+| Odbijen | — (konačno) |
+
+- Odluka ≠ `NaKontroli` zahtijeva `InspectedByEmployeeId` (§7.2).
+- Prelaz u `Odbijen` automatski otpisuje cijelo preostalo stanje (§2.2), razlog obavezan.
+- Poništavanje lota (samo Admin, razlog obavezan): dozvoljeno samo ako lot nema drugih
+  neponištenih pokreta osim `Prijem` i nije vezan ni za jedan nalog. Poništava i `Prijem`.
 
 ### 2.5 Izdavanje iz lota
 Dozvoljeno samo iz lota sa `ReceiptDecision = Prihvacen`. `Karantin`, `NaKontroli`, `Odbijen`
@@ -110,6 +138,15 @@ Uslovi (gate) za prelaz:
 - Nalog koji ne ide kroz laser ili presu (npr. samo plazma/varenje) — vidi otvoreno pitanje §9.1.
   Do odgovora: Admin može preskočiti gate uz obavezan razlog koji ide u AuditLog
   (`override` sa `reason`). Ne graditi ništa više od toga.
+  Override važi **samo** za dva gate-a prvog komada (Laser → Presanje, Presanje → Kontrola).
+  Gate-ovi za `Zavrseno` i `Isporuceno` i blokada `Blokirano` se ne mogu preskočiti.
+- "Unazad" su samo `Spreman → CekaMaterijal` i `Zavrseno → Kontrola` (povrat); svi ostali prelazi
+  su "naprijed". Uz `QualityApproval = Blokirano` dozvoljeni su samo ta dva prelaza unazad,
+  `→ Doraditi` i `→ Otkazano`.
+- Razlog (override, ponovno otvaranje otkazanog naloga) se ne čuva u koloni naloga: endpoint ga
+  upisuje u scoped audit context, a `AuditInterceptor` ga dodaje u `ChangesJson` kao ključ `reason`.
+- Nalog u `Isporuceno` ili `Otkazano` je read-only, osim polja `Notes`.
+- `QualityApproval` se mijenja posebnom akcijom (Kontrolor/Admin), ne kroz formu naloga.
 
 Svaki prelaz se loguje (AuditLog). Ne postoji automatski prelaz statusa — status mijenja
 čovjek; sistem samo provjerava i predlaže (npr. badge "Spremno za završetak").
@@ -119,9 +156,10 @@ Svaki prelaz se loguje (AuditLog). Ne postoji automatski prelaz statusa — stat
 5.1 Nalog mora biti u statusu `Spreman`, `Laser`, `Presanje`, `Kontrola` ili `Doraditi`.
 Za ostale: "Na nalogu {broj} sa statusom {status} se ne može evidentirati proizvodnja."
 
-5.2 Ako `LaserCutQty > 0` → `MaterialLotId` obavezan, i lot mora biti vezan za nalog
-(`WorkOrderMaterial`) — ako nije, veza se kreira automatski sa `ReservedQty = 0` (sljedivost
-je važnija od strogosti forme).
+5.2 Ako `LaserCutQty > 0` ili `MaterialConsumed > 0` → `MaterialLotId` obavezan, lot mora biti
+`Prihvacen` (§2.5), i lot mora biti vezan za nalog (`WorkOrderMaterial`) — ako nije, veza se kreira
+automatski sa `ReservedQty = 0` (sljedivost je važnija od strogosti forme).
+Oprema: barem jedna aktivna mašina (`Kind = Masina`).
 
 5.3 **Pravilo klijenta:** "Gotove ispravne komade upiši tek nakon završne kontrole."
 → `GoodQty > 0` dozvoljeno samo ako nalog ima `FinalInspectionPassed`. Inače odbiti sa:
@@ -134,6 +172,11 @@ je važnija od strogosti forme).
 
 5.6 Izmjena zapisa: autor isti dan, Kontrolor/Admin uvijek. Brisanje ne postoji — poništavanje
 sa razlogom, koje poništava i vezani `StockMovement`.
+- "Autor" = korisnik koji je unio zapis (`CreatedBy`). Operatera u zapisu (`OperatorEmployeeId`)
+  bira slobodno — jedan telefon u hali dijele više radnika.
+- "Isti dan" = isti kalendarski dan kao kreiranje zapisa (`CreatedAt`, Europe/Sarajevo).
+- Nalog se na postojećem zapisu ne mijenja: zapis se poništi i unese novi.
+- Poništavanje: autor isti dan, Kontrolor/Admin uvijek (isto kao izmjena).
 
 ## 6. Numeracija
 
@@ -152,11 +195,16 @@ Kad brojač pređe širinu formata, broj se samo proširi (nema prelijevanja ni 
 
 ## 7. Kvalitet (QMS)
 
+7.0 Kontrola se ne uređuje: pogrešna kontrola se poništi (samo Admin, razlog obavezan) i unese
+nova. Kreira Kontrolor/Admin. (Faza 1: samo kontrole na nalogu; `UlazniMaterijal` dolazi u Fazi 3.)
+
 7.1 `QualityCheck` sa `Result = Neuskladjeno` → u istoj akciji UI nudi kreiranje NC
 (predpopunjeno: izvor po fazi, nalog, lot, kontrola). Ne kreira se automatski bez potvrde.
 
 7.2 Lot: odluka `Prihvacen` zahtijeva `InspectedByEmployeeId`. Upozorenje ako nema
 certifikata. Dobavljač `Blokiran` → novi lot se ne može kreirati ("Dobavljač je blokiran").
+Dobavljač koji se više ne koristi prebacuje se u `Blokiran`, a razlog se upiše u `Notes`
+(dobavljači nemaju `IsActive` i ne brišu se).
 `UProcjeni` / `UslovnoOdobren` → dozvoljeno uz žuto upozorenje.
 
 7.3 NC prelazi: `Otvorena → RadnjaUToku → ProvjeraEfektivnosti → Zatvorena`.
@@ -182,13 +230,20 @@ kontrola dobija trajnu oznaku upozorenja "Mjerno sredstvo van kalibracije". Ne b
 | Akcija | Operater | Kontrolor | Admin |
 |---|---|---|---|
 | Vidi dashboard, naloge, zalihe | ✓ | ✓ | ✓ |
-| Dnevni zapis (svoj, isti dan) | ✓ | ✓ | ✓ |
-| Ispravka/poništavanje tuđeg dnevnog zapisa | | ✓ | ✓ |
+| Dnevni zapis: unos, izmjena i poništavanje svog zapisa isti dan | ✓ | ✓ | ✓ |
+| Dnevni zapis: izmjena i poništavanje bilo kojeg zapisa, bilo kad | | ✓ | ✓ |
 | Kreira/uređuje nalog, mijenja status | | ✓ | ✓ |
-| `QualityApproval`, kontrole, NC | | ✓ | ✓ |
-| Lotovi, prijem, korekcije zalihe | | ✓ | ✓ |
+| `QualityApproval`, kreiranje kontrola, NC | | ✓ | ✓ |
+| Artikli, lotovi, prijem, korekcije i otpis zalihe, rezervacije | | ✓ | ✓ |
 | Dobavljači, oprema, dokumenti | | ✓ | ✓ |
-| Override gate-a, korisnici, zaposlenici, poništavanje QMS zapisa | | | ✓ |
+| Override gate-a, ponovno otvaranje otkazanog naloga | | | ✓ |
+| Korisnici (kreiranje, rola, reset lozinke, deaktivacija), zaposlenici | | | ✓ |
+| Poništavanje QMS zapisa **osim dnevnog zapisa** (lot, kontrola, NC, dokument) | | | ✓ |
+
+Dnevni zapis je izuzetak od "poništavanje QMS zapisa samo Admin" — njega poništava autor isti dan
+ili Kontrolor/Admin (§5.6).
+Korisnički nalog se veže za zaposlenika preko `Employee.UserId`. Deaktiviran korisnik se ne može
+prijaviti; korisnici se ne brišu.
 
 Login: korisničko ime + lozinka (min. 10 znakova, barem jedna cifra i jedno malo slovo; bez obaveznih
 specijalnih znakova i velikih slova). 5 neuspjelih pokušaja → nalog zaključan 15 minuta.
