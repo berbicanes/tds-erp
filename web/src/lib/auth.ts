@@ -49,8 +49,9 @@ export function useLogout() {
   return useMutation({
     mutationFn: () => api.post<void>("/api/auth/logout"),
     onSuccess: () => {
-      queryClient.clear();
+      // Keep the "me" query (RequireAuth observes it) and drop all other cached server data.
       queryClient.setQueryData(meQueryKey, null);
+      queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== meQueryKey[0] });
     },
   });
 }
