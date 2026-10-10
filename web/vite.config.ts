@@ -15,5 +15,7 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.ts"],
     environment: "node",
+    // labels.test.ts reads Tailwind's palette (?raw) to check badge contrast.
+    css: { include: [/tailwindcss\/theme\.css/] },
   },
 });
