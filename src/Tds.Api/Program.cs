@@ -102,6 +102,7 @@ builder.Services
     .AddDefaultTokenProviders();
 builder.Services.AddScoped<IdentitySeeder>();
 builder.Services.AddScoped<EquipmentSeeder>();
+builder.Services.AddScoped<DevDataSeeder>();
 
 var app = builder.Build();
 
@@ -114,6 +115,9 @@ await using (var scope = app.Services.CreateAsyncScope())
     logger.LogInformation("Database connection OK, migrations applied");
     await scope.ServiceProvider.GetRequiredService<IdentitySeeder>().SeedAsync();
     await scope.ServiceProvider.GetRequiredService<EquipmentSeeder>().SeedAsync();
+    // Example data: Development environment only (checked again inside the seeder), opt-in via Seed:DevData.
+    if (app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("Seed:DevData"))
+        await scope.ServiceProvider.GetRequiredService<DevDataSeeder>().SeedAsync();
 }
 
 app.UseForwardedHeaders();
