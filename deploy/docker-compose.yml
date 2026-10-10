@@ -1,0 +1,58 @@
+# Production: one VPS, three containers. See deploy/README.md.
+name: tds-erp
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tds
+      POSTGRES_USER: tds
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tds -d tds"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # No published port: only the api container can reach the database.
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/api.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Default: Host=db;Port=5432;Database=tds;Username=tds;Password=${POSTGRES_PASSWORD};GSS Encryption Mode=Disable
+      TDS_ADMIN_USERNAME: ${TDS_ADMIN_USERNAME:-}
+      TDS_ADMIN_PASSWORD: ${TDS_ADMIN_PASSWORD:-}
+    volumes:
+      # Bind mounts so backup.sh on the host can read the files directly.
+      - ${TDS_DATA_DIR:?set TDS_DATA_DIR in deploy/.env}/files:/data/files
+      - ${TDS_DATA_DIR}/keys:/data/keys
+
+  caddy:
+    build:
+      context: ..
+      dockerfile: deploy/caddy.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      TDS_DOMAIN: ${TDS_DOMAIN:?set TDS_DOMAIN in deploy/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

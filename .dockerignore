@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+**/node_modules/
+web/dist/
+storage/
+.git/
+deploy/.env
+**/.DS_Store

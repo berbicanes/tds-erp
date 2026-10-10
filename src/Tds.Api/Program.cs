@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 using FluentValidation;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Tds.Api.Data;
@@ -20,6 +22,19 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 ValidatorOptions.Global.PropertyNameResolver = (_, member, _) =>
     member is null ? null : System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(member.Name);
 builder.Services.AddHttpContextAccessor();
+
+// Behind Caddy (production): trust X-Forwarded-* from the reverse proxy. The API port is not published.
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.KnownIPNetworks.Clear();
+    o.KnownProxies.Clear();
+});
+
+// Auth cookie keys survive container restarts (otherwise every deploy signs everyone out).
+var keysPath = builder.Configuration["DataProtection:KeysPath"];
+if (!string.IsNullOrWhiteSpace(keysPath))
+    builder.Services.AddDataProtection().SetApplicationName("tds-erp").PersistKeysToFileSystem(new DirectoryInfo(keysPath));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
@@ -85,6 +100,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await scope.ServiceProvider.GetRequiredService<IdentitySeeder>().SeedAsync();
 }
 
+app.UseForwardedHeaders();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseAuthentication();

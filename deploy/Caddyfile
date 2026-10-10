@@ -1,0 +1,39 @@
+# TDS_DOMAIN comes from deploy/.env. Caddy obtains and renews the HTTPS certificate automatically.
+{$TDS_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+
+	# API: same origin as the frontend, so the auth cookie needs no CORS.
+	handle /api/* {
+		request_body {
+			# file uploads: max 25 MB (DATA_MODEL §14) + multipart overhead
+			max_size 26MB
+		}
+		reverse_proxy api:8080
+	}
+
+	# Built assets have content hashes in their names; everything else (index.html) is revalidated.
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	@notAssets not path /assets/* /api/*
+	header @notAssets Cache-Control "no-cache"
+
+	# SPA: unknown paths fall back to index.html.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
