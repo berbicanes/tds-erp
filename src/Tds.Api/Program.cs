@@ -1,7 +1,10 @@
+using System.Text.Json.Serialization;
+using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Tds.Api.Data;
 using Tds.Api.Domain;
+using Tds.Api.Features.Auth;
 using Tds.Api.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +12,13 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Connection string 'Default' is not configured.");
 
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ProblemExceptionHandler>();
+builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+// Field keys in validation errors match JSON camelCase ("userName", not "UserName").
+ValidatorOptions.Global.PropertyNameResolver = (_, member, _) =>
+    member is null ? null : System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(member.Name);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IClock, SystemClock>();
@@ -38,12 +48,12 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Events.OnRedirectToLogin = ctx =>
     {
         ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-        return Task.CompletedTask;
+        return Problems.WriteAsync(ctx.HttpContext, 401, "Neovlašten pristup", "Nisi prijavljen.");
     };
     options.Events.OnRedirectToAccessDenied = ctx =>
     {
         ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
-        return Task.CompletedTask;
+        return Problems.WriteAsync(ctx.HttpContext, 403, "Zabranjeno", "Nemaš ovlasti za ovu akciju.");
     };
 });
 builder.Services.AddAuthorization();
@@ -75,8 +85,12 @@ await using (var scope = app.Services.CreateAsyncScope())
     await scope.ServiceProvider.GetRequiredService<IdentitySeeder>().SeedAsync();
 }
 
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapAuthEndpoints();
 
 app.Run();
 
