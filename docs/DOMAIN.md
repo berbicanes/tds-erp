@@ -208,24 +208,59 @@ Dobavljač koji se više ne koristi prebacuje se u `Blokiran`, a razlog se upiš
 (dobavljači nemaju `IsActive` i ne brišu se).
 `UProcjeni` / `UslovnoOdobren` → dozvoljeno uz žuto upozorenje.
 
+7.1a NC iz kontrole: najviše jedna neponištena NC po kontroli. Ako postoji, UI vodi na nju umjesto nove
+ponude. Predpopunjavanje: izvor po fazi (`UlazniMaterijal` → `UlazniMaterijal`, `LaserskoRezanje` →
+`Laser`, `HidraulicnoPresanje` → `Presanje`, `ZavrsnaKontrola` → `ZavrsnaKontrola`), nalog, lot,
+dobavljač lota, kontrola.
+
 7.3 NC prelazi: `Otvorena → RadnjaUToku → ProvjeraEfektivnosti → Zatvorena`.
 - → `RadnjaUToku`: `ProductDecision ≠ CekaOdluku`.
 - → `ProvjeraEfektivnosti`: `RootCause` i `CorrectiveAction` popunjeni.
 - → `Zatvorena`: `EffectivenessCheckDate` postavljen i nije u budućnosti.
-- Povrat korak unazad dozvoljen (Kontrolor/Admin).
+- Povrat korak unazad dozvoljen (Kontrolor/Admin), i iz `Zatvorena` (ponovno otvaranje).
+- Koraci se ne preskaču (samo susjedni status naprijed ili nazad).
+- NC se uređuje u svim statusima osim `Zatvorena`. `MaterialLotId` i `SupplierId` su opcionalni i za izvor
+  `Dobavljac` / `UlazniMaterijal` (samo se nude). Kreira i mijenja Kontrolor/Admin; poništava Admin.
 
 7.4 Kontrolisani dokumenti: za jedan `Code` najviše **jedna** verzija `Odobren`.
 Odobravanje nove verzije u istoj transakciji prebacuje prethodnu `Odobren` u `Povucen`.
-`Odobren` zahtijeva `ApprovalDate` i fajl.
+`Odobren` zahtijeva `ApprovalDate` (ne u budućnosti) i fajl.
 
-7.5 Mjerno sredstvo sa `NextCalibrationDate < danas` → može se izabrati u kontroli, ali
-kontrola dobija trajnu oznaku upozorenja "Mjerno sredstvo van kalibracije". Ne blokira
-(ISO traži da se to vidi i obradi, ne da se rad zaustavi softverom).
+| Iz | U |
+|---|---|
+| Nacrt | NaPregledu |
+| NaPregledu | Nacrt, Odobren |
+| Odobren | Povucen (ručno; i automatski kad se odobri nova verzija istog `Code`) |
+| Povucen | — (konačno) |
+
+`Odobren` i `Povucen` su read-only, osim `NextReviewDate` na `Odobren`. Nova verzija = novi zapis sa istim
+`Code` (podaci se kopiraju, status `Nacrt`). Kreira i mijenja Kontrolor/Admin; poništava Admin.
+
+7.5 Kalibracija: istorija je u `EquipmentCalibration` (DATA_MODEL §9a). `LastCalibrationDate`,
+`NextCalibrationDate` i stanje kalibracije mjernog sredstva se izvode iz zadnje neponištene kalibracije:
+- nema neponištene kalibracije ili zadnja nema `NextCalibrationDate` → `BezDatumaKalibracije`
+- zadnja kalibracija sa rezultatom `Neuskladjeno` → `VanKalibracije` (bez obzira na datum)
+- `NextCalibrationDate < danas` → `VanKalibracije`
+- inače → `UKalibraciji`
+
+Mjerno sredstvo sa `VanKalibracije` ili `BezDatumaKalibracije` → može se izabrati u kontroli, ali kontrola
+dobija trajnu oznaku `CalibrationStatusAtCheck` (stanje u trenutku kontrole; kontrola bez mjernog
+sredstva → `BezMjernogSredstva`). Server je postavlja pri kreiranju i nikad je ne mijenja. UI prikazuje
+upozorenje za `VanKalibracije` ("Mjerno sredstvo van kalibracije") i `BezDatumaKalibracije`.
+Ne blokira (ISO traži da se to vidi i obradi, ne da se rad zaustavi softverom).
+Kalibraciju bilježi Kontrolor/Admin; poništava Admin.
 
 7.6 Rokovi koji idu na dashboard (≤ 30 dana ili prošli): `Supplier.NextEvaluationDate`,
 `Equipment.NextCalibrationDate`, `ControlledDocument.NextReviewDate` (samo `Odobren`),
 `NonConformity.DueDate` (nije `Zatvorena`), `MaterialItem.NextStocktakeDate`.
 Dobavljači sa statusom `Blokiran` ne dobijaju upozorenje za rok ocjene (blokiran = više se ne koristi, §7.2).
+NC bez roka ne ide u upozorenja (forma NC uz prazan rok kaže "NC bez roka se ne prati na dashboardu").
+Mjerna sredstva u stanju `VanKalibracije` (i zbog rezultata `Neuskladjeno`) ili `BezDatumaKalibracije` su
+crvena upozorenja; kalibracija u narednih 30 dana je narandžasto.
+
+7.7 Fajlovi na QMS zapisima (certifikati dobavljača, dokazi kontrole i NC, certifikat kalibracije, fajl
+dokumenta): dodaje Kontrolor/Admin; vezu fajla sa zapisom uklanja samo Admin (bilježi se u AuditLog),
+sam fajl ostaje sačuvan.
 Neaktivna oprema i neaktivni artikli također ne dobijaju upozorenja za kalibraciju i popis.
 
 ## 8. Uloge i ovlasti

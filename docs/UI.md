@@ -123,6 +123,9 @@ Kartice ispod (tabovi na mobilnom):
 - Materijal (vezani lotovi, rezervacije, utrošeno)
 - Kvalitet (kontrole po fazama, NC)
 - Istorija (AuditLog, čitljivo: "12.10.2026. 14:32 — Anes: Status Laser → Presanje")
+  Objedinjena: nalog + njegove kontrole, NC, dnevni zapisi i veze lotova, hronološki, sa oznakom čemu
+  zapis pripada; uključuje razloge overridea i poništavanja; bez sirovog JSON-a. Ista komponenta je na
+  detaljima NC-a, dokumenta i lota (lot: heat broj → nalozi → kontrole).
 
 ## 7. Forme
 
@@ -143,6 +146,10 @@ Kartice ispod (tabovi na mobilnom):
 | Problem | red | Blokirano, Blokiran (dobavljač), Karantin, Odbijen, Neusaglašeno, Ispod minimuma, Nema, Otvorena NC, kasni |
 | Gotovo | green | Završeno, Prihvaćeno, Prihvaćen, Odobren, Zatvorena, OK |
 | Arhiva | zinc (prigušeno) | Isporučeno, Otkazano, Povučen |
+
+Stanje kalibracije: `VanKalibracije` red, `BezDatumaKalibracije` amber, `UKalibraciji` green,
+`BezMjernogSredstva` slate. Rezultat kalibracije: `Uskladjeno` green, `Neuskladjeno` red.
+NC forma uz prazan rok prikazuje napomenu "NC bez roka se ne prati na dashboardu".
 
 Sve vrijednosti koje nisu navedene u tabeli (npr. `Normalan`, faze kontrole, izvori NC, odluke o
 proizvodu, vrste dokumenata, jedinice, vrste opreme, tipovi pokreta) su **slate**. `Hitno` ostaje amber.

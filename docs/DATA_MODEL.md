@@ -106,7 +106,7 @@ Barem jedno od `LaserCutQty`, `PressedQty`, `GoodQty`, `ScrapQty` mora biti > 0.
 | EvaluationCriteria | string(2000)? | N (`Kriteriji / rezultat ocjene`) | |
 | ResponsibleEmployeeId | FK → Employee? | N | |
 | Notes | string(2000)? | N (`Napomene`) | |
-| Certificates | M:N → FileAttachment | N (`Certifikati / dokazi`) | |
+| Certificates | M:N → FileAttachment | N (`Certifikati / dokazi`) | spojna tabela `supplier_certificate` |
 
 Relacija `Isporuke i lotovi` = MaterialLot.SupplierId (1:N).
 
@@ -196,23 +196,43 @@ kad stigne finalni Notion.
 | Kind | enum `EquipmentKind` | `Masina`, `MjernoSredstvo` |
 | Manufacturer | string(80)? | |
 | SerialNumber | string(60)? | |
-| CalibrationIntervalMonths | int? | samo za mjerna sredstva |
-| LastCalibrationDate | DateOnly? | |
-| NextCalibrationDate | DateOnly? | **IZV** ako ima interval, inače ručno |
-| CalibrationCertificateFileId | FK? | |
+| CalibrationIntervalMonths | int? | samo za mjerna sredstva; predlaže `NextCalibrationDate` nove kalibracije |
+| LastCalibrationDate | DateOnly? | **IZV** — `CalibrationDate` zadnje neponištene `EquipmentCalibration` |
+| NextCalibrationDate | DateOnly? | **IZV** — `NextCalibrationDate` zadnje neponištene `EquipmentCalibration` |
+| CalibrationStatus | enum `CalibrationStatusAtCheck` | **IZV** (samo mjerna sredstva): bez neponištenih kalibracija ili bez `NextCalibrationDate` → `BezDatumaKalibracije`; zadnja kalibracija `Neuskladjeno` ili `NextCalibrationDate < danas` → `VanKalibracije`; inače `UKalibraciji` |
 | IsActive | bool | |
+
+Ranija polja `LastCalibrationDate`, `NextCalibrationDate` i `CalibrationCertificateFileId` na opremi su
+prenesena u `EquipmentCalibration` (migracija Faze 3). Stare kolone ostaju u bazi neiskorištene dok vlasnik
+projekta izričito ne potvrdi `DROP`.
 
 Seed (sa tdsproducts.com, potvrditi sa klijentom):
 `M-01` CNC fiber laser 6 kW · `M-02` CNC plazma 85 A · `M-03` Hidraulična 4-stubna presa 350 t ·
 `M-04` Hidraulična presa 25 t (Durmark).
+
+## 9a. EquipmentCalibration — Kalibracija mjernog sredstva 🔒 (NOVO, Faza 3)
+
+Istorija kalibracija kao jedna čitljiva lista ("pokaži istoriju kalibracije za MS-003").
+
+| Polje | Tip | Napomena |
+|---|---|---|
+| EquipmentId | FK → Equipment, req | samo `Kind = MjernoSredstvo` |
+| CalibrationDate | DateOnly, req | ne u budućnosti |
+| NextCalibrationDate | DateOnly? | predlaže se `CalibrationDate + CalibrationIntervalMonths`; može se promijeniti ručno; ne prije `CalibrationDate` |
+| PerformedBy | string(150), req | ko je kalibrisao, npr. vanjska laboratorija |
+| Result | enum `CalibrationResult` | `Uskladjeno`, `Neuskladjeno` |
+| CertificateFileId | FK → FileAttachment? | certifikat o kalibraciji |
+| Note | string(1000)? | |
+
+Ne uređuje se; pogrešan unos se poništi (Admin, razlog) i unese novi.
 
 ## 10. QualityCheck — Kontrola kvaliteta 🔒 (`Kontrole kvaliteta`)
 
 | Polje | Tip | Izvor | Napomena |
 |---|---|---|---|
 | Number | string(20), unique | N (`Zapis kontrole`, title) | auto, `KK-YYYY-NNNN` |
-| WorkOrderId | FK? | N (`Radni nalog`) | obavezan osim za fazu `UlazniMaterijal` (ta faza dolazi u Fazi 3) |
-| MaterialLotId | FK? | N* (`Lot materijala`, text → relacija) | obavezan za fazu `UlazniMaterijal` |
+| WorkOrderId | FK? | N (`Radni nalog`) | obavezan za faze na nalogu; za `UlazniMaterijal` mora biti prazan (veže lot, ne nalog) |
+| MaterialLotId | FK? | N* (`Lot materijala`, text → relacija) | obavezan za fazu `UlazniMaterijal`; opcionalan za ostale faze |
 | Phase | enum `InspectionPhase` | N (`Faza`) | `UlazniMaterijal`, `LaserskoRezanje`, `HidraulicnoPresanje`, `ZavrsnaKontrola` |
 | Characteristic | string(300), req | N (`Karakteristika / zahtjev crteža`) | |
 | AcceptanceCriterion | string(300)? | N (`Kriterij prihvatanja`) | |
@@ -221,10 +241,12 @@ Seed (sa tdsproducts.com, potvrditi sa klijentom):
 | Result | enum `InspectionResult` | N (`Rezultat`) | `Ceka`, `Prihvaceno`, `Neuskladjeno` |
 | InspectedByEmployeeId | FK → Employee, req | N (`Kontrolisao`) | |
 | InspectionDate | DateOnly, req | N (`Datum kontrole`) | |
-| MeasuringEquipmentId | FK → Equipment? | N* | Notion ima i text `Mjerna oprema / ID` i relaciju — spojeno u relaciju (Kind = MjernoSredstvo) |
-| EvidenceFiles | M:N → FileAttachment | N (`Dokaz / zapis`) | |
+| MeasuringEquipmentId | FK → Equipment? | N* | Notion ima i text `Mjerna oprema / ID` i relaciju — spojeno u relaciju (samo aktivno, `Kind = MjernoSredstvo`) |
+| CalibrationStatusAtCheck | enum `CalibrationStatusAtCheck` | **NOVO** | stanje mjernog sredstva **u trenutku kontrole** (`BezMjernogSredstva` kad ga nema). Postavlja server pri kreiranju, nikad se ne mijenja (trajna oznaka, DOMAIN §7.5) |
+| EvidenceFiles | M:N → FileAttachment | N (`Dokaz / zapis`) | spojna tabela `quality_check_evidence` |
 
 Uklonjeno: `Broj naloga` (text) — duplikat relacije.
+Kontrola se ne uređuje (DOMAIN §7.0); na postojeću se mogu samo dodati dokazi.
 
 ## 11. NonConformity — Neusaglašenost i korektivna radnja 🔒
 
@@ -234,7 +256,7 @@ Uklonjeno: `Broj naloga` (text) — duplikat relacije.
 | WorkOrderId | FK? | N (`Radni nalog`) | |
 | MaterialLotId | FK? | NOVO | za izvor `Dobavljac` / `UlazniMaterijal` |
 | SupplierId | FK? | NOVO | za izvor `Dobavljac` |
-| QualityCheckId | FK? | NOVO | kad NC nastaje iz neuspjele kontrole |
+| QualityCheckId | FK? | NOVO | kad NC nastaje iz neuspjele kontrole; najviše jedna neponištena NC po kontroli |
 | Source | enum `NcSource` | N (`Izvor`) | `Dobavljac`, `UlazniMaterijal`, `Laser`, `Presanje`, `ZavrsnaKontrola`, `Kupac`, `Audit`, `Ostalo` |
 | Description | string(2000), req | N (`Opis neusaglašenosti`) | |
 | Containment | string(2000)? | N (`Zadržavanje / trenutna korekcija`) | |
@@ -245,7 +267,7 @@ Uklonjeno: `Broj naloga` (text) — duplikat relacije.
 | DueDate | DateOnly? | N (`Rok`) | |
 | EffectivenessCheckDate | DateOnly? | N (`Datum provjere efektivnosti`) | |
 | Status | enum `NcStatus` | N (`Status`) | `Otvorena`, `RadnjaUToku`, `ProvjeraEfektivnosti`, `Zatvorena` |
-| EvidenceFiles | M:N → FileAttachment | N (`Dokaz / zapis`) | |
+| EvidenceFiles | M:N → FileAttachment | N (`Dokaz / zapis`) | spojna tabela `non_conformity_evidence` |
 
 Uklonjeno: `Broj naloga` (text).
 
@@ -256,7 +278,7 @@ Uklonjeno: `Broj naloga` (text).
 | Title | string(200), req | N (`Naziv dokumenta`) | |
 | Code | string(40), req | N (`Oznaka dokumenta`) | npr. `PR-01`; više verzija dijeli isti Code |
 | Kind | enum `DocumentKind` | N (`Vrsta`) | `Procedura`, `RadnoUputstvo`, `ObrazacZapis`, `EksterniDokument` |
-| Version | string(10), req | N (`Verzija`) | unique (`Code`, `Version`) |
+| Version | string(10), req | N (`Verzija`) | unique (`Code`, `Version`); u bazi i jedinstveni indeks: najviše jedna neponištena `Odobren` po `Code` |
 | Status | enum `DocumentStatus` | N (`Status`) | `Nacrt`, `NaPregledu`, `Odobren`, `Povucen` |
 | OwnerEmployeeId | FK → Employee? | N (`Vlasnik dokumenta`) | |
 | ApprovalDate | DateOnly? | N | obavezno kad `Odobren` |
@@ -353,6 +375,8 @@ ProductDecision:     CekaOdluku, Dorada, Skart, PovratDobavljacu, OdstupanjeOdob
 NcStatus:            Otvorena, RadnjaUToku, ProvjeraEfektivnosti, Zatvorena
 DocumentKind:        Procedura, RadnoUputstvo, ObrazacZapis, EksterniDokument
 DocumentStatus:      Nacrt, NaPregledu, Odobren, Povucen
+CalibrationResult:   Uskladjeno, Neuskladjeno
+CalibrationStatusAtCheck: UKalibraciji, VanKalibracije, BezDatumaKalibracije, BezMjernogSredstva
 ```
 
 Prikazni nazivi (sa dijakriticima: "Čeka materijal", "Isporučeno", "Neusaglašeno"…) žive
@@ -367,3 +391,4 @@ opcijama iz `NOTION_SOURCE.md`.
 - `material_lot (material_item_id, receipt_decision)`
 - `quality_check (work_order_id, phase, result)`
 - `non_conformity (status)`
+- `equipment_calibration (equipment_id, calibration_date)`
