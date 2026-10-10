@@ -1,0 +1,24 @@
+# Local development database only. Production: deploy/docker-compose.yml
+name: tds-erp-dev
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: tds
+      POSTGRES_USER: tds
+      POSTGRES_PASSWORD: tds_dev_password
+      TZ: UTC
+    ports:
+      # 5433 on the host so it does not clash with other local Postgres instances
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - tds-dev-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tds -d tds"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  tds-dev-db:
