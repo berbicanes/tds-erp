@@ -14,3 +14,9 @@ body {
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* Scrollable table wrappers contain their absolutely positioned children (e.g. sr-only labels),
+   otherwise those widen the whole page on phones. */
+.overflow-x-auto {
+  position: relative;
+}

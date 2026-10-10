@@ -31,24 +31,31 @@ Interni cilj: 2 sedmice intenzivnog rada. Klijentu komunicirano: 4 sedmice.
 
 ## Faza 1 — Jezgro: nalozi, materijal, proizvodnja (dan 3–6)
 
-- [ ] Employee CRUD (Admin)
-- [ ] Equipment CRUD + seed M-01…M-04
-- [ ] Supplier CRUD (bez fajlova za sad je OK, fajlovi u Fazi 3)
-- [ ] MaterialItem CRUD
-- [ ] MaterialLot: kreiranje generiše `Prijem`; odluka prijema; pravila DOMAIN §2.5, §7.2
-- [ ] StockMovement: korekcija i otpis (Kontrolor/Admin), lista pokreta po lotu
-- [ ] Upiti stanja: OnHand, Reserved, Available po lotu i artiklu; Nivo zalihe (DOMAIN §2.4)
-- [ ] QualityCheck (DATA_MODEL §10) — **osnova već u Fazi 1** da gate-ovi statusa (DOMAIN §4) rade
+- [x] Employee CRUD (Admin)
+- [x] Equipment CRUD + seed M-01…M-04
+- [x] Supplier CRUD (bez fajlova za sad je OK, fajlovi u Fazi 3)
+- [x] MaterialItem CRUD
+- [x] MaterialLot: kreiranje generiše `Prijem`; odluka prijema; pravila DOMAIN §2.5, §7.2
+- [x] StockMovement: korekcija i otpis (Kontrolor/Admin), lista pokreta po lotu
+- [x] Upiti stanja: OnHand, Reserved, Available po lotu i artiklu; Nivo zalihe (DOMAIN §2.4)
+- [x] QualityCheck (DATA_MODEL §10) — **osnova već u Fazi 1** da gate-ovi statusa (DOMAIN §4) rade
       nad pravim podacima: tabela, migracija, numeracija `KK`, endpointi za kreiranje i listu po nalogu,
       izvedene oznake prvog komada i završne kontrole na nalogu; na detalju naloga samo jednostavno
       dodavanje kontrole. Puni ekrani kontrola su u Fazi 3.
-- [ ] WorkOrder CRUD + upload crteža + numeracija
-- [ ] WorkOrderMaterial: vezivanje lota i rezervacija
-- [ ] Prelazi statusa sa svim gate-ovima (DOMAIN §4) — **unit test za svaki red tabele prelaza**
-- [ ] ProductionEntry: sva pravila DOMAIN §5, automatsko `Izdavanje`, poništavanje
-- [ ] Izvedene vrijednosti naloga (DOMAIN §3) u DTO-u
-- [ ] Liste + detalj naloga (UI §5, §6) bez taba Kvalitet
-- [ ] Integracioni test: lot → nalog → rezervacija → dnevni zapis sa utroškom → stanje tačno
+- [x] WorkOrder CRUD + upload crteža + numeracija
+- [x] WorkOrderMaterial: vezivanje lota i rezervacija
+- [x] Prelazi statusa sa svim gate-ovima (DOMAIN §4) — **unit test za svaki red tabele prelaza**
+- [x] ProductionEntry: sva pravila DOMAIN §5, automatsko `Izdavanje`, poništavanje
+- [x] Izvedene vrijednosti naloga (DOMAIN §3) u DTO-u
+- [x] Liste + detalj naloga (UI §5, §6) bez taba Kvalitet
+- [x] Integracioni test: lot → nalog → rezervacija → dnevni zapis sa utroškom → stanje tačno
+
+> Napomene (11.10.2026.):
+> - Uz zaposlenike je urađeno i upravljanje korisničkim nalozima (Admin), dogovoreno prije Faze 1.
+> - "Liste + detalj": sortiranje, pretraga (300 ms), filteri u URL-u, paginacija 50 — urađeno. Mobilne
+>   kartice i CSV export su u Fazi 4 (na mobilnom tabele skroluju unutar svog okvira, stranica ne).
+> - Detalj naloga ima jednostavan tab Kvalitet (dodavanje kontrole), po odluci da `QualityCheck` ide u Fazu 1.
+>   Tab Istorija dolazi u Fazi 3.
 
 ## Faza 2 — Dashboard (dan 7–8)
 
