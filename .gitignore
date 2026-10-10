@@ -22,3 +22,7 @@ storage/
 .DS_Store
 .idea/
 .vscode/
+
+# Local dev
+.env.dev
+.dev-api.log
