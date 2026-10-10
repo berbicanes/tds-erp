@@ -129,7 +129,7 @@ Kartice ispod (tabovi na mobilnom):
 | Neutralno / čeka | slate | Zaprimljen, Čeka, Nacrt, Na kontroli, U procjeni |
 | U radu | blue | Spreman, Laser, Presanje, Kontrola, Radnja u toku, Na pregledu |
 | Pažnja | amber | Čeka materijal, Doraditi, Hitno, Nisko, Uslovno odobren, Provjera efektivnosti |
-| Problem | red | Blokirano, Karantin, Odbijen, Neusaglašeno, Ispod minimuma, Nema, Otvorena NC, kasni |
+| Problem | red | Blokirano, Blokiran (dobavljač), Karantin, Odbijen, Neusaglašeno, Ispod minimuma, Nema, Otvorena NC, kasni |
 | Gotovo | green | Završeno, Prihvaćeno, Prihvaćen, Odobren, Zatvorena, OK |
 | Arhiva | zinc (prigušeno) | Isporučeno, Otkazano, Povučen |
 

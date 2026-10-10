@@ -51,7 +51,7 @@ export const supplierApprovalStatus = {
   UProcjeni: l("U procjeni"),
   Odobren: l("Odobren", "green"),
   UslovnoOdobren: l("Uslovno odobren", "amber"),
-  Blokiran: l("Blokiran"),
+  Blokiran: l("Blokiran", "red"),
 } as const satisfies Record<string, Label>;
 
 export const receiptDecision = {

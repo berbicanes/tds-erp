@@ -190,8 +190,8 @@ kontrola dobija trajnu oznaku upozorenja "Mjerno sredstvo van kalibracije". Ne b
 | Dobavljači, oprema, dokumenti | | ✓ | ✓ |
 | Override gate-a, korisnici, zaposlenici, poništavanje QMS zapisa | | | ✓ |
 
-Login: korisničko ime + lozinka (min. 10 znakova, bez obaveznih specijalnih znakova i velikih
-slova). 5 neuspjelih pokušaja → nalog zaključan 15 minuta.
+Login: korisničko ime + lozinka (min. 10 znakova, barem jedna cifra i jedno malo slovo; bez obaveznih
+specijalnih znakova i velikih slova). 5 neuspjelih pokušaja → nalog zaključan 15 minuta.
 
 Pretpostavka: Sanel = Admin. Mala firma — vjerovatno 1–2 Kontrolora, ostalo Operateri.
 

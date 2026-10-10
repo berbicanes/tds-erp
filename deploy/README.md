@@ -114,8 +114,12 @@ docker compose start api
 
 ## 6. Ažuriranje
 
+**Prije svakog deploya obavezno ručno pokreni backup** — migracije se primjenjuju same pri
+pokretanju `api` kontejnera i nema automatskog povratka unazad:
+
 ```bash
+/opt/tds/app/deploy/backup.sh && tail -3 /opt/tds/backup/backup.log   # mora završiti sa "finished"
 cd /opt/tds/app && git pull
 cd deploy && docker compose up -d --build
+docker compose logs api | grep -i "migrations applied"
 ```
-Migracije se primjenjuju same pri pokretanju `api` kontejnera. Prije ažuriranja pokreni `backup.sh`.

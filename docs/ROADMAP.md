@@ -38,12 +38,13 @@ Interni cilj: 2 sedmice intenzivnog rada. Klijentu komunicirano: 4 sedmice.
 - [ ] MaterialLot: kreiranje generiše `Prijem`; odluka prijema; pravila DOMAIN §2.5, §7.2
 - [ ] StockMovement: korekcija i otpis (Kontrolor/Admin), lista pokreta po lotu
 - [ ] Upiti stanja: OnHand, Reserved, Available po lotu i artiklu; Nivo zalihe (DOMAIN §2.4)
+- [ ] QualityCheck (DATA_MODEL §10) — **osnova već u Fazi 1** da gate-ovi statusa (DOMAIN §4) rade
+      nad pravim podacima: tabela, migracija, numeracija `KK`, endpointi za kreiranje i listu po nalogu,
+      izvedene oznake prvog komada i završne kontrole na nalogu; na detalju naloga samo jednostavno
+      dodavanje kontrole. Puni ekrani kontrola su u Fazi 3.
 - [ ] WorkOrder CRUD + upload crteža + numeracija
 - [ ] WorkOrderMaterial: vezivanje lota i rezervacija
 - [ ] Prelazi statusa sa svim gate-ovima (DOMAIN §4) — **unit test za svaki red tabele prelaza**
-      > **Otvoreno pitanje:** gate-ovi (`LaserFirstPieceApproved`, `PressFirstPieceApproved`,
-      > `FinalInspectionPassed`) se izvode iz `QualityCheck`, koji dolazi tek u Fazi 3.
-      > Privremeno rješenje za Fazu 1 odlučuje vlasnik projekta kad se dođe do toga.
 - [ ] ProductionEntry: sva pravila DOMAIN §5, automatsko `Izdavanje`, poništavanje
 - [ ] Izvedene vrijednosti naloga (DOMAIN §3) u DTO-u
 - [ ] Liste + detalj naloga (UI §5, §6) bez taba Kvalitet
@@ -59,7 +60,7 @@ Interni cilj: 2 sedmice intenzivnog rada. Klijentu komunicirano: 4 sedmice.
 
 ## Faza 3 — Kvalitet i QMS (dan 9–10)
 
-- [ ] QualityCheck CRUD; izvedene oznake prvog komada i završne kontrole na nalogu
+- [ ] QualityCheck: puni ekrani (lista, filteri, uređivanje, poništavanje, dokazi); osnova i izvedene oznake su iz Faze 1
 - [ ] Neuspjela kontrola nudi kreiranje NC (DOMAIN §7.1)
 - [ ] NonConformity sa prelazima (DOMAIN §7.3)
 - [ ] Mjerna sredstva + kalibracija (DOMAIN §7.5)

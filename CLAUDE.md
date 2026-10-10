@@ -100,7 +100,7 @@ cd web && npm run build && npm run typecheck && npm test
   (CSRF zaštita se oslanja na ovo + cookie `HttpOnly`, `Secure`, `SameSite=Strict`; nema
   posebnog antiforgery tokena.)
 - **Auth:** login korisničkim imenom (e-mail opcionalan, ne koristi se za login). Lozinka
-  min. 10 znakova, bez obaveznih specijalnih znakova i velikih slova. Lockout: 5 neuspjelih
+  min. 10 znakova, barem jedna cifra i jedno malo slovo; bez obaveznih specijalnih znakova i velikih slova. Lockout: 5 neuspjelih
   pokušaja → nalog zaključan 15 minuta. Na `/api/*` neprijavljen = 401, nema redirecta.
   Prvi Admin se seeduje iz env varijabli `TDS_ADMIN_USERNAME` / `TDS_ADMIN_PASSWORD`.
 - **Vrijeme:** poslovni datumi su `DateOnly` (rok, datum prijema, datum proizvodnje).
@@ -134,3 +134,6 @@ cd web && npm run build && npm run typecheck && npm test
 - Novi NuGet/npm paketi osim onih u Stacku — pitaj prvo.
 - Engleski tekst u UI-ju, lorem ipsum, izmišljeni demo podaci u produkcijskom seedu.
 - Slanje podataka bilo kojem vanjskom servisu (analitika, CDN fontovi sa trackingom, AI API).
+- Brisanje, mijenjanje ili čišćenje bilo čega **izvan ovog repoa** (simulatori, Docker keš/slike/volumeni,
+  globalni paketi, drugi projekti, sistemski fajlovi) — čak ni kad fali prostora na disku. Tada stani,
+  reci šta zauzima prostor i pitaj.

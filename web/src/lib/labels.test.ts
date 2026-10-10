@@ -69,6 +69,7 @@ describe("tones follow UI §8", () => {
 
   it("problems are red", () => {
     expect(enumLabels.qualityApproval.Blokirano.tone).toBe("red");
+    expect(enumLabels.supplierApprovalStatus.Blokiran.tone).toBe("red");
     expect(enumLabels.receiptDecision.Karantin.tone).toBe("red");
     expect(enumLabels.receiptDecision.Odbijen.tone).toBe("red");
     expect(enumLabels.inspectionResult.Neuskladjeno.tone).toBe("red");
