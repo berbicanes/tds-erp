@@ -2,7 +2,7 @@ namespace Tds.Api.Domain;
 
 public abstract class VoidableEntity : Entity, IVoidable
 {
-    public const int VoidedReasonMaxLength = 300;
+    public const int VoidedReasonMax = 300;
 
     public bool IsVoided { get; private set; }
     public string? VoidedReason { get; private set; }

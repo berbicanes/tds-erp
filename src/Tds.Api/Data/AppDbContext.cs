@@ -18,6 +18,8 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
     public DbSet<Equipment> Equipment => Set<Equipment>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<MaterialItem> MaterialItems => Set<MaterialItem>();
+    public DbSet<MaterialLot> MaterialLots => Set<MaterialLot>();
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
     public DbSet<NumberSequence> NumberSequences => Set<NumberSequence>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -48,7 +50,7 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
             modelBuilder.Entity(entityType.ClrType).Property(nameof(Entity.Version)).IsRowVersion();
             if (typeof(IVoidable).IsAssignableFrom(entityType.ClrType))
                 modelBuilder.Entity(entityType.ClrType).Property(nameof(IVoidable.VoidedReason))
-                    .HasMaxLength(VoidableEntity.VoidedReasonMaxLength);
+                    .HasMaxLength(VoidableEntity.VoidedReasonMax);
         }
     }
 }

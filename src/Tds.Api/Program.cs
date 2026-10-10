@@ -123,6 +123,7 @@ app.MapUserEndpoints();
 app.MapEquipmentEndpoints();
 app.MapSupplierEndpoints();
 app.MapMaterialItemEndpoints();
+app.MapLotEndpoints();
 
 app.Run();
 

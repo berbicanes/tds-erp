@@ -604,6 +604,120 @@ namespace Tds.Api.Data.Migrations
                     b.ToTable("material_item", (string)null);
                 });
 
+            modelBuilder.Entity("Tds.Api.Domain.MaterialLot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("CertificateFileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("certificate_file_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DimensionsDescription")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("dimensions_description");
+
+                    b.Property<Guid?>("InspectedByEmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("inspected_by_employee_id");
+
+                    b.Property<bool>("IsVoided")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_voided");
+
+                    b.Property<string>("LotNumber")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("lot_number");
+
+                    b.Property<Guid>("MaterialItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_item_id");
+
+                    b.Property<string>("ReceiptDecision")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("receipt_decision");
+
+                    b.Property<DateOnly>("ReceivedDate")
+                        .HasColumnType("date")
+                        .HasColumnName("received_date");
+
+                    b.Property<decimal>("ReceivedQty")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("received_qty");
+
+                    b.Property<string>("StorageLocation")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("storage_location");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<DateTimeOffset?>("VoidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("voided_at");
+
+                    b.Property<Guid?>("VoidedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("voided_by");
+
+                    b.Property<string>("VoidedReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("voided_reason");
+
+                    b.HasKey("Id")
+                        .HasName("pk_material_lot");
+
+                    b.HasIndex("CertificateFileId")
+                        .HasDatabaseName("ix_material_lot_certificate_file_id");
+
+                    b.HasIndex("InspectedByEmployeeId")
+                        .HasDatabaseName("ix_material_lot_inspected_by_employee_id");
+
+                    b.HasIndex("LotNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_material_lot_lot_number");
+
+                    b.HasIndex("SupplierId")
+                        .HasDatabaseName("ix_material_lot_supplier_id");
+
+                    b.HasIndex("MaterialItemId", "ReceiptDecision")
+                        .HasDatabaseName("ix_material_lot_material_item_id_receipt_decision");
+
+                    b.ToTable("material_lot", (string)null);
+                });
+
             modelBuilder.Entity("Tds.Api.Domain.NumberSequence", b =>
                 {
                     b.Property<string>("Kind")
@@ -624,6 +738,92 @@ namespace Tds.Api.Data.Migrations
                         .HasName("pk_number_sequence");
 
                     b.ToTable("number_sequence", (string)null);
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.StockMovement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<bool>("IsVoided")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_voided");
+
+                    b.Property<Guid>("MaterialLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_lot_id");
+
+                    b.Property<Guid?>("ProductionEntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("production_entry_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<DateTimeOffset?>("VoidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("voided_at");
+
+                    b.Property<Guid?>("VoidedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("voided_by");
+
+                    b.Property<string>("VoidedReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("voided_reason");
+
+                    b.Property<Guid?>("WorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("work_order_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_stock_movement");
+
+                    b.HasIndex("MaterialLotId")
+                        .HasDatabaseName("ix_stock_movement_material_lot_id");
+
+                    b.ToTable("stock_movement", (string)null);
                 });
 
             modelBuilder.Entity("Tds.Api.Domain.Supplier", b =>
@@ -779,6 +979,45 @@ namespace Tds.Api.Data.Migrations
                         .HasForeignKey("CalibrationCertificateFileId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_equipment_file_attachments_calibration_certificate_file_id");
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.MaterialLot", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.FileAttachment", null)
+                        .WithMany()
+                        .HasForeignKey("CertificateFileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_material_lot_file_attachment_certificate_file_id");
+
+                    b.HasOne("Tds.Api.Domain.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("InspectedByEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_material_lot_employee_inspected_by_employee_id");
+
+                    b.HasOne("Tds.Api.Domain.MaterialItem", null)
+                        .WithMany()
+                        .HasForeignKey("MaterialItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_material_lot_material_item_material_item_id");
+
+                    b.HasOne("Tds.Api.Domain.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_material_lot_suppliers_supplier_id");
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.StockMovement", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.MaterialLot", null)
+                        .WithMany()
+                        .HasForeignKey("MaterialLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_stock_movement_material_lot_material_lot_id");
                 });
 
             modelBuilder.Entity("Tds.Api.Domain.Supplier", b =>

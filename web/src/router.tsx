@@ -16,6 +16,9 @@ import { SupplierFormPage } from "./features/suppliers/SupplierFormPage";
 import { StockLayout } from "./features/stock/StockLayout";
 import { ItemsPage } from "./features/stock/ItemsPage";
 import { ItemFormPage } from "./features/stock/ItemFormPage";
+import { LotsPage } from "./features/stock/LotsPage";
+import { ReceiveLotPage } from "./features/stock/ReceiveLotPage";
+import { LotDetailPage } from "./features/stock/LotDetailPage";
 
 export const router = createBrowserRouter([
   { path: "/prijava", element: <LoginPage /> },
@@ -37,7 +40,9 @@ export const router = createBrowserRouter([
               { path: "artikli", element: <ItemsPage /> },
               { path: "artikli/novi", element: <ItemFormPage /> },
               { path: "artikli/:id", element: <ItemFormPage /> },
-              { path: "lotovi", element: <EmptyModulePage title="Lotovi" /> },
+              { path: "lotovi", element: <LotsPage /> },
+              { path: "lotovi/prijem", element: <ReceiveLotPage /> },
+              { path: "lotovi/:id", element: <LotDetailPage /> },
             ],
           },
           { path: "/kvalitet", element: <EmptyModulePage title="Kvalitet" /> },
