@@ -17,6 +17,7 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Equipment> Equipment => Set<Equipment>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<MaterialItem> MaterialItems => Set<MaterialItem>();
     public DbSet<NumberSequence> NumberSequences => Set<NumberSequence>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

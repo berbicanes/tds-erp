@@ -13,6 +13,9 @@ import { EquipmentListPage } from "./features/equipment/EquipmentListPage";
 import { EquipmentFormPage } from "./features/equipment/EquipmentFormPage";
 import { SupplierListPage } from "./features/suppliers/SupplierListPage";
 import { SupplierFormPage } from "./features/suppliers/SupplierFormPage";
+import { StockLayout } from "./features/stock/StockLayout";
+import { ItemsPage } from "./features/stock/ItemsPage";
+import { ItemFormPage } from "./features/stock/ItemFormPage";
 
 export const router = createBrowserRouter([
   { path: "/prijava", element: <LoginPage /> },
@@ -26,7 +29,17 @@ export const router = createBrowserRouter([
           { path: "/brzi-unos", element: <EmptyModulePage title="Brzi unos" /> },
           { path: "/nalozi", element: <EmptyModulePage title="Nalozi" /> },
           { path: "/proizvodnja", element: <EmptyModulePage title="Dnevna proizvodnja" /> },
-          { path: "/zalihe", element: <EmptyModulePage title="Zalihe" /> },
+          {
+            path: "/zalihe",
+            element: <StockLayout />,
+            children: [
+              { index: true, element: <Navigate to="/zalihe/artikli" replace /> },
+              { path: "artikli", element: <ItemsPage /> },
+              { path: "artikli/novi", element: <ItemFormPage /> },
+              { path: "artikli/:id", element: <ItemFormPage /> },
+              { path: "lotovi", element: <EmptyModulePage title="Lotovi" /> },
+            ],
+          },
           { path: "/kvalitet", element: <EmptyModulePage title="Kvalitet" /> },
           { path: "/dobavljaci", element: <SupplierListPage /> },
           { path: "/dobavljaci/novi", element: <SupplierFormPage /> },
