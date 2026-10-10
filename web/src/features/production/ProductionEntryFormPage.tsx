@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,7 +15,8 @@ import { formatDate } from "../../lib/format";
 import { userLabel } from "../../lib/labels";
 import { itemTitle, qtyWithUnit } from "../../lib/material";
 import { dateInput, decimalInput, intInput, optionalText } from "../../lib/schema";
-import { useUnsavedChangesPrompt } from "../../hooks/useUnsavedChangesPrompt";
+import { ChangedOnServerNotice, useUnsavedChanges } from "../../components/UnsavedChanges";
+import { useServerForm } from "../../hooks/useServerForm";
 import { useEmployeeOptions } from "../settings/api";
 import { useEquipmentOptions } from "../equipment/api";
 import { useLots } from "../stock/lotsApi";
@@ -67,26 +68,24 @@ export function ProductionEntryFormPage() {
   const [voidReason, setVoidReason] = useState("");
   const presetOrder = new URLSearchParams(location.search).get("nalog");
 
-  const { register, handleSubmit, reset, control, setError, formState: { errors, isDirty, isSubmitSuccessful } } = useForm<FormIn, unknown, FormOut>({
+  const form = useForm<FormIn, unknown, FormOut>({
     resolver: zodResolver(schema),
     defaultValues: {
       workOrderId: presetOrder, date: todaySarajevo(), operatorEmployeeId: null, equipmentIds: [], materialLotId: null,
       laserCutQty: "", pressedQty: "", goodQty: "", scrapQty: "", laborHours: "", materialConsumed: "", note: "",
     },
   });
+  const { register, handleSubmit, control, setError, formState: { errors, isDirty } } = form;
 
-  useEffect(() => {
-    const e = entry.data;
-    if (e)
-      reset({
+  // Never overwrite unsaved input with refetched data (lib/formSync.ts).
+  const sync = useServerForm(form, entry.data, (e) => ({
         workOrderId: e.workOrderId, date: e.date, operatorEmployeeId: e.operatorEmployeeId, equipmentIds: e.equipmentIds,
         materialLotId: e.materialLotId, laserCutQty: String(e.laserCutQty), pressedQty: String(e.pressedQty), goodQty: String(e.goodQty),
         scrapQty: String(e.scrapQty), laborHours: String(e.laborHours).replace(".", ","),
         materialConsumed: e.materialConsumed == null ? "" : String(e.materialConsumed).replace(".", ","), note: e.note ?? "",
-      });
-  }, [entry.data, reset]);
+      }));
 
-  const prompt = useUnsavedChangesPrompt(isDirty && !isSubmitSuccessful);
+  const markSaved = useUnsavedChanges(isDirty);
   const [workOrderId, lotId] = useWatch({ control, name: ["workOrderId", "materialLotId"] });
   const wo = useWorkOrder(workOrderId ?? undefined);
   const lot = lots.data?.items.find((l) => l.id === lotId);
@@ -99,11 +98,13 @@ export function ProductionEntryFormPage() {
         workOrderId: v.workOrderId!, date: v.date!, operatorEmployeeId: v.operatorEmployeeId!, equipmentIds: v.equipmentIds,
         materialLotId: v.materialLotId, laserCutQty: v.laserCutQty ?? 0, pressedQty: v.pressedQty ?? 0, goodQty: v.goodQty ?? 0,
         scrapQty: v.scrapQty ?? 0, laborHours: v.laborHours ?? 0, materialConsumed: v.materialConsumed, note: v.note,
-        version: entry.data?.version ?? 0,
+        version: sync.baseVersion,
       },
       {
         onSuccess: (r) => {
+          sync.markSaved(r.data);
           setWarnings(r.warnings);
+          markSaved();
           if (r.warnings.length === 0) navigate("/proizvodnja");
           else navigate(`/proizvodnja/${r.data.id}`, { replace: true });
         },
@@ -122,7 +123,6 @@ export function ProductionEntryFormPage() {
     <>
       <PageHeader title={e ? `Dnevni zapis ${e.number}` : "Novi dnevni zapis"} />
       <form onSubmit={onSubmit} noValidate className="max-w-3xl space-y-4 px-4 py-4">
-        {prompt}
         {e && (
           <p className="text-sm text-slate-600">
             Unio: {userLabel(e.createdByName)} · {formatDate(e.date)}
@@ -205,7 +205,8 @@ export function ProductionEntryFormPage() {
           </Field>
         </fieldset>
 
-        <ErrorBanner error={save.error instanceof ApiError && Object.keys(save.error.fieldErrors).length ? null : save.error ?? voidEntry.error} onRefresh={() => void entry.refetch()} />
+        <ChangedOnServerNotice show={sync.changedOnServer} onDiscard={sync.discard} />
+        <ErrorBanner error={save.error instanceof ApiError && Object.keys(save.error.fieldErrors).length ? null : save.error ?? voidEntry.error} onRefresh={() => { save.reset(); void sync.reload(entry.refetch); }} />
 
         <div className="flex flex-wrap gap-2">
           {!readOnly && (

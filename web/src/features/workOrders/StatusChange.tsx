@@ -5,6 +5,7 @@ import { labelOf, workOrderStatus, type WorkOrderStatus } from "../../lib/labels
 import { ErrorBanner } from "../../components/ErrorBanner";
 import { inputClass } from "../../components/form/Field";
 import { woKey, type WorkOrder } from "./api";
+import { useUnsavedChanges } from "../../components/UnsavedChanges";
 
 interface TransitionOption {
   to: WorkOrderStatus;
@@ -19,6 +20,7 @@ export function StatusChange({ wo }: { wo: WorkOrder }) {
   const [open, setOpen] = useState(false);
   const [reasonFor, setReasonFor] = useState<WorkOrderStatus | null>(null);
   const [reason, setReason] = useState("");
+  useUnsavedChanges(reason.trim() !== "");
   const options = useQuery({
     queryKey: [...woKey, wo.id, "transitions", wo.version],
     queryFn: () => api.get<TransitionOption[]>(`/api/work-orders/${wo.id}/transitions`),

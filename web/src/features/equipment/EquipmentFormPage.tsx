@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,7 +10,8 @@ import { hasRole, useMe } from "../../lib/auth";
 import { equipmentKind } from "../../lib/labels";
 import { formatDate } from "../../lib/format";
 import { dateInput, intInput, optionalText, requiredText } from "../../lib/schema";
-import { useUnsavedChangesPrompt } from "../../hooks/useUnsavedChangesPrompt";
+import { ChangedOnServerNotice, useUnsavedChanges } from "../../components/UnsavedChanges";
+import { useServerForm } from "../../hooks/useServerForm";
 import { useEquipment, useSaveEquipment } from "./api";
 
 // Mirrors SaveEquipmentValidator.
@@ -50,29 +50,27 @@ export function EquipmentFormPage() {
   const equipment = useEquipment(id);
   const save = useSaveEquipment(id);
 
-  const { register, handleSubmit, reset, control, setError, formState: { errors, isDirty, isSubmitSuccessful } } = useForm<FormIn, unknown, FormOut>({
+  const form = useForm<FormIn, unknown, FormOut>({
     resolver: zodResolver(schema),
     defaultValues: { code: "", name: "", kind: "Masina", manufacturer: "", serialNumber: "", calibrationIntervalMonths: "", lastCalibrationDate: "", nextCalibrationDate: "", isActive: true },
   });
+  const { register, handleSubmit, control, setError, formState: { errors, isDirty } } = form;
 
-  useEffect(() => {
-    const e = equipment.data;
-    if (e)
-      reset({
+  // Never overwrite unsaved input with refetched data (lib/formSync.ts).
+  const sync = useServerForm(form, equipment.data, (e) => ({
         code: e.code, name: e.name, kind: e.kind, manufacturer: e.manufacturer ?? "", serialNumber: e.serialNumber ?? "",
         calibrationIntervalMonths: e.calibrationIntervalMonths?.toString() ?? "", lastCalibrationDate: e.lastCalibrationDate ?? "",
         nextCalibrationDate: e.nextCalibrationDate ?? "", isActive: e.isActive,
-      });
-  }, [equipment.data, reset]);
+      }));
 
-  const prompt = useUnsavedChangesPrompt(canEdit && isDirty && !isSubmitSuccessful);
+  const markSaved = useUnsavedChanges(canEdit && isDirty && !save.isSuccess);
   const [kind, interval, last] = useWatch({ control, name: ["kind", "calibrationIntervalMonths", "lastCalibrationDate"] });
   const intervalNumber = Number(interval);
   const derivedNext = kind === "MjernoSredstvo" && Number.isInteger(intervalNumber) && intervalNumber > 0 && last ? addMonths(last, intervalNumber) : null;
 
   const onSubmit = handleSubmit((values) =>
-    save.mutate({ ...values, version: equipment.data?.version ?? 0 }, {
-      onSuccess: () => navigate("/oprema"),
+    save.mutate({ ...values, version: sync.baseVersion }, {
+      onSuccess: () => { markSaved(); navigate("/oprema"); },
       onError: (e) => {
         if (e instanceof ApiError)
           for (const [f, m] of Object.entries(e.fieldErrors)) setError(f as keyof FormIn, { message: m[0] ?? "" });
@@ -87,7 +85,6 @@ export function EquipmentFormPage() {
     <>
       <PageHeader title={id ? `Oprema ${equipment.data?.code ?? ""}` : "Nova oprema"} />
       <form onSubmit={onSubmit} noValidate className="max-w-xl space-y-4 px-4 py-4">
-        {prompt}
         <fieldset disabled={!canEdit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Oznaka" htmlFor="code" required error={errors.code?.message}>
@@ -136,7 +133,8 @@ export function EquipmentFormPage() {
           </label>
         </fieldset>
 
-        <ErrorBanner error={save.error instanceof ApiError && Object.keys(save.error.fieldErrors).length ? null : save.error} onRefresh={() => void equipment.refetch()} />
+        <ChangedOnServerNotice show={sync.changedOnServer} onDiscard={sync.discard} />
+        <ErrorBanner error={save.error instanceof ApiError && Object.keys(save.error.fieldErrors).length ? null : save.error} onRefresh={() => { save.reset(); void sync.reload(equipment.refetch); }} />
 
         <div className="flex gap-2">
           {canEdit && (

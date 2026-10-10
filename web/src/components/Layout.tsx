@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { hasRole, useLogout, useMe } from "../lib/auth";
 import { bottomNav, mainNav, type NavItem } from "./nav";
+import { UnsavedChangesProvider } from "./UnsavedChanges";
 
 function visible(items: NavItem[], me: ReturnType<typeof useMe>["data"]) {
   return items.filter((i) => !i.roles || hasRole(me, ...i.roles));
@@ -79,7 +80,9 @@ export function Layout() {
       )}
 
       <main className="min-w-0 flex-1 pb-16 md:pb-0">
-        <Outlet />
+        <UnsavedChangesProvider>
+          <Outlet />
+        </UnsavedChangesProvider>
       </main>
 
       {/* Mobile bottom bar (UI §2) */}

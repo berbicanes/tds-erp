@@ -9,7 +9,7 @@ import { ApiError } from "../../lib/api";
 import { labelOf, supplierApprovalStatus } from "../../lib/labels";
 import { decimalInput, optionalText, requiredText, dateInput } from "../../lib/schema";
 import { itemTitle } from "../../lib/material";
-import { useUnsavedChangesPrompt } from "../../hooks/useUnsavedChangesPrompt";
+import { useUnsavedChanges } from "../../components/UnsavedChanges";
 import { useMaterialItemOptions } from "./itemsApi";
 import { useSupplierOptions } from "../suppliers/api";
 import { useReceiveLot } from "./lotsApi";
@@ -35,11 +35,11 @@ export function ReceiveLotPage() {
   const suppliers = useSupplierOptions();
   const receive = useReceiveLot();
 
-  const { register, handleSubmit, control, watch, setError, formState: { errors, isDirty, isSubmitSuccessful } } = useForm<FormIn, unknown, FormOut>({
+  const { register, handleSubmit, control, watch, setError, formState: { errors, isDirty } } = useForm<FormIn, unknown, FormOut>({
     resolver: zodResolver(schema),
     defaultValues: { lotNumber: "", materialItemId: null, supplierId: null, receivedDate: todayIso(), receivedQty: "", dimensionsDescription: "", storageLocation: "" },
   });
-  const prompt = useUnsavedChangesPrompt(isDirty && !isSubmitSuccessful);
+  const markSaved = useUnsavedChanges(isDirty && !receive.isSuccess);
 
   const selectedItem = items.data?.find((i) => i.id === watch("materialItemId"));
   const selectedSupplier = suppliers.data?.find((s) => s.id === watch("supplierId"));
@@ -48,7 +48,7 @@ export function ReceiveLotPage() {
     receive.mutate(
       { ...v, materialItemId: v.materialItemId!, supplierId: v.supplierId!, receivedDate: v.receivedDate!, receivedQty: v.receivedQty! },
       {
-        onSuccess: (r) => navigate(`/zalihe/lotovi/${r.data.id}`, { state: { warnings: r.warnings } }),
+        onSuccess: (r) => { markSaved(); navigate(`/zalihe/lotovi/${r.data.id}`, { state: { warnings: r.warnings } }); },
         onError: (e) => {
           if (e instanceof ApiError)
             for (const [f, m] of Object.entries(e.fieldErrors)) setError(f as keyof FormIn, { message: m[0] ?? "" });
@@ -63,7 +63,6 @@ export function ReceiveLotPage() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="max-w-2xl space-y-4 px-4 py-4">
-      {prompt}
       <h2 className="font-semibold">Prijem lota</h2>
       <Field label="Oznaka lota / heat broj" htmlFor="lotNumber" required error={errors.lotNumber?.message} hint="Upiši heat broj sa certifikata.">
         <input id="lotNumber" autoCapitalize="characters" className={inputClass} aria-invalid={!!errors.lotNumber} {...register("lotNumber")} />

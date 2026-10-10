@@ -13,6 +13,7 @@ import { useEmployeeOptions } from "../settings/api";
 import { allowedDecisions, useDecideLot, useLot, useVoidLot, type Lot } from "./lotsApi";
 import { LotEditForm } from "./LotEditForm";
 import { LotMovements } from "./LotMovements";
+import { useUnsavedChanges } from "../../components/UnsavedChanges";
 import { FilePicker } from "../../components/form/FilePicker";
 import { fileUrl, uploadFile } from "../../lib/files";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -37,6 +38,7 @@ function DecisionPanel({ lot, onWarnings }: { lot: Lot; onWarnings: (w: string[]
   const [reason, setReason] = useState("");
   const [confirm, setConfirm] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  useUnsavedChanges(decision !== "" || reason.trim() !== "");
 
   if (options.length === 0) return <p className="text-sm text-slate-600">Lot je odbijen. Odluka se više ne može mijenjati.</p>;
 
@@ -92,6 +94,7 @@ function DecisionPanel({ lot, onWarnings }: { lot: Lot; onWarnings: (w: string[]
 function CertificatePanel({ lot, onWarnings }: { lot: Lot; onWarnings: (w: string[]) => void }) {
   const qc = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
+  useUnsavedChanges(file !== null);
   const save = useMutation({
     mutationFn: async (f: File) => {
       const uploaded = await uploadFile(f);

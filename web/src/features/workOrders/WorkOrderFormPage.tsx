@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,7 +11,8 @@ import { PageHeader } from "../../components/PageHeader";
 import { ApiError } from "../../lib/api";
 import { uploadFile } from "../../lib/files";
 import { dateInput, intInput, optionalText, requiredText } from "../../lib/schema";
-import { useUnsavedChangesPrompt } from "../../hooks/useUnsavedChangesPrompt";
+import { ChangedOnServerNotice, useUnsavedChanges } from "../../components/UnsavedChanges";
+import { useServerForm } from "../../hooks/useServerForm";
 import { useEmployeeOptions } from "../settings/api";
 import { useSaveWorkOrder, useWorkOrder } from "./api";
 
@@ -40,25 +41,23 @@ export function WorkOrderFormPage() {
   const [drawing, setDrawing] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<unknown>(null);
 
-  const { register, handleSubmit, reset, control, setError, formState: { errors, isDirty, isSubmitSuccessful, isSubmitting } } = useForm<FormIn, unknown, FormOut>({
+  const form = useForm<FormIn, unknown, FormOut>({
     resolver: zodResolver(schema),
     defaultValues: {
       customer: "", productDescription: "", orderedQty: "", dueDate: "", releaseDate: "", priority: "Normalan",
       drawingNumber: "", drawingRevision: "", responsibleEmployeeId: null, notes: "",
     },
   });
+  const { register, handleSubmit, control, setError, formState: { errors, isDirty, isSubmitting } } = form;
 
-  useEffect(() => {
-    const w = wo.data;
-    if (w)
-      reset({
+  // Never overwrite unsaved input with refetched data (lib/formSync.ts).
+  const sync = useServerForm(form, wo.data, (w) => ({
         customer: w.customer, productDescription: w.productDescription, orderedQty: String(w.orderedQty), dueDate: w.dueDate,
         releaseDate: w.releaseDate ?? "", priority: w.priority, drawingNumber: w.drawingNumber ?? "", drawingRevision: w.drawingRevision ?? "",
         responsibleEmployeeId: w.responsibleEmployeeId, notes: w.notes ?? "",
-      });
-  }, [wo.data, reset]);
+      }));
 
-  const prompt = useUnsavedChangesPrompt((isDirty || !!drawing) && !isSubmitSuccessful);
+  const markSaved = useUnsavedChanges((isDirty || !!drawing) && !save.isSuccess);
   const readOnly = wo.data ? ["Isporuceno", "Otkazano"].includes(wo.data.status) : false;
 
   const onSubmit = handleSubmit(async (v) => {
@@ -72,8 +71,8 @@ export function WorkOrderFormPage() {
         return;
       }
     }
-    save.mutate({ ...v, orderedQty: v.orderedQty!, dueDate: v.dueDate!, drawingFileId, version: wo.data?.version ?? 0 }, {
-      onSuccess: (saved) => navigate(`/nalozi/${saved.id}`),
+    save.mutate({ ...v, orderedQty: v.orderedQty!, dueDate: v.dueDate!, drawingFileId, version: sync.baseVersion }, {
+      onSuccess: (saved) => { markSaved(); navigate(`/nalozi/${saved.id}`); },
       onError: (e) => {
         if (e instanceof ApiError) for (const [f, m] of Object.entries(e.fieldErrors)) setError(f as keyof FormIn, { message: m[0] ?? "" });
       },
@@ -87,7 +86,6 @@ export function WorkOrderFormPage() {
     <>
       <PageHeader title={id ? `Uredi nalog ${wo.data?.number ?? ""}` : "Novi nalog"} />
       <form onSubmit={onSubmit} noValidate className="max-w-3xl space-y-4 px-4 py-4">
-        {prompt}
         {readOnly && <p className="rounded bg-zinc-100 p-3 text-sm">Nalog je {wo.data?.status === "Otkazano" ? "otkazan" : "isporučen"}. Može se mijenjati samo napomena.</p>}
         {!id && <p className="text-sm text-slate-600">Broj naloga (RN-…) dodjeljuje sistem pri spremanju.</p>}
         <fieldset disabled={readOnly} className="space-y-4">
@@ -138,7 +136,8 @@ export function WorkOrderFormPage() {
           <textarea id="notes" className={textareaClass} {...register("notes")} />
         </Field>
 
-        <ErrorBanner error={uploadError ?? (save.error instanceof ApiError && Object.keys(save.error.fieldErrors).length ? null : save.error)} onRefresh={() => void wo.refetch()} />
+        <ChangedOnServerNotice show={sync.changedOnServer} onDiscard={sync.discard} />
+        <ErrorBanner error={uploadError ?? (save.error instanceof ApiError && Object.keys(save.error.fieldErrors).length ? null : save.error)} onRefresh={() => { save.reset(); void sync.reload(wo.refetch); }} />
 
         <div className="flex gap-2">
           <button type="submit" disabled={save.isPending || isSubmitting} className="min-h-12 rounded bg-blue-700 px-5 font-medium text-white disabled:opacity-60">

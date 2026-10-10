@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,7 +10,8 @@ import { ApiError } from "../../lib/api";
 import { hasRole, useMe } from "../../lib/auth";
 import { supplierApprovalStatus } from "../../lib/labels";
 import { dateInput, optionalText, requiredText } from "../../lib/schema";
-import { useUnsavedChangesPrompt } from "../../hooks/useUnsavedChangesPrompt";
+import { ChangedOnServerNotice, useUnsavedChanges } from "../../components/UnsavedChanges";
+import { useServerForm } from "../../hooks/useServerForm";
 import { useEmployeeOptions } from "../settings/api";
 import { useSaveSupplier, useSupplier } from "./api";
 
@@ -43,30 +43,28 @@ export function SupplierFormPage() {
   const employees = useEmployeeOptions();
   const save = useSaveSupplier(id);
 
-  const { register, handleSubmit, reset, control, watch, setError, formState: { errors, isDirty, isSubmitSuccessful } } = useForm<FormIn, unknown, FormOut>({
+  const form = useForm<FormIn, unknown, FormOut>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: "", materialOrService: "", approvalStatus: "UProcjeni", initialEvaluationDate: "", nextEvaluationDate: "",
       evaluationCriteria: "", responsibleEmployeeId: null, notes: "",
     },
   });
+  const { register, handleSubmit, control, watch, setError, formState: { errors, isDirty } } = form;
 
-  useEffect(() => {
-    const s = supplier.data;
-    if (s)
-      reset({
+  // Never overwrite unsaved input with refetched data (lib/formSync.ts).
+  const sync = useServerForm(form, supplier.data, (s) => ({
         name: s.name, materialOrService: s.materialOrService ?? "", approvalStatus: s.approvalStatus,
         initialEvaluationDate: s.initialEvaluationDate ?? "", nextEvaluationDate: s.nextEvaluationDate ?? "",
         evaluationCriteria: s.evaluationCriteria ?? "", responsibleEmployeeId: s.responsibleEmployeeId, notes: s.notes ?? "",
-      });
-  }, [supplier.data, reset]);
+      }));
 
-  const prompt = useUnsavedChangesPrompt(canEdit && isDirty && !isSubmitSuccessful);
+  const markSaved = useUnsavedChanges(canEdit && isDirty && !save.isSuccess);
   const blocked = watch("approvalStatus") === "Blokiran";
 
   const onSubmit = handleSubmit((values) =>
-    save.mutate({ ...values, version: supplier.data?.version ?? 0 }, {
-      onSuccess: () => navigate("/dobavljaci"),
+    save.mutate({ ...values, version: sync.baseVersion }, {
+      onSuccess: () => { markSaved(); navigate("/dobavljaci"); },
       onError: (e) => {
         if (e instanceof ApiError)
           for (const [f, m] of Object.entries(e.fieldErrors)) setError(f as keyof FormIn, { message: m[0] ?? "" });
@@ -83,7 +81,6 @@ export function SupplierFormPage() {
     <>
       <PageHeader title={id ? supplier.data?.name ?? "Dobavljač" : "Novi dobavljač"} />
       <form onSubmit={onSubmit} noValidate className="max-w-2xl space-y-4 px-4 py-4">
-        {prompt}
         <fieldset disabled={!canEdit} className="space-y-4">
           <Field label="Naziv dobavljača" htmlFor="name" required error={errors.name?.message}>
             <input id="name" className={inputClass} aria-invalid={!!errors.name} {...register("name")} />
@@ -118,7 +115,8 @@ export function SupplierFormPage() {
           </Field>
         </fieldset>
 
-        <ErrorBanner error={save.error instanceof ApiError && Object.keys(save.error.fieldErrors).length ? null : save.error} onRefresh={() => void supplier.refetch()} />
+        <ChangedOnServerNotice show={sync.changedOnServer} onDiscard={sync.discard} />
+        <ErrorBanner error={save.error instanceof ApiError && Object.keys(save.error.fieldErrors).length ? null : save.error} onRefresh={() => { save.reset(); void sync.reload(supplier.refetch); }} />
 
         <div className="flex gap-2">
           {canEdit && (

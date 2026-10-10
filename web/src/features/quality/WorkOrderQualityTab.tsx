@@ -16,6 +16,7 @@ import { dateInput, intInput, optionalText, requiredText } from "../../lib/schem
 import { useEmployeeOptions } from "../settings/api";
 import type { WorkOrder } from "../workOrders/api";
 import { useCreateCheck, useVoidCheck, useWorkOrderChecks, type QualityCheck } from "./api";
+import { useUnsavedChanges } from "../../components/UnsavedChanges";
 
 const PHASES = ["LaserskoRezanje", "HidraulicnoPresanje", "ZavrsnaKontrola"] as const;
 
@@ -36,13 +37,14 @@ type FormOut = z.output<typeof schema>;
 function AddCheckForm({ wo, onDone }: { wo: WorkOrder; onDone: () => void }) {
   const create = useCreateCheck();
   const employees = useEmployeeOptions();
-  const { register, handleSubmit, control, setError, formState: { errors } } = useForm<FormIn, unknown, FormOut>({
+  const { register, handleSubmit, control, setError, formState: { errors, isDirty } } = useForm<FormIn, unknown, FormOut>({
     resolver: zodResolver(schema),
     defaultValues: {
       phase: "LaserskoRezanje", characteristic: "", acceptanceCriterion: "", measuredResult: "", sampleSize: "",
       result: "Prihvaceno", inspectedByEmployeeId: null, inspectionDate: todaySarajevo(),
     },
   });
+  useUnsavedChanges(isDirty && !create.isSuccess);
   const onSubmit = handleSubmit((v) =>
     create.mutate({ ...v, workOrderId: wo.id, inspectedByEmployeeId: v.inspectedByEmployeeId!, inspectionDate: v.inspectionDate! }, {
       onSuccess: onDone,

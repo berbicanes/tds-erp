@@ -11,6 +11,7 @@ import { ErrorBanner } from "../../components/ErrorBanner";
 import { Field, inputClass } from "../../components/form/Field";
 import { itemKey } from "./itemsApi";
 import { lotKey, type Lot } from "./lotsApi";
+import { useUnsavedChanges } from "../../components/UnsavedChanges";
 
 interface Movement {
   id: string;
@@ -31,6 +32,7 @@ function ManualMovementForm({ lot }: { lot: Lot }) {
   const [date, setDate] = useState(todaySarajevo());
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
+  useUnsavedChanges(qty.trim() !== "" || reason.trim() !== "");
   const save = useMutation({
     mutationFn: (body: { type: string; quantity: number; date: string; reason: string }) => api.post(`/api/lots/${lot.id}/movements`, body),
     onSuccess: () => {

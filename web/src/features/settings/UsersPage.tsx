@@ -9,6 +9,7 @@ import { ApiError } from "../../lib/api";
 import { useMe, type Role } from "../../lib/auth";
 import { requiredText } from "../../lib/schema";
 import { useCreateUser, useSetPassword, useUpdateUser, useUsers, type User } from "./api";
+import { useUnsavedChanges } from "../../components/UnsavedChanges";
 
 const ROLES: { value: Role; text: string }[] = [
   { value: "Operater", text: "Operater" },
@@ -32,10 +33,11 @@ type CreateIn = z.input<typeof createSchema>;
 
 function CreateUserForm() {
   const create = useCreateUser();
-  const { register, handleSubmit, reset, setError, formState: { errors } } = useForm<CreateIn>({
+  const { register, handleSubmit, reset, setError, formState: { errors, isDirty } } = useForm<CreateIn>({
     resolver: zodResolver(createSchema),
     defaultValues: { userName: "", role: "Operater", password: "" },
   });
+  useUnsavedChanges(isDirty);
   const onSubmit = handleSubmit((v) =>
     create.mutate(v, {
       onSuccess: () => reset(),
@@ -76,6 +78,7 @@ function PasswordDialog({ user, onClose }: { user: User | null; onClose: () => v
   const [value, setValue] = useState("");
   const [error, setErrorText] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  useUnsavedChanges(!!user && value !== "" && !done);
 
   const close = () => {
     setValue("");

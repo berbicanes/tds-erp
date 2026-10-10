@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,7 +9,8 @@ import { hasRole, useMe } from "../../lib/auth";
 import { unit as unitLabels } from "../../lib/labels";
 import { dateInput, decimalInput, optionalText, requiredText, toInput } from "../../lib/schema";
 import { itemTitle } from "../../lib/material";
-import { useUnsavedChangesPrompt } from "../../hooks/useUnsavedChangesPrompt";
+import { ChangedOnServerNotice, useUnsavedChanges } from "../../components/UnsavedChanges";
+import { useServerForm } from "../../hooks/useServerForm";
 import { useMaterialItem, useSaveMaterialItem } from "./itemsApi";
 
 // Mirrors SaveMaterialItemValidator.
@@ -34,25 +34,23 @@ export function ItemFormPage() {
   const item = useMaterialItem(id);
   const save = useSaveMaterialItem(id);
 
-  const { register, handleSubmit, reset, setError, formState: { errors, isDirty, isSubmitSuccessful } } = useForm<FormIn, unknown, FormOut>({
+  const form = useForm<FormIn, unknown, FormOut>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", grade: "", thicknessMm: "", unit: "tabla", minimumStock: "", nextStocktakeDate: "", isActive: true },
   });
+  const { register, handleSubmit, setError, formState: { errors, isDirty } } = form;
 
-  useEffect(() => {
-    const m = item.data;
-    if (m)
-      reset({
+  // Never overwrite unsaved input with refetched data (lib/formSync.ts).
+  const sync = useServerForm(form, item.data, (m) => ({
         name: m.name, grade: m.grade ?? "", thicknessMm: toInput(m.thicknessMm), unit: m.unit,
         minimumStock: toInput(m.minimumStock), nextStocktakeDate: m.nextStocktakeDate ?? "", isActive: m.isActive,
-      });
-  }, [item.data, reset]);
+      }));
 
-  const prompt = useUnsavedChangesPrompt(canEdit && isDirty && !isSubmitSuccessful);
+  const markSaved = useUnsavedChanges(canEdit && isDirty && !save.isSuccess);
 
   const onSubmit = handleSubmit((values) =>
-    save.mutate({ ...values, version: item.data?.version ?? 0 }, {
-      onSuccess: () => navigate("/zalihe/artikli"),
+    save.mutate({ ...values, version: sync.baseVersion }, {
+      onSuccess: () => { markSaved(); navigate("/zalihe/artikli"); },
       onError: (e) => {
         if (e instanceof ApiError)
           for (const [f, m] of Object.entries(e.fieldErrors)) setError(f as keyof FormIn, { message: m[0] ?? "" });
@@ -65,7 +63,6 @@ export function ItemFormPage() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="max-w-xl space-y-4 px-4 py-4">
-      {prompt}
       <h2 className="font-semibold">{item.data ? itemTitle(item.data) : "Novi artikal"}</h2>
       <fieldset disabled={!canEdit} className="space-y-4">
         <Field label="Materijal / artikal" htmlFor="name" required error={errors.name?.message} hint="npr. Lim crni, Lim inox, Lim aluminij">
@@ -98,7 +95,8 @@ export function ItemFormPage() {
         </label>
       </fieldset>
 
-      <ErrorBanner error={save.error instanceof ApiError && Object.keys(save.error.fieldErrors).length ? null : save.error} onRefresh={() => void item.refetch()} />
+      <ChangedOnServerNotice show={sync.changedOnServer} onDiscard={sync.discard} />
+      <ErrorBanner error={save.error instanceof ApiError && Object.keys(save.error.fieldErrors).length ? null : save.error} onRefresh={() => { save.reset(); void sync.reload(item.refetch); }} />
 
       <div className="flex gap-2">
         {canEdit && (

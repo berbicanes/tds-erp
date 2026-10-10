@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useUnsavedChanges } from "../../components/UnsavedChanges";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Field, inputClass } from "../../components/form/Field";
@@ -22,12 +24,15 @@ type FormOut = z.output<typeof schema>;
 export function LotEditForm({ lot, onDone }: { lot: Lot; onDone: () => void }) {
   const update = useUpdateLot(lot.id);
   const suppliers = useSupplierOptions();
-  const { register, handleSubmit, control, setError, formState: { errors } } = useForm<FormIn, unknown, FormOut>({
+  // Version of the lot when editing started: a change by someone else in the meantime → 409, never a silent overwrite.
+  const [baseVersion] = useState(lot.version);
+  const { register, handleSubmit, control, setError, formState: { errors, isDirty } } = useForm<FormIn, unknown, FormOut>({
     resolver: zodResolver(schema),
     defaultValues: { lotNumber: lot.lotNumber, supplierId: lot.supplierId, dimensionsDescription: lot.dimensionsDescription ?? "", storageLocation: lot.storageLocation ?? "" },
   });
+  useUnsavedChanges(isDirty && !update.isSuccess);
   const onSubmit = handleSubmit((v) =>
-    update.mutate({ ...v, supplierId: v.supplierId!, version: lot.version }, {
+    update.mutate({ ...v, supplierId: v.supplierId!, version: baseVersion }, {
       onSuccess: onDone,
       onError: (e) => {
         if (e instanceof ApiError) for (const [f, m] of Object.entries(e.fieldErrors)) setError(f as keyof FormIn, { message: m[0] ?? "" });

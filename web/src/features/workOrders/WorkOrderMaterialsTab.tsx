@@ -10,6 +10,7 @@ import { itemTitle, qtyWithUnit } from "../../lib/material";
 import { useLots } from "../stock/lotsApi";
 import type { WorkOrder } from "./api";
 import { useLinkLot, useSetReservation, useWorkOrderMaterials, type WorkOrderMaterial } from "./materialsApi";
+import { useUnsavedChanges } from "../../components/UnsavedChanges";
 
 const reservable = { page: 1, sort: "lotNumber", q: "", filters: { receiptDecision: ["NaKontroli", "Prihvacen"] } };
 
@@ -19,6 +20,7 @@ function LinkLotForm({ wo, onWarnings }: { wo: WorkOrder; onWarnings: (w: string
   const [lotId, setLotId] = useState<string | null>(null);
   const [qty, setQty] = useState("");
   const [error, setError] = useState<string | null>(null);
+  useUnsavedChanges(lotId !== null || qty.trim() !== "");
   const selected = lots.data?.items.find((l) => l.id === lotId);
 
   const submit = () => {
@@ -58,11 +60,17 @@ function ReservationCell({ wo, m, canEdit, onWarnings }: { wo: WorkOrder; m: Wor
   const set = useSetReservation(wo.id);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(String(m.reservedQty).replace(".", ","));
+  // Version when editing started (a refetch must not move it, see lib/formSync.ts).
+  const [baseVersion, setBaseVersion] = useState(m.version);
+  useUnsavedChanges(editing && value !== String(m.reservedQty).replace(".", ","));
   if (!editing)
     return (
       <span className="inline-flex items-center gap-2">
         {qtyWithUnit(m.reservedQty, m.unit)}
-        {canEdit && <button type="button" onClick={() => setEditing(true)} className="min-h-8 rounded border border-slate-300 px-2 text-xs">Promijeni</button>}
+        {canEdit && (
+          <button type="button" onClick={() => { setBaseVersion(m.version); setValue(String(m.reservedQty).replace(".", ",")); setEditing(true); }}
+            className="min-h-8 rounded border border-slate-300 px-2 text-xs">Promijeni</button>
+        )}
       </span>
     );
   const n = parseDecimal(value);
@@ -70,7 +78,7 @@ function ReservationCell({ wo, m, canEdit, onWarnings }: { wo: WorkOrder; m: Wor
     <span className="inline-flex flex-wrap items-center gap-2">
       <input aria-label={`Rezervacija za lot ${m.lotNumber}`} inputMode="decimal" className="h-9 w-24 rounded border border-slate-300 px-2 text-right" value={value} onChange={(e) => setValue(e.target.value)} />
       <button type="button" disabled={n === null || n < 0 || set.isPending}
-        onClick={() => set.mutate({ linkId: m.id, reservedQty: n!, version: m.version }, { onSuccess: (r) => { onWarnings(r.warnings); setEditing(false); } })}
+        onClick={() => set.mutate({ linkId: m.id, reservedQty: n!, version: baseVersion }, { onSuccess: (r) => { onWarnings(r.warnings); setEditing(false); } })}
         className="min-h-8 rounded bg-blue-700 px-2 text-xs text-white disabled:opacity-50">Spremi</button>
       <button type="button" onClick={() => setEditing(false)} className="min-h-8 rounded border border-slate-300 px-2 text-xs">Odustani</button>
       {set.error && <span className="block w-full"><ErrorBanner error={set.error} /></span>}

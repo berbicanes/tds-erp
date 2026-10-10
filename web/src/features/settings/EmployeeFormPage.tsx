@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,7 +7,8 @@ import { Combobox, type Option } from "../../components/form/Combobox";
 import { ErrorBanner } from "../../components/ErrorBanner";
 import { ApiError } from "../../lib/api";
 import { optionalText, requiredText } from "../../lib/schema";
-import { useUnsavedChangesPrompt } from "../../hooks/useUnsavedChangesPrompt";
+import { ChangedOnServerNotice, useUnsavedChanges } from "../../components/UnsavedChanges";
+import { useServerForm } from "../../hooks/useServerForm";
 import { useEmployee, useSaveEmployee, useUsers } from "./api";
 
 // Mirrors SaveEmployeeValidator.
@@ -32,22 +32,18 @@ export function EmployeeFormPage() {
     resolver: zodResolver(schema),
     defaultValues: { fullName: "", position: "", isActive: true, userId: null },
   });
-  const { register, handleSubmit, reset, control, setError, formState: { errors, isDirty, isSubmitSuccessful } } = form;
+  const { register, handleSubmit, control, setError, formState: { errors, isDirty } } = form;
 
-  useEffect(() => {
-    if (employee.data) {
-      const e = employee.data;
-      reset({ fullName: e.fullName, position: e.position ?? "", isActive: e.isActive, userId: e.userId });
-    }
-  }, [employee.data, reset]);
+  // Never overwrite unsaved input with refetched data (lib/formSync.ts).
+  const sync = useServerForm(form, employee.data, (e) => ({ fullName: e.fullName, position: e.position ?? "", isActive: e.isActive, userId: e.userId }));
 
-  const prompt = useUnsavedChangesPrompt(isDirty && !isSubmitSuccessful);
+  const markSaved = useUnsavedChanges(isDirty && !save.isSuccess);
 
   const onSubmit = handleSubmit((values) =>
     save.mutate(
-      { ...values, version: employee.data?.version ?? 0 },
+      { ...values, version: sync.baseVersion },
       {
-        onSuccess: () => navigate("/podesavanja/zaposlenici"),
+        onSuccess: () => { markSaved(); navigate("/podesavanja/zaposlenici"); },
         onError: (e) => {
           if (e instanceof ApiError)
             for (const [field, msgs] of Object.entries(e.fieldErrors))
@@ -67,7 +63,6 @@ export function EmployeeFormPage() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="max-w-xl space-y-4 px-4 py-4">
-      {prompt}
       <h2 className="font-semibold">{id ? "Uredi zaposlenika" : "Novi zaposlenik"}</h2>
 
       <Field label="Ime i prezime" htmlFor="fullName" required error={errors.fullName?.message}>
@@ -93,7 +88,8 @@ export function EmployeeFormPage() {
         Aktivan (nudi se u izborima)
       </label>
 
-      <ErrorBanner error={save.error instanceof ApiError && Object.keys(save.error.fieldErrors).length ? null : save.error} onRefresh={() => void employee.refetch()} />
+      <ChangedOnServerNotice show={sync.changedOnServer} onDiscard={sync.discard} />
+      <ErrorBanner error={save.error instanceof ApiError && Object.keys(save.error.fieldErrors).length ? null : save.error} onRefresh={() => { save.reset(); void sync.reload(employee.refetch); }} />
 
       <div className="flex gap-2">
         <button type="submit" disabled={save.isPending} className="min-h-12 rounded bg-blue-700 px-5 font-medium text-white disabled:opacity-60">
