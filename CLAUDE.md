@@ -82,10 +82,11 @@ sa 5 projekata, repository pattern iznad EF Core-a. Jednostavno je namjerno.
 ## Komande (kreira ih Faza 0 — provjeri da postoje prije korištenja)
 
 ```bash
-docker compose -f deploy/docker-compose.dev.yml up -d db   # lokalni Postgres
-dotnet run --project src/Tds.Api                            # API na :5080
-dotnet test                                                 # svi testovi
-dotnet ef migrations add <Ime> -p src/Tds.Api               # nova migracija
+docker compose -f deploy/docker-compose.dev.yml up -d db   # lokalni Postgres na :5433
+dotnet run --project src/Tds.Api                            # API na :5080 (migracije se primijene same)
+dotnet test                                                 # svi testovi (treba pokrenut Docker)
+dotnet tool restore                                         # jednom: dotnet-ef iz .config/dotnet-tools.json
+dotnet ef migrations add <Ime> -p src/Tds.Api -o Data/Migrations   # nova migracija
 cd web && npm run dev                                       # frontend na :5173 (proxy /api → :5080)
 cd web && npm run build && npm run typecheck && npm test
 ```

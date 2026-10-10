@@ -9,17 +9,20 @@ Interni cilj: 2 sedmice intenzivnog rada. Klijentu komunicirano: 4 sedmice.
 
 ## Faza 0 — Kostur i deploy (dan 1–2)
 
-- [ ] Solution: `src/Tds.Api`, `src/Tds.Api.Tests`, `web/` po strukturi iz `CLAUDE.md`
-- [ ] `deploy/docker-compose.dev.yml` sa Postgres 17; `dotnet run` se spaja
-- [ ] EF Core + Npgsql + snake_case konvencija; `AuditInterceptor`; bazni entitet sa audit poljima
-- [ ] `IClock` (Europe/Sarajevo), `IFileStorage` (lokalni disk), numeracija (`number_sequence`)
-- [ ] Identity sa cookie auth, 3 role, seed Admin korisnika iz env varijabli (ne hardkodirano)
-- [ ] Login / logout ekran, zaštićene rute, `GET /api/me`
-- [ ] Vite + React + TS strict + Tailwind + TanStack Query + Router; proxy `/api`
-- [ ] `format.ts` (datum, broj) i `labels.ts` (enum → tekst, boja) sa testovima
-- [ ] Layout: sidebar + mobilna donja traka, prazne stranice za sve module
-- [ ] Testcontainers integracioni test koji pokreće migracije i radi login
-- [ ] Produkcijski `docker-compose.yml` + Caddy (HTTPS) + `backup.sh` (pg_dump + fajlovi, rotacija 30 dana)
+- [x] Solution: `src/Tds.Api`, `src/Tds.Api.Tests`, `web/` po strukturi iz `CLAUDE.md`
+- [x] `deploy/docker-compose.dev.yml` sa Postgres 17; `dotnet run` se spaja
+- [x] EF Core + Npgsql + snake_case konvencija; `AuditInterceptor`; bazni entitet sa audit poljima
+- [x] `IClock` (Europe/Sarajevo), `IFileStorage` (lokalni disk), numeracija (`number_sequence`)
+- [x] Identity sa cookie auth, 3 role, seed Admin korisnika iz env varijabli (ne hardkodirano)
+- [x] Login / logout ekran, zaštićene rute, `GET /api/me`
+- [x] Vite + React + TS strict + Tailwind + TanStack Query + Router; proxy `/api`
+- [x] `format.ts` (datum, broj) i `labels.ts` (enum → tekst, boja) sa testovima
+- [x] Layout: sidebar + mobilna donja traka, prazne stranice za sve module
+- [x] Testcontainers integracioni test koji pokreće migracije i radi login
+- [x] Produkcijski `docker-compose.yml` + Caddy (HTTPS) + `backup.sh` (pg_dump + fajlovi, rotacija 30 dana)
+      > Provjereno lokalno (11.10.2026.): HTTPS na `localhost` (Caddy interni certifikat), login,
+      > SPA fallback, sesija preživi restart; `backup.sh` bez remote cilja (dump, snapshot fajlova,
+      > rotacija, upozorenje). Slanje na Hetzner Storage Box **nije** testirano — nema cilja.
 - [ ] Deploy na VPS radi, HTTPS radi, login radi
 
 > Napomena (10.10.2026.): VPS i domen još ne postoje. Sve za deploy se priprema
