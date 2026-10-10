@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Tds.Api.Data;
 using Tds.Api.Domain;
+using Tds.Api.Infrastructure;
 
 namespace Tds.Api.Features.Stock;
 
@@ -28,50 +30,82 @@ public sealed record ItemStockDto
     public required bool IsActive { get; init; }
 }
 
+/// <summary>
+/// DOMAIN §2.1–2.4 in one SQL statement per question. The only stock arithmetic in the system:
+/// OnHand = Σ non-voided movements; effective reservation = max(0, reserved − issued for that order),
+/// only for orders not in Zavrseno/Isporuceno/Otkazano. The level itself comes from <see cref="StockLevels"/>.
+/// </summary>
 public static class StockQueries
 {
-    /// <summary>OnHand, effective reservations and Available for every non-voided lot (optionally one item).</summary>
-    public static async Task<List<LotStock>> LotStocksAsync(AppDbContext db, Guid? materialItemId, CancellationToken ct, Guid? lotId = null)
-    {
-        var lots = db.MaterialLots.Where(l => !l.IsVoided
-            && (materialItemId == null || l.MaterialItemId == materialItemId)
-            && (lotId == null || l.Id == lotId));
-        var rows = await lots.Select(l => new
-        {
-            l.Id,
-            l.MaterialItemId,
-            l.ReceiptDecision,
-            OnHand = db.StockMovements.Where(m => m.MaterialLotId == l.Id && !m.IsVoided).Sum(m => (decimal?)m.Quantity) ?? 0m,
-        }).ToListAsync(ct);
+    private const string LotCte = """
+        lot_onhand AS (
+            SELECT l.id, l.material_item_id, l.receipt_decision,
+                   COALESCE(SUM(m.quantity) FILTER (WHERE NOT m.is_voided), 0) AS on_hand
+            FROM material_lot l
+            LEFT JOIN stock_movement m ON m.material_lot_id = l.id
+            WHERE NOT l.is_voided
+            GROUP BY l.id),
+        issued AS (
+            SELECT material_lot_id, work_order_id, -SUM(quantity) AS qty
+            FROM stock_movement
+            WHERE type = 'Izdavanje' AND NOT is_voided
+            GROUP BY material_lot_id, work_order_id),
+        lot_reserved AS (
+            SELECT wm.material_lot_id, SUM(GREATEST(0, wm.reserved_qty - COALESCE(i.qty, 0))) AS reserved
+            FROM work_order_material wm
+            JOIN work_order w ON w.id = wm.work_order_id AND w.status NOT IN ('Zavrseno', 'Isporuceno', 'Otkazano')
+            LEFT JOIN issued i ON i.material_lot_id = wm.material_lot_id AND i.work_order_id = wm.work_order_id
+            GROUP BY wm.material_lot_id)
+        """;
 
-        var reservations = await Reservations.EffectiveByLotAsync(db, rows.Select(r => r.Id).ToList(), ct);
-        return rows.Select(r => new LotStock(r.Id, r.MaterialItemId, r.ReceiptDecision, r.OnHand, reservations.GetValueOrDefault(r.Id))).ToList();
-    }
+    public static async Task<List<LotStock>> LotStocksAsync(AppDbContext db, Guid? materialItemId, CancellationToken ct, Guid? lotId = null) =>
+        await Sql.QueryAsync(db, $"""
+            WITH {LotCte}
+            SELECT lo.id, lo.material_item_id, lo.receipt_decision, lo.on_hand, COALESCE(lr.reserved, 0) AS reserved
+            FROM lot_onhand lo
+            LEFT JOIN lot_reserved lr ON lr.material_lot_id = lo.id
+            WHERE (@item::uuid IS NULL OR lo.material_item_id = @item) AND (@lot::uuid IS NULL OR lo.id = @lot)
+            """,
+            r => new LotStock(r.Get<Guid>("id"), r.Get<Guid>("material_item_id"), Enum.Parse<ReceiptDecision>(r.Get<string>("receipt_decision")),
+                r.Get<decimal>("on_hand"), r.Get<decimal>("reserved")),
+            ct,
+            new NpgsqlParameter("item", (object?)materialItemId ?? DBNull.Value) { NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid },
+            new NpgsqlParameter("lot", (object?)lotId ?? DBNull.Value) { NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid });
 
-    /// <summary>Per item (DOMAIN §2.4): OnHand/Reserved/Available/level over Prihvacen lots; OnHold separately.</summary>
-    public static async Task<List<ItemStockDto>> ItemStocksAsync(AppDbContext db, CancellationToken ct)
-    {
-        var items = await db.MaterialItems.ToListAsync(ct);
-        var lots = await LotStocksAsync(db, null, ct);
-        return items.Select(i =>
-        {
-            var accepted = lots.Where(l => l.MaterialItemId == i.Id && l.Decision == ReceiptDecision.Prihvacen).ToList();
-            var onHand = accepted.Sum(l => l.OnHand);
-            var reserved = accepted.Sum(l => l.Reserved);
-            var available = onHand - reserved;
-            return new ItemStockDto
+    /// <summary>Per item (DOMAIN §2.4): OnHand/Reserved/Available/level over Prihvacen lots; OnHold separately. One query.</summary>
+    public static async Task<List<ItemStockDto>> ItemStocksAsync(AppDbContext db, CancellationToken ct) =>
+        await Sql.QueryAsync(db, $"""
+            WITH {LotCte}
+            SELECT mi.id, mi.name, mi.grade, mi.thickness_mm, mi.unit, mi.minimum_stock, mi.is_active,
+                   COALESCE(SUM(lo.on_hand) FILTER (WHERE lo.receipt_decision = 'Prihvacen'), 0) AS on_hand,
+                   COALESCE(SUM(lr.reserved) FILTER (WHERE lo.receipt_decision = 'Prihvacen'), 0) AS reserved,
+                   COALESCE(SUM(lo.on_hand) FILTER (WHERE lo.receipt_decision IN ('NaKontroli', 'Karantin')), 0) AS on_hold
+            FROM material_item mi
+            LEFT JOIN lot_onhand lo ON lo.material_item_id = mi.id
+            LEFT JOIN lot_reserved lr ON lr.material_lot_id = lo.id
+            GROUP BY mi.id
+            """,
+            r =>
             {
-                MaterialItemId = i.Id, Name = i.Name, Grade = i.Grade, ThicknessMm = i.ThicknessMm, Unit = i.Unit,
-                MinimumStock = i.MinimumStock, OnHand = onHand, Reserved = reserved, Available = available,
-                StockLevel = StockLevels.Level(available, i.MinimumStock),
-                OnHoldQty = lots.Where(l => l.MaterialItemId == i.Id && l.Decision is ReceiptDecision.NaKontroli or ReceiptDecision.Karantin).Sum(l => l.OnHand),
-                IsActive = i.IsActive,
-            };
-        }).ToList();
-    }
+                var onHand = r.Get<decimal>("on_hand");
+                var reserved = r.Get<decimal>("reserved");
+                var minimum = r.Nullable<decimal>("minimum_stock");
+                return new ItemStockDto
+                {
+                    MaterialItemId = r.Get<Guid>("id"), Name = r.Get<string>("name"), Grade = r.NullableString("grade"),
+                    ThicknessMm = r.Nullable<decimal>("thickness_mm"), Unit = Enum.Parse<Unit>(r.Get<string>("unit")),
+                    MinimumStock = minimum, OnHand = onHand, Reserved = reserved, Available = onHand - reserved,
+                    StockLevel = StockLevels.Level(onHand - reserved, minimum), OnHoldQty = r.Get<decimal>("on_hold"),
+                    IsActive = r.Get<bool>("is_active"),
+                };
+            }, ct);
+
+    /// <summary>Attention first (Nema, Ispod minimuma, Nisko, Nije definisano), then OK; by name within (UI §3).</summary>
+    public static IEnumerable<ItemStockDto> AttentionFirst(IEnumerable<ItemStockDto> rows) =>
+        rows.OrderBy(r => r.StockLevel == StockLevel.Ok ? 1 : 0).ThenBy(r => r.StockLevel).ThenBy(r => r.Name).ThenBy(r => r.Grade).ThenBy(r => r.ThicknessMm);
 }
 
-/// <summary>Reservations from WorkOrderMaterial (DOMAIN §2.3).</summary>
+/// <summary>Reservation usage per link (detail screens). Same formula as the SQL above.</summary>
 public static class Reservations
 {
     /// <summary>One link with what was already issued from that lot for that order.</summary>
@@ -98,10 +132,4 @@ public static class Reservations
                 && m.Type == StockMovementType.Izdavanje && !m.IsVoided).Sum(m => (decimal?)m.Quantity) ?? 0m),
             OrderIsActive = !WorkOrder.FinalStatuses.Contains(w.Status),
         };
-
-    public static async Task<Dictionary<Guid, decimal>> EffectiveByLotAsync(AppDbContext db, IReadOnlyCollection<Guid> lotIds, CancellationToken ct)
-    {
-        var links = await Usage(db).Where(u => lotIds.Contains(u.MaterialLotId)).ToListAsync(ct);
-        return links.GroupBy(l => l.MaterialLotId).ToDictionary(g => g.Key, g => g.Sum(l => l.Effective));
-    }
 }

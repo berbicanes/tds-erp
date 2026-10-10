@@ -33,9 +33,9 @@ public static class StockEndpoints
             ("name", var d) => d ? rows.OrderByDescending(r => r.Name) : rows.OrderBy(r => r.Name),
             ("available", var d) => d ? rows.OrderByDescending(r => r.Available) : rows.OrderBy(r => r.Available),
             ("onHand", var d) => d ? rows.OrderByDescending(r => r.OnHand) : rows.OrderBy(r => r.OnHand),
-            _ => rows.OrderBy(r => r.StockLevel).ThenBy(r => r.Name),
+            _ => StockQueries.AttentionFirst(rows),
         };
-        var all = sorted.ThenBy(r => r.Grade).ThenBy(r => r.ThicknessMm).ToList();
+        var all = sorted.ToList();
         var page = all.Skip((list.SafePage - 1) * list.SafePageSize).Take(list.SafePageSize).ToList();
         return new PagedResult<ItemStockDto>(page, all.Count, list.SafePage, list.SafePageSize);
     }
