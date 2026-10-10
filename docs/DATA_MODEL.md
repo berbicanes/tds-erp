@@ -127,6 +127,9 @@ minimalnom zalihom) i **stanje po lotu**. Ovdje su razdvojeni.
 
 Unique: (`Name`, `Grade`, `ThicknessMm`).
 
+`Unit` se ne može promijeniti čim artikal ima ijedan lot (i poništen) — sve količine lotova i pokreta
+su u toj jedinici.
+
 Izvedeno po artiklu (IZV, vidi DOMAIN §2.4):
 - `OnHand`, `Reserved`, `Available`, `StockLevel` — samo nad lotovima sa odlukom `Prihvacen`
 - `OnHoldQty` ("Na kontroli / karantin") — Σ OnHand lotova sa odlukom `NaKontroli` ili `Karantin`,
@@ -149,6 +152,11 @@ Izvedeno po artiklu (IZV, vidi DOMAIN §2.4):
 
 Uklonjeno: `Broj naloga` (text) — veza ide kroz WorkOrderMaterial i ProductionEntry.
 Relacije `Dnevni zapisi proizvodnje` i `Radni nalozi` su obrnute strane tih veza.
+
+**Nepromjenjivo nakon kreiranja:** `MaterialItemId`, `ReceivedDate`, `ReceivedQty`. Mijenjaju se samo
+`LotNumber`, `SupplierId`, `DimensionsDescription`, `StorageLocation` (odluka prijema i certifikat kroz
+posebne akcije). Pogrešna količina → `Korekcija`. Pogrešan artikal ili datum prijema → lot se poništi
+(Admin, samo kad nema drugih pokreta osim `Prijem` i nije vezan ni za jedan nalog) i unese novi.
 
 ## 7. StockMovement — Pokret zalihe 🔒 (NOVO, zamjenjuje ručne brojeve)
 

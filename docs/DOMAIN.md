@@ -68,11 +68,12 @@ odlukom `NaKontroli` ili `Karantin` (materijal fizički u hali, ali još nije up
 u `Available` ni u Nivo zalihe.
 
 Nivo zalihe:
-- `Available ≤ 0` → **Nema**
+- `Available ≤ 0` → **Nema** — bez obzira na minimum (i kad `MinimumStock` nije postavljen):
+  stanje 0 je činjenica i korisnija informacija od "Nije definisano".
 - `MinimumStock` postoji i `Available < MinimumStock` → **Ispod minimuma**
 - `MinimumStock` postoji i `Available < 1.5 × MinimumStock` → **Nisko**
 - inače → **OK**
-- `MinimumStock` nije postavljen → **Nije definisano** (ne "OK")
+- `MinimumStock` nije postavljen, a `Available > 0` → **Nije definisano** (ne "OK")
 
 Notion formula `Nivo zalihe` nije bila čitljiva iz snimka — ovo je naša definicija.
 Potvrditi pragove sa klijentom (vidi §9).
@@ -196,7 +197,7 @@ Kad brojač pređe širinu formata, broj se samo proširi (nema prelijevanja ni 
 ## 7. Kvalitet (QMS)
 
 7.0 Kontrola se ne uređuje: pogrešna kontrola se poništi (samo Admin, razlog obavezan) i unese
-nova. Kreira Kontrolor/Admin. (Faza 1: samo kontrole na nalogu; `UlazniMaterijal` dolazi u Fazi 3.)
+nova. `InspectionDate` ne smije biti u budućnosti (isto kao dnevni zapis i pokret zalihe). Kreira Kontrolor/Admin. (Faza 1: samo kontrole na nalogu; `UlazniMaterijal` dolazi u Fazi 3.)
 
 7.1 `QualityCheck` sa `Result = Neuskladjeno` → u istoj akciji UI nudi kreiranje NC
 (predpopunjeno: izvor po fazi, nalog, lot, kontrola). Ne kreira se automatski bez potvrde.
