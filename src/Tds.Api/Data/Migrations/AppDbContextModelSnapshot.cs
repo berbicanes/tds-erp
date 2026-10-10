@@ -740,6 +740,131 @@ namespace Tds.Api.Data.Migrations
                     b.ToTable("number_sequence", (string)null);
                 });
 
+            modelBuilder.Entity("Tds.Api.Domain.QualityCheck", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AcceptanceCriterion")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("acceptance_criterion");
+
+                    b.Property<string>("Characteristic")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("characteristic");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid>("InspectedByEmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("inspected_by_employee_id");
+
+                    b.Property<DateOnly>("InspectionDate")
+                        .HasColumnType("date")
+                        .HasColumnName("inspection_date");
+
+                    b.Property<bool>("IsVoided")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_voided");
+
+                    b.Property<Guid?>("MaterialLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_lot_id");
+
+                    b.Property<string>("MeasuredResult")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("measured_result");
+
+                    b.Property<Guid?>("MeasuringEquipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("measuring_equipment_id");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("number");
+
+                    b.Property<string>("Phase")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("phase");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("result");
+
+                    b.Property<int?>("SampleSize")
+                        .HasColumnType("integer")
+                        .HasColumnName("sample_size");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<DateTimeOffset?>("VoidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("voided_at");
+
+                    b.Property<Guid?>("VoidedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("voided_by");
+
+                    b.Property<string>("VoidedReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("voided_reason");
+
+                    b.Property<Guid?>("WorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("work_order_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_quality_check");
+
+                    b.HasIndex("InspectedByEmployeeId")
+                        .HasDatabaseName("ix_quality_check_inspected_by_employee_id");
+
+                    b.HasIndex("MaterialLotId")
+                        .HasDatabaseName("ix_quality_check_material_lot_id");
+
+                    b.HasIndex("MeasuringEquipmentId")
+                        .HasDatabaseName("ix_quality_check_measuring_equipment_id");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_quality_check_number");
+
+                    b.HasIndex("WorkOrderId", "Phase", "Result")
+                        .HasDatabaseName("ix_quality_check_work_order_id_phase_result");
+
+                    b.ToTable("quality_check", (string)null);
+                });
+
             modelBuilder.Entity("Tds.Api.Domain.StockMovement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1126,6 +1251,34 @@ namespace Tds.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_material_lot_suppliers_supplier_id");
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.QualityCheck", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("InspectedByEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_quality_check_employee_inspected_by_employee_id");
+
+                    b.HasOne("Tds.Api.Domain.MaterialLot", null)
+                        .WithMany()
+                        .HasForeignKey("MaterialLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_quality_check_material_lot_material_lot_id");
+
+                    b.HasOne("Tds.Api.Domain.Equipment", null)
+                        .WithMany()
+                        .HasForeignKey("MeasuringEquipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_quality_check_equipment_measuring_equipment_id");
+
+                    b.HasOne("Tds.Api.Domain.WorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_quality_check_work_orders_work_order_id");
                 });
 
             modelBuilder.Entity("Tds.Api.Domain.StockMovement", b =>

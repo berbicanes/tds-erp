@@ -11,6 +11,7 @@ using Tds.Api.Features.Employees;
 using Tds.Api.Features.Equipment;
 using Tds.Api.Features.Files;
 using Tds.Api.Features.Materials;
+using Tds.Api.Features.QualityChecks;
 using Tds.Api.Features.Stock;
 using Tds.Api.Features.Suppliers;
 using Tds.Api.Features.Users;
@@ -131,6 +132,7 @@ app.MapStockMovementEndpoints();
 app.MapStockEndpoints();
 app.MapFileEndpoints();
 app.MapWorkOrderEndpoints();
+app.MapQualityCheckEndpoints();
 
 app.Run();
 

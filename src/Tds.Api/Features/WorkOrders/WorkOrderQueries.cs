@@ -98,9 +98,12 @@ public static class WorkOrderQueries
             DrawingRevision = w.DrawingRevision, DrawingFileId = w.DrawingFileId, DrawingFileName = f.OriginalName,
             ResponsibleEmployeeId = w.ResponsibleEmployeeId, ResponsibleEmployeeName = e.FullName, Notes = w.Notes,
             CompletedQty = 0,
-            LaserFirstPieceApproved = false,
-            PressFirstPieceApproved = false,
-            FinalInspectionPassed = false,
+            LaserFirstPieceApproved = db.QualityChecks.Any(q => q.WorkOrderId == w.Id && !q.IsVoided
+                && q.Phase == InspectionPhase.LaserskoRezanje && q.Result == InspectionResult.Prihvaceno),
+            PressFirstPieceApproved = db.QualityChecks.Any(q => q.WorkOrderId == w.Id && !q.IsVoided
+                && q.Phase == InspectionPhase.HidraulicnoPresanje && q.Result == InspectionResult.Prihvaceno),
+            FinalInspectionPassed = db.QualityChecks.Any(q => q.WorkOrderId == w.Id && !q.IsVoided
+                && q.Phase == InspectionPhase.ZavrsnaKontrola && q.Result == InspectionResult.Prihvaceno),
             CreatedAt = w.CreatedAt, Version = w.Version,
         };
 }
