@@ -6,7 +6,7 @@ export function Field({ label, htmlFor, required, error, hint, children }: {
   htmlFor: string;
   required?: boolean;
   error?: string | undefined;
-  hint?: string;
+  hint?: string | undefined;
   children: ReactNode;
 }) {
   return (

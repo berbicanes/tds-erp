@@ -551,6 +551,86 @@ namespace Tds.Api.Data.Migrations
                     b.ToTable("number_sequence", (string)null);
                 });
 
+            modelBuilder.Entity("Tds.Api.Domain.Supplier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("approval_status");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("EvaluationCriteria")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("evaluation_criteria");
+
+                    b.Property<DateOnly?>("InitialEvaluationDate")
+                        .HasColumnType("date")
+                        .HasColumnName("initial_evaluation_date");
+
+                    b.Property<string>("MaterialOrService")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("material_or_service");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
+
+                    b.Property<DateOnly?>("NextEvaluationDate")
+                        .HasColumnType("date")
+                        .HasColumnName("next_evaluation_date");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<Guid?>("ResponsibleEmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("responsible_employee_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_supplier");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_supplier_name");
+
+                    b.HasIndex("ResponsibleEmployeeId")
+                        .HasDatabaseName("ix_supplier_responsible_employee_id");
+
+                    b.ToTable("supplier", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -624,6 +704,15 @@ namespace Tds.Api.Data.Migrations
                         .HasForeignKey("CalibrationCertificateFileId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_equipment_file_attachments_calibration_certificate_file_id");
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.Supplier", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("ResponsibleEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_supplier_employee_responsible_employee_id");
                 });
 #pragma warning restore 612, 618
         }

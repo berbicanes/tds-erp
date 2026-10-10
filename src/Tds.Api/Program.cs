@@ -9,6 +9,7 @@ using Tds.Api.Domain;
 using Tds.Api.Features.Auth;
 using Tds.Api.Features.Employees;
 using Tds.Api.Features.Equipment;
+using Tds.Api.Features.Suppliers;
 using Tds.Api.Features.Users;
 using Tds.Api.Infrastructure;
 
@@ -119,6 +120,7 @@ app.MapAuthEndpoints();
 app.MapEmployeeEndpoints();
 app.MapUserEndpoints();
 app.MapEquipmentEndpoints();
+app.MapSupplierEndpoints();
 
 app.Run();
 

@@ -11,6 +11,8 @@ import { EmployeeFormPage } from "./features/settings/EmployeeFormPage";
 import { UsersPage } from "./features/settings/UsersPage";
 import { EquipmentListPage } from "./features/equipment/EquipmentListPage";
 import { EquipmentFormPage } from "./features/equipment/EquipmentFormPage";
+import { SupplierListPage } from "./features/suppliers/SupplierListPage";
+import { SupplierFormPage } from "./features/suppliers/SupplierFormPage";
 
 export const router = createBrowserRouter([
   { path: "/prijava", element: <LoginPage /> },
@@ -26,7 +28,9 @@ export const router = createBrowserRouter([
           { path: "/proizvodnja", element: <EmptyModulePage title="Dnevna proizvodnja" /> },
           { path: "/zalihe", element: <EmptyModulePage title="Zalihe" /> },
           { path: "/kvalitet", element: <EmptyModulePage title="Kvalitet" /> },
-          { path: "/dobavljaci", element: <EmptyModulePage title="Dobavljači" /> },
+          { path: "/dobavljaci", element: <SupplierListPage /> },
+          { path: "/dobavljaci/novi", element: <SupplierFormPage /> },
+          { path: "/dobavljaci/:id", element: <SupplierFormPage /> },
           { path: "/oprema", element: <EquipmentListPage /> },
           { path: "/oprema/nova", element: <EquipmentFormPage /> },
           { path: "/oprema/:id", element: <EquipmentFormPage /> },
