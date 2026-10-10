@@ -76,8 +76,10 @@ public static class QualityCheckEndpoints
             .OrderBy(q => q.Phase).ThenByDescending(q => q.InspectionDate).ThenByDescending(q => q.Number).ToListAsync(ct));
     }
 
-    private static async Task<IResult> Create(CreateQualityCheckRequest req, AppDbContext db, DocumentNumberService numbers, CancellationToken ct)
+    private static async Task<IResult> Create(CreateQualityCheckRequest req, AppDbContext db, DocumentNumberService numbers, IClock clock, CancellationToken ct)
     {
+        if (req.InspectionDate > clock.Today)
+            return ApiResults.Validation("inspectionDate", "Datum kontrole ne može biti u budućnosti.");
         if (!await db.WorkOrders.AnyAsync(w => w.Id == req.WorkOrderId, ct))
             return ApiResults.Validation("workOrderId", "Nalog ne postoji.");
         if (!await db.Employees.AnyAsync(e => e.Id == req.InspectedByEmployeeId, ct))

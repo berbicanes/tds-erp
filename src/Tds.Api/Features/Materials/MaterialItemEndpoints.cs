@@ -107,6 +107,9 @@ public static class MaterialItemEndpoints
             return ApiResults.NotFound("Artikal ne postoji.");
         if (await Duplicate(req, id, db, ct) is { } problem)
             return problem;
+        // DATA_MODEL §5: all lot and movement quantities are in this unit.
+        if (m.Unit != req.Unit && await db.MaterialLots.AnyAsync(l => l.MaterialItemId == id, ct))
+            return ApiResults.Validation("unit", "Jedinica se ne može promijeniti jer artikal već ima lotove; njihove količine su u ovoj jedinici.");
         db.Entry(m).Property(x => x.Version).OriginalValue = req.Version;
         m.Name = req.Name.Trim();
         Apply(m, req);

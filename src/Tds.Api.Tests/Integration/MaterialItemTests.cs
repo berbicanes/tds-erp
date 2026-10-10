@@ -72,4 +72,31 @@ public class MaterialItemTests(PostgresFixture postgres)
         Assert.Equal(HttpStatusCode.Forbidden,
             (await op.PostAsJsonAsync("/api/material-items", new { name = "Lim", unit = "kg", isActive = true }, Ct)).StatusCode);
     }
+
+    [Fact]
+    public async Task Unit_cannot_change_once_the_item_has_a_lot()
+    {
+        await using var factory = await TdsApiFactory.CreateAsync(postgres);
+        var admin = await factory.AdminAsync();
+        var item = await TestData.Item(admin, unit: "tabla");
+        var free = await TestData.Item(admin, "Lim inox", "1.4301", 2, "kg");
+
+        // Without lots the unit can still be corrected.
+        var ok = await (await admin.PutAsJsonAsync($"/api/material-items/{free.Id}",
+            new { name = free.Name, grade = free.Grade, thicknessMm = free.ThicknessMm, unit = "tabla", isActive = true, version = free.Version }, Ct)).ReadAsync<MaterialItemDto>();
+        Assert.Equal(Tds.Api.Domain.Unit.tabla, ok.Unit);
+
+        var lot = await TestData.Lot(admin, item.Id, (await TestData.Supplier(admin)).Id, 5);
+        await admin.PostAsJsonAsync($"/api/lots/{lot.Id}/void", new { reason = "Greška", version = lot.Version }, Ct); // even a voided lot counts
+
+        var change = await admin.PutAsJsonAsync($"/api/material-items/{item.Id}",
+            new { name = item.Name, grade = item.Grade, thicknessMm = item.ThicknessMm, unit = "kg", isActive = true, version = item.Version }, Ct);
+        Assert.Equal("Jedinica se ne može promijeniti jer artikal već ima lotove; njihove količine su u ovoj jedinici.",
+            (await change.ProblemAsync(HttpStatusCode.BadRequest)).FieldError("unit"));
+
+        // Other fields of the same item still change.
+        var rename = await admin.PutAsJsonAsync($"/api/material-items/{item.Id}",
+            new { name = "Lim crni topljeni", grade = item.Grade, thicknessMm = item.ThicknessMm, unit = "tabla", isActive = true, version = item.Version }, Ct);
+        Assert.Equal(HttpStatusCode.OK, rename.StatusCode);
+    }
 }

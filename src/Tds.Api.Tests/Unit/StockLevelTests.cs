@@ -20,6 +20,13 @@ public class StockLevelTests
         Assert.Equal(expected, StockLevels.Level((decimal)available, minimum is null ? null : (decimal)minimum));
 
     [Fact]
+    public void Zero_stock_is_Nema_even_without_minimum_and_NijeDefinisano_needs_stock()
+    {
+        Assert.Equal(StockLevel.Nema, StockLevels.Level(0m, null));
+        Assert.Equal(StockLevel.NijeDefinisano, StockLevels.Level(0.001m, null));
+    }
+
+    [Fact]
     public void Missing_minimum_is_never_reported_as_ok() =>
         Assert.NotEqual(StockLevel.Ok, StockLevels.Level(1_000_000m, null));
 

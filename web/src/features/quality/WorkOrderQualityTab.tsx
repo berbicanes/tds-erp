@@ -66,7 +66,7 @@ function AddCheckForm({ wo, onDone }: { wo: WorkOrder; onDone: () => void }) {
           </select>
         </Field>
         <Field label="Datum kontrole" htmlFor="qc-date" required error={errors.inspectionDate?.message}>
-          <input id="qc-date" type="date" className={inputClass} {...register("inspectionDate")} />
+          <input id="qc-date" type="date" max={todaySarajevo()} className={inputClass} {...register("inspectionDate")} />
         </Field>
       </div>
       <Field label="Karakteristika / zahtjev crteža" htmlFor="qc-char" required error={errors.characteristic?.message}>

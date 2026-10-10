@@ -101,4 +101,22 @@ public class QualityCheckTests(PostgresFixture postgres)
             workOrderId = wo.Id, phase = "LaserskoRezanje", characteristic = "X", result = "Prihvaceno", inspectedByEmployeeId = inspector.Id, inspectionDate = "2026-10-08",
         }, Ct)).StatusCode);
     }
+
+    [Fact]
+    public async Task Future_inspection_date_is_rejected()
+    {
+        await using var factory = await TdsApiFactory.CreateAsync(postgres);
+        var admin = await factory.AdminAsync();
+        var inspector = await TestData.Employee(admin);
+        var wo = await TestData.WorkOrder(admin);
+        var tomorrow = new Tds.Api.Infrastructure.SystemClock(TimeProvider.System).Today.AddDays(1).ToString("yyyy-MM-dd");
+
+        var r = await admin.PostAsJsonAsync("/api/quality-checks", new
+        {
+            workOrderId = wo.Id, phase = "LaserskoRezanje", characteristic = "Mjera", result = "Prihvaceno",
+            inspectedByEmployeeId = inspector.Id, inspectionDate = tomorrow,
+        }, Ct);
+
+        Assert.Equal("Datum kontrole ne može biti u budućnosti.", (await r.ProblemAsync(HttpStatusCode.BadRequest)).FieldError("inspectionDate"));
+    }
 }

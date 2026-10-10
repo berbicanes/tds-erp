@@ -177,4 +177,24 @@ public class LotTests(PostgresFixture postgres)
         var r = await admin.PostAsJsonAsync($"/api/lots/{lot.Id}/void", new { reason = "Greška", version = rejected.Data.Version }, Ct);
         Assert.Equal("Lot H-4471 ima pokrete zalihe osim prijema i ne može se poništiti.", (await r.ProblemAsync(HttpStatusCode.Conflict)).Detail());
     }
+
+    [Fact]
+    public async Task Item_received_date_and_quantity_cannot_be_changed_by_update()
+    {
+        await using var factory = await TdsApiFactory.CreateAsync(postgres);
+        var admin = await factory.AdminAsync();
+        var item = await TestData.Item(admin);
+        var other = await TestData.Item(admin, "Lim inox", "1.4301", 2, "kg");
+        var supplier = await TestData.Supplier(admin);
+        var lot = await TestData.Lot(admin, item.Id, supplier.Id, 10, receivedDate: "2026-10-01");
+
+        var r = await (await admin.PutAsJsonAsync($"/api/lots/{lot.Id}", new
+        {
+            lotNumber = "H-4471", supplierId = supplier.Id, storageLocation = "B2", version = lot.Version,
+            materialItemId = other.Id, receivedDate = "2026-09-01", receivedQty = 99,   // not part of the contract → ignored
+        }, Ct)).ReadAsync<LotDto>();
+
+        Assert.Equal((item.Id, new DateOnly(2026, 10, 1), 10m, 10m), (r.MaterialItemId, r.ReceivedDate, r.ReceivedQty, r.OnHand));
+        Assert.Equal("B2", r.StorageLocation);
+    }
 }
