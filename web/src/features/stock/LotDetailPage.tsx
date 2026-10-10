@@ -13,6 +13,11 @@ import { useEmployeeOptions } from "../settings/api";
 import { allowedDecisions, useDecideLot, useLot, useVoidLot, type Lot } from "./lotsApi";
 import { LotEditForm } from "./LotEditForm";
 import { LotMovements } from "./LotMovements";
+import { FilePicker } from "../../components/form/FilePicker";
+import { fileUrl, uploadFile } from "../../lib/files";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, type WithWarnings } from "../../lib/api";
+import { lotKey } from "./lotsApi";
 
 function Info({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -84,6 +89,34 @@ function DecisionPanel({ lot, onWarnings }: { lot: Lot; onWarnings: (w: string[]
   );
 }
 
+function CertificatePanel({ lot, onWarnings }: { lot: Lot; onWarnings: (w: string[]) => void }) {
+  const qc = useQueryClient();
+  const [file, setFile] = useState<File | null>(null);
+  const save = useMutation({
+    mutationFn: async (f: File) => {
+      const uploaded = await uploadFile(f);
+      return api.post<WithWarnings<Lot>>(`/api/lots/${lot.id}/certificate`, { fileId: uploaded.id, version: lot.version });
+    },
+    onSuccess: (r) => {
+      setFile(null);
+      onWarnings(r.warnings);
+      void qc.invalidateQueries({ queryKey: lotKey });
+    },
+  });
+  return (
+    <div className="space-y-2 rounded border border-slate-200 p-3">
+      <h3 className="text-sm font-semibold">{lot.certificateFileId ? "Zamijeni certifikat materijala" : "Certifikat materijala"}</h3>
+      <FilePicker file={file} onChange={setFile} label="Odaberi certifikat (PDF ili slika)" />
+      <ErrorBanner error={save.error} />
+      {file && (
+        <button type="button" disabled={save.isPending} onClick={() => save.mutate(file)} className="min-h-11 rounded bg-blue-700 px-4 text-sm font-medium text-white disabled:opacity-60">
+          {save.isPending ? "Slanje…" : "Spremi certifikat"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function VoidPanel({ lot }: { lot: Lot }) {
   const voidLot = useVoidLot(lot.id);
   const [reason, setReason] = useState("");
@@ -140,7 +173,11 @@ export function LotDetailPage() {
           <Info label="Dimenzije / količina">{l.dimensionsDescription ?? EMPTY}</Info>
           <Info label="Skladišna lokacija">{l.storageLocation ?? EMPTY}</Info>
           <Info label="Kontrolisao">{l.inspectedByName ?? EMPTY}</Info>
-          <Info label="Certifikat">{l.certificateFileName ?? "Nema"}</Info>
+          <Info label="Certifikat">
+            {l.certificateFileId ? (
+              <a href={fileUrl(l.certificateFileId)} target="_blank" rel="noreferrer" className="text-blue-800 underline">{l.certificateFileName}</a>
+            ) : "Nema"}
+          </Info>
         </dl>
       )}
 
@@ -151,7 +188,12 @@ export function LotDetailPage() {
         </div>
       )}
 
-      {canEdit && !l.isVoided && <DecisionPanel lot={l} onWarnings={setWarnings} />}
+      {canEdit && !l.isVoided && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <DecisionPanel lot={l} onWarnings={setWarnings} />
+          <CertificatePanel lot={l} onWarnings={setWarnings} />
+        </div>
+      )}
 
       <LotMovements lot={l} />
     </div>

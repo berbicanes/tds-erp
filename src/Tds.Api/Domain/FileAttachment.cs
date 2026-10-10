@@ -5,11 +5,6 @@ public class FileAttachment : Entity
 {
     public const long MaxSizeBytes = 25L * 1024 * 1024;
 
-    public static readonly IReadOnlySet<string> AllowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    {
-        ".pdf", ".dxf", ".dwg", ".step", ".stp", ".png", ".jpg", ".jpeg", ".xlsx", ".docx",
-    };
-
     public required string OriginalName { get; set; }
     public required string ContentType { get; set; }
     public required long SizeBytes { get; set; }

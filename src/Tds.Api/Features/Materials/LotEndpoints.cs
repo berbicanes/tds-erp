@@ -43,6 +43,8 @@ public sealed record DecideLotRequest(ReceiptDecision Decision, Guid? InspectedB
 
 public sealed record VoidRequest(string Reason, uint Version);
 
+public sealed record SetFileRequest(Guid? FileId, uint Version);
+
 public sealed class ReceiveLotValidator : AbstractValidator<ReceiveLotRequest>
 {
     public ReceiveLotValidator()
@@ -99,6 +101,7 @@ public static class LotEndpoints
         write.MapPost("/", Receive).Validate<ReceiveLotRequest>();
         write.MapPut("/{id:guid}", Update).Validate<UpdateLotRequest>();
         write.MapPost("/{id:guid}/decision", Decide).Validate<DecideLotRequest>();
+        write.MapPost("/{id:guid}/certificate", SetCertificate);
 
         app.MapPost("/api/lots/{id:guid}/void", Void).Validate<VoidRequest>().RequireAuthorization(Policies.Admin);
     }
@@ -230,6 +233,24 @@ public static class LotEndpoints
         var supplier = await db.Suppliers.SingleAsync(s => s.Id == lot.SupplierId, ct);
         var dto = await Project(db).SingleAsync(x => x.Id == id, ct);
         return TypedResults.Ok(new WithWarnings<LotDto>(dto, lot.Warnings(supplier.Name, supplier.ApprovalStatus)));
+    }
+
+    /// <summary>Attaches (or replaces) the material certificate. The previous file stays stored (no deletes).</summary>
+    private static async Task<IResult> SetCertificate(Guid id, SetFileRequest req, AppDbContext db, CancellationToken ct)
+    {
+        var lot = await db.MaterialLots.SingleOrDefaultAsync(l => l.Id == id, ct);
+        if (lot is null)
+            return ApiResults.NotFound("Lot ne postoji.");
+        if (lot.IsVoided)
+            return ApiResults.Conflict($"Lot {lot.LotNumber} je poništen i ne može se mijenjati.");
+        if (req.FileId is { } f && !await db.FileAttachments.AnyAsync(x => x.Id == f, ct))
+            return ApiResults.Validation("fileId", "Fajl ne postoji.");
+        db.Entry(lot).Property(x => x.Version).OriginalValue = req.Version;
+        lot.CertificateFileId = req.FileId;
+        await db.SaveChangesAsync(ct);
+
+        var supplier = await db.Suppliers.SingleAsync(s => s.Id == lot.SupplierId, ct);
+        return TypedResults.Ok(new WithWarnings<LotDto>(await Project(db).SingleAsync(x => x.Id == id, ct), lot.Warnings(supplier.Name, supplier.ApprovalStatus)));
     }
 
     /// <summary>
