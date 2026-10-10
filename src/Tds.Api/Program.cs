@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Tds.Api.Data;
 using Tds.Api.Domain;
 using Tds.Api.Features.Auth;
+using Tds.Api.Features.Employees;
+using Tds.Api.Features.Users;
 using Tds.Api.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -72,7 +74,9 @@ builder.Services.ConfigureApplicationCookie(options =>
         return Problems.WriteAsync(ctx.HttpContext, 403, "Zabranjeno", "Nemaš ovlasti za ovu akciju.");
     };
 });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorizationBuilder().AddTdsPolicies();
+// Role changes and deactivation reach existing sessions within a minute.
+builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.FromMinutes(1));
 builder.Services
     .AddIdentityCore<AppUser>(options =>
     {
@@ -86,7 +90,8 @@ builder.Services
     })
     .AddRoles<IdentityRole<Guid>>()
     .AddEntityFrameworkStores<AppDbContext>()
-    .AddSignInManager();
+    .AddSignInManager()
+    .AddDefaultTokenProviders();
 builder.Services.AddScoped<IdentitySeeder>();
 
 var app = builder.Build();
@@ -108,6 +113,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapAuthEndpoints();
+app.MapEmployeeEndpoints();
+app.MapUserEndpoints();
 
 app.Run();
 

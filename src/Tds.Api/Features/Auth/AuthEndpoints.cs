@@ -33,6 +33,11 @@ public static class AuthEndpoints
     private static async Task<IResult> Login(
         LoginRequest request, SignInManager<AppUser> signInManager, UserManager<AppUser> userManager)
     {
+        var existing = await userManager.FindByNameAsync(request.UserName.Trim());
+        if (existing is not null && Users.UserEndpoints.IsDeactivated(existing)
+            && await userManager.CheckPasswordAsync(existing, request.Password))
+            return Problems.Unauthorized("Nalog je deaktiviran. Javi se administratoru.");
+
         var result = await signInManager.PasswordSignInAsync(
             request.UserName.Trim(), request.Password, isPersistent: true, lockoutOnFailure: true);
 

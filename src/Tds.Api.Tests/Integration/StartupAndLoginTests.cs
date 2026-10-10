@@ -36,13 +36,15 @@ public class StartupAndLoginTests(PostgresFixture postgres)
                 while (await reader.ReadAsync(ct))
                     tables.Add(reader.GetString(0));
 
-            Assert.Equal(
-                [
-                    "__EFMigrationsHistory", "asp_net_role_claims", "asp_net_roles", "asp_net_user_claims",
-                    "asp_net_user_logins", "asp_net_user_roles", "asp_net_user_tokens", "asp_net_users",
-                    "audit_log", "file_attachment", "number_sequence",
-                ],
-                tables);
+            string[] phase0 =
+            [
+                "asp_net_role_claims", "asp_net_roles", "asp_net_user_claims", "asp_net_user_logins",
+                "asp_net_user_roles", "asp_net_user_tokens", "asp_net_users", "audit_log", "file_attachment",
+                "number_sequence",
+            ];
+            Assert.All(phase0, t => Assert.Contains(t, tables));
+            Assert.All(tables.Where(t => t != "__EFMigrationsHistory"),
+                t => Assert.Matches("^[a-z][a-z0-9_]*$", t));
         }
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/me", ct)).StatusCode);

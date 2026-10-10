@@ -1,10 +1,14 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import { Layout } from "./components/Layout";
 import { EmptyModulePage } from "./components/EmptyModulePage";
 import { LoginPage } from "./features/auth/LoginPage";
 import { RequireAuth } from "./features/auth/RequireAuth";
 import { RequireRole } from "./features/auth/RequireRole";
 import { NotFoundPage } from "./features/NotFoundPage";
+import { SettingsLayout } from "./features/settings/SettingsLayout";
+import { EmployeesPage } from "./features/settings/EmployeesPage";
+import { EmployeeFormPage } from "./features/settings/EmployeeFormPage";
+import { UsersPage } from "./features/settings/UsersPage";
 
 export const router = createBrowserRouter([
   { path: "/prijava", element: <LoginPage /> },
@@ -25,7 +29,19 @@ export const router = createBrowserRouter([
           { path: "/dokumenti", element: <EmptyModulePage title="Dokumenti" /> },
           {
             element: <RequireRole roles={["Admin"]} />,
-            children: [{ path: "/podesavanja", element: <EmptyModulePage title="Podešavanja" /> }],
+            children: [
+              {
+                path: "/podesavanja",
+                element: <SettingsLayout />,
+                children: [
+                  { index: true, element: <Navigate to="/podesavanja/zaposlenici" replace /> },
+                  { path: "zaposlenici", element: <EmployeesPage /> },
+                  { path: "zaposlenici/novi", element: <EmployeeFormPage /> },
+                  { path: "zaposlenici/:id", element: <EmployeeFormPage /> },
+                  { path: "korisnici", element: <UsersPage /> },
+                ],
+              },
+            ],
           },
           { path: "*", element: <NotFoundPage /> },
         ],
