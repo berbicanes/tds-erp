@@ -11,6 +11,8 @@ public class AppDbContext : DbContext
     protected AppDbContext(DbContextOptions options) : base(options) { }
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();
+    public DbSet<NumberSequence> NumberSequences => Set<NumberSequence>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {

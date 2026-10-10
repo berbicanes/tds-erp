@@ -12,6 +12,10 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
 builder.Services.AddScoped<AuditInterceptor>();
+builder.Services.AddScoped<DocumentNumberService>();
+builder.Services.AddSingleton<IFileStorage>(sp => new LocalFileStorage(
+    builder.Configuration[$"{FileStorageOptions.Section}:Root"] ?? "",
+    sp.GetRequiredService<TimeProvider>()));
 
 builder.Services.AddDbContext<AppDbContext>((sp, options) => options
     .UseNpgsql(connectionString)
