@@ -16,7 +16,9 @@ QMS entiteti (označeni 🔒) imaju i `IsVoided`, `VoidedReason`, `VoidedAt`, `V
 - `CreatedBy`, `UpdatedBy`, `VoidedBy` su `Guid?` = Id korisnika (`AspNetUsers`, `IdentityUser<Guid>`).
   `null` = sistemska akcija (seed, import, migracija). Ne postoji "system" korisnik. UI prikazuje
   `null` kao "Sistem".
-- `CreatedAt`, `UpdatedAt`, `VoidedAt` su `DateTimeOffset` (UTC, `timestamptz`).
+- `CreatedAt`, `UpdatedAt`, `VoidedAt` su `DateTimeOffset` (UTC, `timestamptz`). Pri kreiranju
+  `UpdatedAt`/`UpdatedBy` = `CreatedAt`/`CreatedBy`.
+- `VoidedReason` je string(300), obavezan pri poništavanju.
 - **Izuzeci** (nemaju audit polja i ne audituju se): Identity tabele (`AspNetUsers`, role…),
   `number_sequence` (§16) i `AuditLog` (§15). `AuditLog` ima samo `Id` (Guid v7) i svoja polja.
 - Audituje se (AuditLog) sve što nasljeđuje bazni entitet.
