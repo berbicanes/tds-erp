@@ -20,6 +20,7 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
     public DbSet<MaterialItem> MaterialItems => Set<MaterialItem>();
     public DbSet<MaterialLot> MaterialLots => Set<MaterialLot>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
     public DbSet<NumberSequence> NumberSequences => Set<NumberSequence>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

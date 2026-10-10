@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Tds.Api.Features.Employees;
 using Tds.Api.Features.Materials;
 using Tds.Api.Features.Suppliers;
+using Tds.Api.Features.WorkOrders;
 using Tds.Api.Infrastructure;
 using static Tds.Api.Tests.Support.ApiClientExtensions;
 
@@ -28,6 +29,13 @@ public static class TestData
             .ReadAsync<WithWarnings<LotDto>>(HttpStatusCode.Created);
         return r.Data;
     }
+
+    public static async Task<WorkOrderDto> WorkOrder(HttpClient client, string customer = "Metalbau AG", int qty = 100, string dueDate = "2026-11-15", string priority = "Normalan") =>
+        await (await client.PostAsJsonAsync("/api/work-orders", new
+        {
+            customer, productDescription = "Nosač ugaoni 120×80, S235 3 mm", orderedQty = qty, dueDate, priority,
+            drawingNumber = "TDS-0412", drawingRevision = "B",
+        }, Ct)).ReadAsync<WorkOrderDto>(HttpStatusCode.Created);
 
     public static async Task<LotDto> AcceptedLot(HttpClient admin, Guid itemId, Guid supplierId, Guid inspectorId, decimal qty, string lotNumber = "H-4471")
     {

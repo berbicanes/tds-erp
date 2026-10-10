@@ -14,6 +14,7 @@ using Tds.Api.Features.Materials;
 using Tds.Api.Features.Stock;
 using Tds.Api.Features.Suppliers;
 using Tds.Api.Features.Users;
+using Tds.Api.Features.WorkOrders;
 using Tds.Api.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -129,6 +130,7 @@ app.MapLotEndpoints();
 app.MapStockMovementEndpoints();
 app.MapStockEndpoints();
 app.MapFileEndpoints();
+app.MapWorkOrderEndpoints();
 
 app.Run();
 

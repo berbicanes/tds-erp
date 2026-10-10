@@ -906,6 +906,124 @@ namespace Tds.Api.Data.Migrations
                     b.ToTable("supplier", (string)null);
                 });
 
+            modelBuilder.Entity("Tds.Api.Domain.WorkOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Customer")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("customer");
+
+                    b.Property<Guid?>("DrawingFileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("drawing_file_id");
+
+                    b.Property<string>("DrawingNumber")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("drawing_number");
+
+                    b.Property<string>("DrawingRevision")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("drawing_revision");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("number");
+
+                    b.Property<int>("OrderedQty")
+                        .HasColumnType("integer")
+                        .HasColumnName("ordered_qty");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("priority");
+
+                    b.Property<string>("ProductDescription")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("product_description");
+
+                    b.Property<string>("QualityApproval")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("quality_approval");
+
+                    b.Property<DateOnly?>("ReleaseDate")
+                        .HasColumnType("date")
+                        .HasColumnName("release_date");
+
+                    b.Property<Guid?>("ResponsibleEmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("responsible_employee_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_work_order");
+
+                    b.HasIndex("DrawingFileId")
+                        .HasDatabaseName("ix_work_order_drawing_file_id");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_work_order_number");
+
+                    b.HasIndex("ResponsibleEmployeeId")
+                        .HasDatabaseName("ix_work_order_responsible_employee_id");
+
+                    b.HasIndex("Status", "DueDate")
+                        .HasDatabaseName("ix_work_order_status_due_date");
+
+                    b.ToTable("work_order", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -1027,6 +1145,21 @@ namespace Tds.Api.Data.Migrations
                         .HasForeignKey("ResponsibleEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_supplier_employee_responsible_employee_id");
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.WorkOrder", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.FileAttachment", null)
+                        .WithMany()
+                        .HasForeignKey("DrawingFileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_work_order_file_attachment_drawing_file_id");
+
+                    b.HasOne("Tds.Api.Domain.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("ResponsibleEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_work_order_employee_responsible_employee_id");
                 });
 #pragma warning restore 612, 618
         }

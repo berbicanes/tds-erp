@@ -19,6 +19,9 @@ import { ItemFormPage } from "./features/stock/ItemFormPage";
 import { LotsPage } from "./features/stock/LotsPage";
 import { ReceiveLotPage } from "./features/stock/ReceiveLotPage";
 import { LotDetailPage } from "./features/stock/LotDetailPage";
+import { WorkOrderListPage } from "./features/workOrders/WorkOrderListPage";
+import { WorkOrderFormPage } from "./features/workOrders/WorkOrderFormPage";
+import { WorkOrderDetailPage } from "./features/workOrders/WorkOrderDetailPage";
 
 export const router = createBrowserRouter([
   { path: "/prijava", element: <LoginPage /> },
@@ -30,7 +33,10 @@ export const router = createBrowserRouter([
         children: [
           { path: "/", element: <EmptyModulePage title="Pregled" /> },
           { path: "/brzi-unos", element: <EmptyModulePage title="Brzi unos" /> },
-          { path: "/nalozi", element: <EmptyModulePage title="Nalozi" /> },
+          { path: "/nalozi", element: <WorkOrderListPage /> },
+          { path: "/nalozi/novi", element: <WorkOrderFormPage /> },
+          { path: "/nalozi/:id", element: <WorkOrderDetailPage /> },
+          { path: "/nalozi/:id/uredi", element: <WorkOrderFormPage /> },
           { path: "/proizvodnja", element: <EmptyModulePage title="Dnevna proizvodnja" /> },
           {
             path: "/zalihe",
