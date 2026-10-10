@@ -22,6 +22,10 @@ Interni cilj: 2 sedmice intenzivnog rada. Klijentu komunicirano: 4 sedmice.
 - [ ] Produkcijski `docker-compose.yml` + Caddy (HTTPS) + `backup.sh` (pg_dump + fajlovi, rotacija 30 dana)
 - [ ] Deploy na VPS radi, HTTPS radi, login radi
 
+> Napomena (10.10.2026.): VPS i domen još ne postoje. Sve za deploy se priprema
+> (`deploy/README.md`), a ova stavka ostaje neoznačena dok deploy stvarno ne proradi.
+> To **nije** blokada za Fazu 1.
+
 ## Faza 1 — Jezgro: nalozi, materijal, proizvodnja (dan 3–6)
 
 - [ ] Employee CRUD (Admin)
@@ -34,6 +38,9 @@ Interni cilj: 2 sedmice intenzivnog rada. Klijentu komunicirano: 4 sedmice.
 - [ ] WorkOrder CRUD + upload crteža + numeracija
 - [ ] WorkOrderMaterial: vezivanje lota i rezervacija
 - [ ] Prelazi statusa sa svim gate-ovima (DOMAIN §4) — **unit test za svaki red tabele prelaza**
+      > **Otvoreno pitanje:** gate-ovi (`LaserFirstPieceApproved`, `PressFirstPieceApproved`,
+      > `FinalInspectionPassed`) se izvode iz `QualityCheck`, koji dolazi tek u Fazi 3.
+      > Privremeno rješenje za Fazu 1 odlučuje vlasnik projekta kad se dođe do toga.
 - [ ] ProductionEntry: sva pravila DOMAIN §5, automatsko `Izdavanje`, poništavanje
 - [ ] Izvedene vrijednosti naloga (DOMAIN §3) u DTO-u
 - [ ] Liste + detalj naloga (UI §5, §6) bez taba Kvalitet

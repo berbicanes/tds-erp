@@ -13,6 +13,16 @@ Oznake u koloni "Izvor":
 Svi entiteti imaju i: `Id` (Guid v7), `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy`.
 QMS entiteti (označeni 🔒) imaju i `IsVoided`, `VoidedReason`, `VoidedAt`, `VoidedBy`.
 
+- `CreatedBy`, `UpdatedBy`, `VoidedBy` su `Guid?` = Id korisnika (`AspNetUsers`, `IdentityUser<Guid>`).
+  `null` = sistemska akcija (seed, import, migracija). Ne postoji "system" korisnik. UI prikazuje
+  `null` kao "Sistem".
+- `CreatedAt`, `UpdatedAt`, `VoidedAt` su `DateTimeOffset` (UTC, `timestamptz`).
+- **Izuzeci** (nemaju audit polja i ne audituju se): Identity tabele (`AspNetUsers`, role…),
+  `number_sequence` (§16) i `AuditLog` (§15). `AuditLog` ima samo `Id` (Guid v7) i svoja polja.
+- Audituje se (AuditLog) sve što nasljeđuje bazni entitet.
+
+Korisnički nalog (Identity): login korisničkim imenom (`UserName`), `Email` opcionalan.
+
 ---
 
 ## 1. Employee — Zaposlenik
@@ -273,10 +283,24 @@ Dozvoljeno: `.pdf .dxf .dwg .step .stp .png .jpg .jpeg .xlsx .docx`.
 | EntityId | Guid |
 | Action | enum `Create`, `Update`, `Void` |
 | ChangesJson | jsonb — `{polje: [staro, novo]}` |
-| UserId | string |
+| UserId | Guid? — `null` = sistemska akcija |
 | At | DateTimeOffset |
 
 Puni se automatski iz EF `SaveChangesInterceptor`, nikad ručno iz endpointa.
+Izuzetak od baznog entiteta: ima `Id` (Guid v7), ali **nema** `CreatedAt/By`, `UpdatedAt/By`
+i sam se ne audituje.
+
+## 16. NumberSequence (`number_sequence`)
+
+Tehnička tabela brojača za numeraciju (DOMAIN §6). Nema audit polja, ne audituje se.
+
+| Polje | Tip | Napomena |
+|---|---|---|
+| Kind | string(10), PK dio | prefiks: `RN`, `DP`, `KK`, `NC` |
+| Period | string(8), PK dio | `YYYY` ili `YYYYMMDD` (za `DP`) |
+| LastValue | int | zadnji izdani broj |
+
+PK (`Kind`, `Period`).
 
 ---
 

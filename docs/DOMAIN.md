@@ -146,7 +146,9 @@ sa razlogom, koje poništava i vezani `StockMovement`.
 
 Brojač po (vrsta, godina/dan) u tabeli `number_sequence`, inkrement `SELECT … FOR UPDATE`
 u istoj transakciji. Godina = godina datuma dokumenta po Europe/Sarajevo. Bez rupa nije
-zahtjev; bez duplikata jeste. Format potvrditi (§9.4) — možda Sanel već ima svoju šemu.
+zahtjev; bez duplikata jeste.
+Kad brojač pređe širinu formata, broj se samo proširi (nema prelijevanja ni greške):
+`DP-20261012-100`, `NC-2026-1000`, `RN-2026-10000`. Format potvrditi (§9.4) — možda Sanel već ima svoju šemu.
 
 ## 7. Kvalitet (QMS)
 
@@ -187,6 +189,9 @@ kontrola dobija trajnu oznaku upozorenja "Mjerno sredstvo van kalibracije". Ne b
 | Lotovi, prijem, korekcije zalihe | | ✓ | ✓ |
 | Dobavljači, oprema, dokumenti | | ✓ | ✓ |
 | Override gate-a, korisnici, zaposlenici, poništavanje QMS zapisa | | | ✓ |
+
+Login: korisničko ime + lozinka (min. 10 znakova, bez obaveznih specijalnih znakova i velikih
+slova). 5 neuspjelih pokušaja → nalog zaključan 15 minuta.
 
 Pretpostavka: Sanel = Admin. Mala firma — vjerovatno 1–2 Kontrolora, ostalo Operateri.
 

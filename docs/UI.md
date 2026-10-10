@@ -133,6 +133,11 @@ Kartice ispod (tabovi na mobilnom):
 | Gotovo | green | Završeno, Prihvaćeno, Prihvaćen, Odobren, Zatvorena, OK |
 | Arhiva | zinc (prigušeno) | Isporučeno, Otkazano, Povučen |
 
+Sve vrijednosti koje nisu navedene u tabeli (npr. `Normalan`, faze kontrole, izvori NC, odluke o
+proizvodu, vrste dokumenata, jedinice, vrste opreme, tipovi pokreta) su **slate**. `Hitno` ostaje amber.
+Prikazni nazivi enuma su 1:1 iz `NOTION_SOURCE.md`; jedinice ostaju malim slovima
+(`kg`, `kom`, `m`, `tabla`, `drugo`).
+
 Kontrast teksta na badge pozadini ≥ 4.5:1.
 
 ## 9. Tekstovi

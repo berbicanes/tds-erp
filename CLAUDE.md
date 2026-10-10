@@ -39,13 +39,20 @@ varenje/čelične konstrukcije. ISO 9001:2015 certifikovana (TÜV NORD). Kupci u
 
 ## Stack
 
-- **Backend:** .NET 10 (LTS), ASP.NET Core Minimal API, EF Core 10 + Npgsql, FluentValidation
+- **Backend:** .NET 10 (LTS), ASP.NET Core Minimal API, EF Core 10 + Npgsql, FluentValidation,
+  EFCore.NamingConventions (snake_case)
 - **Baza:** PostgreSQL 17
-- **Auth:** ASP.NET Core Identity, cookie auth (isti origin, bez JWT), role: `Admin`, `Kontrolor`, `Operater`
-- **Frontend:** React 19 + TypeScript (strict) + Vite, TanStack Query, React Router, React Hook Form + Zod, Tailwind CSS, Recharts
+- **Auth:** ASP.NET Core Identity (`IdentityUser<Guid>`), cookie auth (isti origin, bez JWT), role: `Admin`, `Kontrolor`, `Operater`
+- **Frontend:** React 19 + TypeScript 6.0.x (strict, pinovana verzija — ne 7) + Vite, TanStack Query, React Router,
+  React Hook Form + Zod + @hookform/resolvers, Tailwind CSS, Recharts
 - **Fajlovi:** lokalni disk (Docker volume) iza `IFileStorage` interfejsa
-- **Deploy:** jedan VPS, Docker Compose (api + web + postgres + caddy), dnevni `pg_dump` van servera
-- **Testovi:** xUnit + Testcontainers (pravi Postgres), Vitest za frontend logiku
+- **Deploy:** jedan VPS, Docker Compose (api + postgres + caddy; Caddy direktno servira izgrađeni
+  `web/dist`, `/api` proxy na api, SPA fallback na `index.html`), dnevni `pg_dump` van servera
+  (Hetzner Storage Box, rsync preko SSH-a)
+- **Testovi:** xUnit + Testcontainers (pravi Postgres) + Microsoft.AspNetCore.Mvc.Testing
+  (`WebApplicationFactory`), Vitest za frontend logiku
+
+Tačne verzije paketa su pinovane u `*.csproj` i `web/package.json`.
 
 Ne uvoditi: MediatR, CQRS, mikroservise, Redis, message queue, GraphQL, Clean Architecture
 sa 5 projekata, repository pattern iznad EF Core-a. Jednostavno je namjerno.
@@ -68,7 +75,8 @@ sa 5 projekata, repository pattern iznad EF Core-a. Jednostavno je namjerno.
   src/features/<modul>/     ekrani, hookovi, zod šeme po modulu
   src/components/           dijeljene UI komponente
   src/lib/                  api klijent, formatiranje (datum, broj), auth
-/deploy/                    docker-compose.yml, Caddyfile, backup.sh, .env.example
+/deploy/                    docker-compose.yml, docker-compose.dev.yml, Caddyfile, backup.sh,
+                            .env.example, README.md (koraci za prvi deploy)
 ```
 
 ## Komande (kreira ih Faza 0 — provjeri da postoje prije korištenja)
@@ -86,6 +94,13 @@ cd web && npm run build && npm run typecheck && npm test
 
 - **API:** REST pod `/api/...`, JSON camelCase, greške kao `ProblemDetails` (RFC 9457) sa
   porukom na bosanskom u `detail`. Validacijske greške po polju u `errors`.
+- **GET ne mijenja stanje.** Nijedan GET endpoint ne smije ništa upisati ni promijeniti.
+  (CSRF zaštita se oslanja na ovo + cookie `HttpOnly`, `Secure`, `SameSite=Strict`; nema
+  posebnog antiforgery tokena.)
+- **Auth:** login korisničkim imenom (e-mail opcionalan, ne koristi se za login). Lozinka
+  min. 10 znakova, bez obaveznih specijalnih znakova i velikih slova. Lockout: 5 neuspjelih
+  pokušaja → nalog zaključan 15 minuta. Na `/api/*` neprijavljen = 401, nema redirecta.
+  Prvi Admin se seeduje iz env varijabli `TDS_ADMIN_USERNAME` / `TDS_ADMIN_PASSWORD`.
 - **Vrijeme:** poslovni datumi su `DateOnly` (rok, datum prijema, datum proizvodnje).
   Tehnički timestampi `DateTimeOffset` u UTC (`timestamptz`). "Danas" = `Europe/Sarajevo`,
   uvijek preko `IClock`, nikad `DateTime.Now` u logici.
@@ -93,10 +108,12 @@ cd web && npm run build && npm run typecheck && npm test
 - **Numeracija** (`RN-2026-0001` itd.) se generiše na serveru u transakciji, po godini.
   Format u `DOMAIN.md` §6.
 - **EF Core:** enumi kao string u bazi. Snake_case imena tabela/kolona (`UseSnakeCaseNamingConvention`).
-  Svaki entitet: `Id` (Guid v7), `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy`.
+  Svaki entitet: `Id` (Guid v7), `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy`
+  (`*By` = `Guid?` Id korisnika; `null` = sistemska akcija, u UI-ju "Sistem").
 - **Frontend:** server-state samo kroz TanStack Query. Forme kroz RHF + Zod; Zod šema
   odražava serversku validaciju, ali server je jedini autoritet.
 - **Formatiranje u UI:** datum `dd.MM.yyyy.`, decimale zarezom (`1.234,5`), helperi u `web/src/lib/format.ts`.
+  Količine do 3 decimale bez nula na kraju, komadi bez decimala, radni sati do 2 decimale.
 - **Commit:** mali, jedan logički korak. Poruka na engleskom, imperativ.
 
 ## Prije nego kažeš "gotovo"
