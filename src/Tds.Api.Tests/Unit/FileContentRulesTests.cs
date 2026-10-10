@@ -2,7 +2,7 @@ using System.IO.Compression;
 using System.Text;
 using Tds.Api.Domain;
 
-namespace Tds.Api.Tests.Unit;
+namespace Tds.Api.Tests.UnitTests;
 
 /// <summary>DATA_MODEL §14 content checks.</summary>
 public class FileContentRulesTests

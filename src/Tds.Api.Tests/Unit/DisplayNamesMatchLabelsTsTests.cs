@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Tds.Api.Domain;
 
-namespace Tds.Api.Tests.Unit;
+namespace Tds.Api.Tests.UnitTests;
 
 /// <summary>Server message names must equal web/src/lib/labels.ts (the single UI source).</summary>
 public partial class DisplayNamesMatchLabelsTsTests

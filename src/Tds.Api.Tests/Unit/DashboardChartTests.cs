@@ -1,6 +1,6 @@
 using Tds.Api.Features.Dashboard;
 
-namespace Tds.Api.Tests.Unit;
+namespace Tds.Api.Tests.UnitTests;
 
 /// <summary>UI §3 chart days: last 14 working days, weekends only with entries, empty past days are 0.</summary>
 public class DashboardChartTests

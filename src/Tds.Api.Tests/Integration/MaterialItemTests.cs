@@ -24,7 +24,7 @@ public class MaterialItemTests(PostgresFixture postgres)
 
         var crni = await (await k.GetAsync("/api/material-items?q=S235&sort=thicknessMm", Ct)).ReadAsync<PagedResult<MaterialItemDto>>();
         Assert.Equal([2.5m, 3m, 10m], crni.Items.Select(x => x.ThicknessMm!.Value));
-        Assert.All(crni.Items, x => Assert.Equal(Tds.Api.Domain.Unit.tabla, x.Unit));
+        Assert.All(crni.Items, x => Assert.Equal(Unit.tabla, x.Unit));
 
         var inox = await (await k.GetAsync("/api/material-items?q=1.4301", Ct)).ReadAsync<PagedResult<MaterialItemDto>>();
         Assert.Null(Assert.Single(inox.Items).MinimumStock);
@@ -84,7 +84,7 @@ public class MaterialItemTests(PostgresFixture postgres)
         // Without lots the unit can still be corrected.
         var ok = await (await admin.PutAsJsonAsync($"/api/material-items/{free.Id}",
             new { name = free.Name, grade = free.Grade, thicknessMm = free.ThicknessMm, unit = "tabla", isActive = true, version = free.Version }, Ct)).ReadAsync<MaterialItemDto>();
-        Assert.Equal(Tds.Api.Domain.Unit.tabla, ok.Unit);
+        Assert.Equal(Unit.tabla, ok.Unit);
 
         var lot = await TestData.Lot(admin, item.Id, (await TestData.Supplier(admin)).Id, 5);
         await admin.PostAsJsonAsync($"/api/lots/{lot.Id}/void", new { reason = "Greška", version = lot.Version }, Ct); // even a voided lot counts

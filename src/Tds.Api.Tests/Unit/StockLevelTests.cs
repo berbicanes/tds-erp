@@ -1,6 +1,6 @@
 using Tds.Api.Domain;
 
-namespace Tds.Api.Tests.Unit;
+namespace Tds.Api.Tests.UnitTests;
 
 /// <summary>DOMAIN §2.3 and §2.4.</summary>
 public class StockLevelTests

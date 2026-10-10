@@ -1,7 +1,7 @@
 using Tds.Api.Domain;
 using S = Tds.Api.Domain.WorkOrderStatus;
 
-namespace Tds.Api.Tests.Unit;
+namespace Tds.Api.Tests.UnitTests;
 
 /// <summary>DOMAIN §4 — one test per row of the transition table, forbidden transitions, every gate (pass + reject).</summary>
 public class WorkOrderTransitionTests

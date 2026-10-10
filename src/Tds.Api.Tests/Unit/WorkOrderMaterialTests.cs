@@ -1,6 +1,6 @@
 using Tds.Api.Domain;
 
-namespace Tds.Api.Tests.Unit;
+namespace Tds.Api.Tests.UnitTests;
 
 /// <summary>DOMAIN §2.3 — reservations.</summary>
 public class WorkOrderMaterialTests

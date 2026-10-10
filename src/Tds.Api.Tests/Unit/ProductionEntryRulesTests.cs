@@ -1,6 +1,6 @@
 using Tds.Api.Domain;
 
-namespace Tds.Api.Tests.Unit;
+namespace Tds.Api.Tests.UnitTests;
 
 /// <summary>DOMAIN §5 — every rule with its rejecting case.</summary>
 public class ProductionEntryRulesTests
@@ -15,7 +15,7 @@ public class ProductionEntryRulesTests
     private static OrderFacts Order(WorkOrderStatus status = WorkOrderStatus.Presanje, bool final = false, int ordered = 100, int otherGood = 0) =>
         new("RN-2026-0042", status, final, ordered, otherGood);
 
-    private static readonly LotUse AcceptedLot = new("H-4471", ReceiptDecision.Prihvacen, false, 10m, Tds.Api.Domain.Unit.tabla);
+    private static readonly LotUse AcceptedLot = new("H-4471", ReceiptDecision.Prihvacen, false, 10m, Unit.tabla);
 
     private static string Reject(ProductionEntryInput e, OrderFacts? o = null, LotUse? lot = null, decimal onHand = 10m, bool admin = false) =>
         Assert.Throws<DomainException>(() => ProductionEntryRules.Check(e, o ?? Order(), lot, onHand, Today, admin)).Message;

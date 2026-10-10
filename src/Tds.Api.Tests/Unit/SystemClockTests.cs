@@ -1,7 +1,7 @@
 using Tds.Api.Infrastructure;
 using Tds.Api.Tests.Support;
 
-namespace Tds.Api.Tests.Unit;
+namespace Tds.Api.Tests.UnitTests;
 
 public class SystemClockTests
 {
