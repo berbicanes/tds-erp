@@ -71,9 +71,37 @@ public static class StockQueries
     }
 }
 
-/// <summary>Effective reservations per lot (DOMAIN §2.3). Source is WorkOrderMaterial, added in Phase 1 item 12.</summary>
+/// <summary>Reservations from WorkOrderMaterial (DOMAIN §2.3).</summary>
 public static class Reservations
 {
-    public static Task<Dictionary<Guid, decimal>> EffectiveByLotAsync(AppDbContext db, IReadOnlyCollection<Guid> lotIds, CancellationToken ct) =>
-        Task.FromResult(new Dictionary<Guid, decimal>());
+    /// <summary>One link with what was already issued from that lot for that order.</summary>
+    public sealed record LinkUsage
+    {
+        public required Guid LinkId { get; init; }
+        public required Guid WorkOrderId { get; init; }
+        public required Guid MaterialLotId { get; init; }
+        public required decimal ReservedQty { get; init; }
+        public required decimal IssuedQty { get; init; }
+        public required bool OrderIsActive { get; init; }
+
+        /// <summary>max(0, ReservedQty − issued); 0 for finished orders (Zavrseno, Isporuceno, Otkazano).</summary>
+        public decimal Effective => OrderIsActive ? StockLevels.EffectiveReservation(ReservedQty, IssuedQty) : 0m;
+    }
+
+    public static IQueryable<LinkUsage> Usage(AppDbContext db) =>
+        from l in db.WorkOrderMaterials
+        join w in db.WorkOrders on l.WorkOrderId equals w.Id
+        select new LinkUsage
+        {
+            LinkId = l.Id, WorkOrderId = l.WorkOrderId, MaterialLotId = l.MaterialLotId, ReservedQty = l.ReservedQty,
+            IssuedQty = -(db.StockMovements.Where(m => m.MaterialLotId == l.MaterialLotId && m.WorkOrderId == l.WorkOrderId
+                && m.Type == StockMovementType.Izdavanje && !m.IsVoided).Sum(m => (decimal?)m.Quantity) ?? 0m),
+            OrderIsActive = !WorkOrder.FinalStatuses.Contains(w.Status),
+        };
+
+    public static async Task<Dictionary<Guid, decimal>> EffectiveByLotAsync(AppDbContext db, IReadOnlyCollection<Guid> lotIds, CancellationToken ct)
+    {
+        var links = await Usage(db).Where(u => lotIds.Contains(u.MaterialLotId)).ToListAsync(ct);
+        return links.GroupBy(l => l.MaterialLotId).ToDictionary(g => g.Key, g => g.Sum(l => l.Effective));
+    }
 }

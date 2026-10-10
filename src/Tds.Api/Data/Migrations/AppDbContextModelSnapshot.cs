@@ -948,6 +948,12 @@ namespace Tds.Api.Data.Migrations
                     b.HasIndex("MaterialLotId")
                         .HasDatabaseName("ix_stock_movement_material_lot_id");
 
+                    b.HasIndex("WorkOrderId")
+                        .HasDatabaseName("ix_stock_movement_work_order_id");
+
+                    b.HasIndex("MaterialLotId", "WorkOrderId", "Type")
+                        .HasDatabaseName("ix_stock_movement_material_lot_id_work_order_id_type");
+
                     b.ToTable("stock_movement", (string)null);
                 });
 
@@ -1149,6 +1155,60 @@ namespace Tds.Api.Data.Migrations
                     b.ToTable("work_order", (string)null);
                 });
 
+            modelBuilder.Entity("Tds.Api.Domain.WorkOrderMaterial", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid>("MaterialLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_lot_id");
+
+                    b.Property<decimal>("ReservedQty")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("reserved_qty");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<Guid>("WorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("work_order_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_work_order_material");
+
+                    b.HasIndex("MaterialLotId")
+                        .HasDatabaseName("ix_work_order_material_material_lot_id");
+
+                    b.HasIndex("WorkOrderId", "MaterialLotId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_work_order_material_work_order_id_material_lot_id");
+
+                    b.ToTable("work_order_material", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -1289,6 +1349,12 @@ namespace Tds.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_stock_movement_material_lot_material_lot_id");
+
+                    b.HasOne("Tds.Api.Domain.WorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_stock_movement_work_orders_work_order_id");
                 });
 
             modelBuilder.Entity("Tds.Api.Domain.Supplier", b =>
@@ -1313,6 +1379,23 @@ namespace Tds.Api.Data.Migrations
                         .HasForeignKey("ResponsibleEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_work_order_employee_responsible_employee_id");
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.WorkOrderMaterial", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.MaterialLot", null)
+                        .WithMany()
+                        .HasForeignKey("MaterialLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_order_material_material_lot_material_lot_id");
+
+                    b.HasOne("Tds.Api.Domain.WorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_order_material_work_order_work_order_id");
                 });
 #pragma warning restore 612, 618
         }

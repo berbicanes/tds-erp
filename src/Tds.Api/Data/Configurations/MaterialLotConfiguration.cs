@@ -29,6 +29,8 @@ public class StockMovementConfiguration : IEntityTypeConfiguration<StockMovement
         b.Property(x => x.Reason).HasMaxLength(StockMovement.ReasonMax);
         b.HasOne<MaterialLot>().WithMany().HasForeignKey(x => x.MaterialLotId).OnDelete(DeleteBehavior.Restrict);
         b.HasIndex(x => x.MaterialLotId);
-        // FKs to production_entry / work_order are added with those tables.
+        b.HasIndex(x => new { x.MaterialLotId, x.WorkOrderId, x.Type });
+        b.HasOne<WorkOrder>().WithMany().HasForeignKey(x => x.WorkOrderId).OnDelete(DeleteBehavior.Restrict);
+        // FK to production_entry is added with that table.
     }
 }

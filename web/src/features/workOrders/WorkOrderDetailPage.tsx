@@ -10,6 +10,7 @@ import { fileUrl } from "../../lib/files";
 import { dueTone, isFinished } from "../../lib/workOrder";
 import { useSetQualityApproval, useWorkOrder, type WorkOrder } from "./api";
 import { WorkOrderQualityTab } from "../quality/WorkOrderQualityTab";
+import { WorkOrderMaterialsTab } from "./WorkOrderMaterialsTab";
 
 function Info({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -37,7 +38,7 @@ function QualityApprovalControl({ wo }: { wo: WorkOrder }) {
   );
 }
 
-type DetailTab = "osnovno" | "kvalitet";
+type DetailTab = "osnovno" | "materijal" | "kvalitet";
 
 /** UI §6. Tabs Proizvodnja, Materijal, Kvalitet are added as the modules are built; Istorija comes in Phase 3. */
 export function WorkOrderDetailPage() {
@@ -53,6 +54,7 @@ export function WorkOrderDetailPage() {
 
   const tabs: { key: DetailTab; label: string }[] = [
     { key: "osnovno", label: "Osnovno" },
+    { key: "materijal", label: "Materijal" },
     { key: "kvalitet", label: "Kvalitet" },
   ];
 
@@ -82,6 +84,7 @@ export function WorkOrderDetailPage() {
       </nav>
 
       <div className="px-4 pb-6">
+        {tab === "materijal" && <WorkOrderMaterialsTab wo={w} />}
         {tab === "kvalitet" && <WorkOrderQualityTab wo={w} />}
         {tab === "osnovno" && (
           <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">

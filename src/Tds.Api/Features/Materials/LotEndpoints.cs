@@ -283,8 +283,8 @@ public static class LotEndpoints
     private static string? Clean(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 }
 
-/// <summary>Lot ↔ work order links. Filled in when WorkOrderMaterial exists (Phase 1, item 12).</summary>
 public static class LotLinks
 {
-    public static Task<bool> IsLinkedToWorkOrderAsync(AppDbContext db, Guid lotId, CancellationToken ct) => Task.FromResult(false);
+    public static Task<bool> IsLinkedToWorkOrderAsync(AppDbContext db, Guid lotId, CancellationToken ct) =>
+        db.WorkOrderMaterials.AnyAsync(l => l.MaterialLotId == lotId, ct);
 }
