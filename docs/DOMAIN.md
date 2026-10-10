@@ -225,6 +225,8 @@ kontrola dobija trajnu oznaku upozorenja "Mjerno sredstvo van kalibracije". Ne b
 7.6 Rokovi koji idu na dashboard (≤ 30 dana ili prošli): `Supplier.NextEvaluationDate`,
 `Equipment.NextCalibrationDate`, `ControlledDocument.NextReviewDate` (samo `Odobren`),
 `NonConformity.DueDate` (nije `Zatvorena`), `MaterialItem.NextStocktakeDate`.
+Dobavljači sa statusom `Blokiran` ne dobijaju upozorenje za rok ocjene (blokiran = više se ne koristi, §7.2).
+Neaktivna oprema i neaktivni artikli također ne dobijaju upozorenja za kalibraciju i popis.
 
 ## 8. Uloge i ovlasti
 
