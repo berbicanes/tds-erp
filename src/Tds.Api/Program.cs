@@ -8,6 +8,7 @@ using Tds.Api.Data;
 using Tds.Api.Domain;
 using Tds.Api.Features.Auth;
 using Tds.Api.Features.Employees;
+using Tds.Api.Features.Equipment;
 using Tds.Api.Features.Users;
 using Tds.Api.Infrastructure;
 
@@ -93,6 +94,7 @@ builder.Services
     .AddSignInManager()
     .AddDefaultTokenProviders();
 builder.Services.AddScoped<IdentitySeeder>();
+builder.Services.AddScoped<EquipmentSeeder>();
 
 var app = builder.Build();
 
@@ -104,6 +106,7 @@ await using (var scope = app.Services.CreateAsyncScope())
     await db.Database.MigrateAsync();
     logger.LogInformation("Database connection OK, migrations applied");
     await scope.ServiceProvider.GetRequiredService<IdentitySeeder>().SeedAsync();
+    await scope.ServiceProvider.GetRequiredService<EquipmentSeeder>().SeedAsync();
 }
 
 app.UseForwardedHeaders();
@@ -115,6 +118,7 @@ app.UseAuthorization();
 app.MapAuthEndpoints();
 app.MapEmployeeEndpoints();
 app.MapUserEndpoints();
+app.MapEquipmentEndpoints();
 
 app.Run();
 

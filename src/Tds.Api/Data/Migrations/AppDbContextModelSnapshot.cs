@@ -373,6 +373,95 @@ namespace Tds.Api.Data.Migrations
                     b.ToTable("employee", (string)null);
                 });
 
+            modelBuilder.Entity("Tds.Api.Domain.Equipment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("CalibrationCertificateFileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("calibration_certificate_file_id");
+
+                    b.Property<int?>("CalibrationIntervalMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("calibration_interval_months");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateOnly?>("LastCalibrationDate")
+                        .HasColumnType("date")
+                        .HasColumnName("last_calibration_date");
+
+                    b.Property<string>("Manufacturer")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("manufacturer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("name");
+
+                    b.Property<DateOnly?>("NextCalibrationDate")
+                        .HasColumnType("date")
+                        .HasColumnName("next_calibration_date");
+
+                    b.Property<string>("SerialNumber")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("serial_number");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_equipment");
+
+                    b.HasIndex("CalibrationCertificateFileId")
+                        .HasDatabaseName("ix_equipment_calibration_certificate_file_id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_equipment_code");
+
+                    b.ToTable("equipment", (string)null);
+                });
+
             modelBuilder.Entity("Tds.Api.Domain.FileAttachment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -526,6 +615,15 @@ namespace Tds.Api.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_employee_asp_net_users_user_id");
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.Equipment", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.FileAttachment", null)
+                        .WithMany()
+                        .HasForeignKey("CalibrationCertificateFileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_equipment_file_attachments_calibration_certificate_file_id");
                 });
 #pragma warning restore 612, 618
         }

@@ -9,6 +9,8 @@ import { SettingsLayout } from "./features/settings/SettingsLayout";
 import { EmployeesPage } from "./features/settings/EmployeesPage";
 import { EmployeeFormPage } from "./features/settings/EmployeeFormPage";
 import { UsersPage } from "./features/settings/UsersPage";
+import { EquipmentListPage } from "./features/equipment/EquipmentListPage";
+import { EquipmentFormPage } from "./features/equipment/EquipmentFormPage";
 
 export const router = createBrowserRouter([
   { path: "/prijava", element: <LoginPage /> },
@@ -25,7 +27,9 @@ export const router = createBrowserRouter([
           { path: "/zalihe", element: <EmptyModulePage title="Zalihe" /> },
           { path: "/kvalitet", element: <EmptyModulePage title="Kvalitet" /> },
           { path: "/dobavljaci", element: <EmptyModulePage title="Dobavljači" /> },
-          { path: "/oprema", element: <EmptyModulePage title="Oprema" /> },
+          { path: "/oprema", element: <EquipmentListPage /> },
+          { path: "/oprema/nova", element: <EquipmentFormPage /> },
+          { path: "/oprema/:id", element: <EquipmentFormPage /> },
           { path: "/dokumenti", element: <EmptyModulePage title="Dokumenti" /> },
           {
             element: <RequireRole roles={["Admin"]} />,
