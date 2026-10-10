@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import dataModel from "../../../docs/DATA_MODEL.md?raw";
 import theme from "tailwindcss/theme.css?raw";
-import { enumLabels, labelOf, toneClasses, userLabel, workOrderStatus, type Tone } from "./labels";
+import { enumLabels, labelOf, stockLevel, toneClasses, userLabel, workOrderStatus, type Tone } from "./labels";
 
 /** Parses the "Enumi — kompletna lista" block of DATA_MODEL.md. */
 function enumsFromDataModel(): Record<string, string[]> {
@@ -110,6 +110,14 @@ describe("badge contrast ≥ 4.5:1 (UI §8)", () => {
     const fg = /text-([a-z]+-\d+)/.exec(classes)![1]!;
     const [hi, lo] = [luminance(bg), luminance(fg)].sort((x, y) => y - x) as [number, number];
     expect((hi + 0.05) / (lo + 0.05)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("stock level (DOMAIN §2.4, UI §8)", () => {
+  it("texts and tones", () => {
+    expect(Object.values(stockLevel).map((x) => [x.text, x.tone])).toEqual([
+      ["Nema", "red"], ["Ispod minimuma", "red"], ["Nisko", "amber"], ["OK", "green"], ["Nije definisano", "slate"],
+    ]);
   });
 });
 

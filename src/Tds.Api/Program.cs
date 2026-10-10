@@ -126,6 +126,7 @@ app.MapSupplierEndpoints();
 app.MapMaterialItemEndpoints();
 app.MapLotEndpoints();
 app.MapStockMovementEndpoints();
+app.MapStockEndpoints();
 
 app.Run();
 

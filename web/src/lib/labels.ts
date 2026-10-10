@@ -134,6 +134,20 @@ export const documentStatus = {
   Povucen: l("Povučen", "zinc"),
 } as const satisfies Record<string, Label>;
 
+/**
+ * Derived "Nivo zalihe" (DOMAIN §2.4) — not a stored enum, so it is not part of enumLabels.
+ * Tones from UI §8: Nema / Ispod minimuma red, Nisko amber, OK green, Nije definisano slate.
+ */
+export const stockLevel = {
+  Nema: l("Nema", "red"),
+  IspodMinimuma: l("Ispod minimuma", "red"),
+  Nisko: l("Nisko", "amber"),
+  Ok: l("OK", "green"),
+  NijeDefinisano: l("Nije definisano"),
+} as const satisfies Record<string, Label>;
+
+export type StockLevel = keyof typeof stockLevel;
+
 export type WorkOrderStatus = keyof typeof workOrderStatus;
 export type Priority = keyof typeof priority;
 export type QualityApproval = keyof typeof qualityApproval;

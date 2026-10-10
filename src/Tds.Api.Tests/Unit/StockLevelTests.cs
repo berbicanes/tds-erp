@@ -1,0 +1,34 @@
+using Tds.Api.Domain;
+
+namespace Tds.Api.Tests.Unit;
+
+/// <summary>DOMAIN §2.3 and §2.4.</summary>
+public class StockLevelTests
+{
+    [Theory]
+    [InlineData(0.0, 10.0, StockLevel.Nema)]
+    [InlineData(-3.0, 10.0, StockLevel.Nema)]
+    [InlineData(0.0, null, StockLevel.Nema)]
+    [InlineData(5.0, null, StockLevel.NijeDefinisano)]
+    [InlineData(9.999, 10.0, StockLevel.IspodMinimuma)]
+    [InlineData(10.0, 10.0, StockLevel.Nisko)]
+    [InlineData(14.999, 10.0, StockLevel.Nisko)]
+    [InlineData(15.0, 10.0, StockLevel.Ok)]
+    [InlineData(100.0, 10.0, StockLevel.Ok)]
+    [InlineData(1.0, 0.0, StockLevel.Ok)]
+    public void Level_follows_DOMAIN_2_4(double available, double? minimum, StockLevel expected) =>
+        Assert.Equal(expected, StockLevels.Level((decimal)available, minimum is null ? null : (decimal)minimum));
+
+    [Fact]
+    public void Missing_minimum_is_never_reported_as_ok() =>
+        Assert.NotEqual(StockLevel.Ok, StockLevels.Level(1_000_000m, null));
+
+    [Theory]
+    [InlineData(10, 0, 10)]
+    [InlineData(10, 4, 6)]
+    [InlineData(10, 10, 0)]
+    [InlineData(10, 12, 0)]
+    [InlineData(0, 3, 0)]
+    public void Effective_reservation_is_reduced_by_issued_and_never_negative(decimal reserved, decimal issued, decimal expected) =>
+        Assert.Equal(expected, StockLevels.EffectiveReservation(reserved, issued));
+}
