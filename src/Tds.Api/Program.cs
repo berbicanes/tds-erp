@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Tds.Api.Data;
 using Tds.Api.Domain;
 using Tds.Api.Features.Auth;
+using Tds.Api.Features.Dashboard;
 using Tds.Api.Features.Employees;
 using Tds.Api.Features.Equipment;
 using Tds.Api.Features.Files;
@@ -143,6 +144,7 @@ app.MapWorkOrderMaterialEndpoints();
 app.MapWorkOrderStatusEndpoints();
 app.MapProductionEntryEndpoints();
 app.MapNoteEndpoints();
+app.MapDashboardEndpoints();
 
 app.Run();
 
