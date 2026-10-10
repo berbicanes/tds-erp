@@ -97,7 +97,7 @@ public static class WorkOrderQueries
             Priority = w.Priority, QualityApproval = w.QualityApproval, DrawingNumber = w.DrawingNumber,
             DrawingRevision = w.DrawingRevision, DrawingFileId = w.DrawingFileId, DrawingFileName = f.OriginalName,
             ResponsibleEmployeeId = w.ResponsibleEmployeeId, ResponsibleEmployeeName = e.FullName, Notes = w.Notes,
-            CompletedQty = 0,
+            CompletedQty = db.ProductionEntries.Where(p => p.WorkOrderId == w.Id && !p.IsVoided).Sum(p => (int?)p.GoodQty) ?? 0,
             LaserFirstPieceApproved = db.QualityChecks.Any(q => q.WorkOrderId == w.Id && !q.IsVoided
                 && q.Phase == InspectionPhase.LaserskoRezanje && q.Result == InspectionResult.Prihvaceno),
             PressFirstPieceApproved = db.QualityChecks.Any(q => q.WorkOrderId == w.Id && !q.IsVoided

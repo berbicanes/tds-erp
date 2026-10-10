@@ -22,6 +22,8 @@ import { LotDetailPage } from "./features/stock/LotDetailPage";
 import { WorkOrderListPage } from "./features/workOrders/WorkOrderListPage";
 import { WorkOrderFormPage } from "./features/workOrders/WorkOrderFormPage";
 import { WorkOrderDetailPage } from "./features/workOrders/WorkOrderDetailPage";
+import { ProductionListPage } from "./features/production/ProductionListPage";
+import { ProductionEntryFormPage } from "./features/production/ProductionEntryFormPage";
 
 export const router = createBrowserRouter([
   { path: "/prijava", element: <LoginPage /> },
@@ -37,7 +39,9 @@ export const router = createBrowserRouter([
           { path: "/nalozi/novi", element: <WorkOrderFormPage /> },
           { path: "/nalozi/:id", element: <WorkOrderDetailPage /> },
           { path: "/nalozi/:id/uredi", element: <WorkOrderFormPage /> },
-          { path: "/proizvodnja", element: <EmptyModulePage title="Dnevna proizvodnja" /> },
+          { path: "/proizvodnja", element: <ProductionListPage /> },
+          { path: "/proizvodnja/novi", element: <ProductionEntryFormPage /> },
+          { path: "/proizvodnja/:id", element: <ProductionEntryFormPage /> },
           {
             path: "/zalihe",
             element: <StockLayout />,

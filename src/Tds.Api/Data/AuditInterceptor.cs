@@ -41,6 +41,7 @@ public sealed class AuditInterceptor(IClock clock, ICurrentUser currentUser, Aud
         var now = clock.UtcNow;
         var userId = currentUser.UserId;
         var logs = new List<AuditLog>();
+        var linkChanges = LinkChanges(context);
 
         foreach (var entry in context.ChangeTracker.Entries<Entity>().ToList())
         {
@@ -51,11 +52,11 @@ public sealed class AuditInterceptor(IClock clock, ICurrentUser currentUser, Aud
                     entry.Entity.CreatedBy = userId;
                     entry.Entity.UpdatedAt = now;
                     entry.Entity.UpdatedBy = userId;
-                    logs.Add(CreateLog(entry, AuditAction.Create, CreateChanges(entry), userId, now));
+                    logs.Add(CreateLog(entry, AuditAction.Create, Merge(CreateChanges(entry), linkChanges, entry.Entity.Id), userId, now));
                     break;
 
                 case EntityState.Modified:
-                    var changes = UpdateChanges(entry);
+                    var changes = Merge(UpdateChanges(entry), linkChanges, entry.Entity.Id);
                     if (changes.Count == 0)
                         break;
 
@@ -80,7 +81,51 @@ public sealed class AuditInterceptor(IClock clock, ICurrentUser currentUser, Aud
             }
         }
 
+        // Link-only changes (e.g. only the machines of a production entry changed).
+        foreach (var ((parentType, parentId), fields) in linkChanges)
+            logs.Add(new AuditLog
+            {
+                EntityType = parentType, EntityId = parentId, Action = AuditAction.Update,
+                ChangesJson = JsonSerializer.Serialize(fields), UserId = userId, At = now,
+            });
+
         context.Set<AuditLog>().AddRange(logs);
+    }
+
+    /// <summary>
+    /// M:N rows (<see cref="IAuditedLink"/>) are audited on their parent as one field: {"EquipmentIds": [old set, new set]}.
+    /// Only parents whose links were added or removed are returned.
+    /// </summary>
+    private static Dictionary<(string Type, Guid Id), Dictionary<string, object?[]>> LinkChanges(DbContext context)
+    {
+        var result = new Dictionary<(string, Guid), Dictionary<string, object?[]>>();
+        var links = context.ChangeTracker.Entries<IAuditedLink>()
+            .Where(e => e.State is EntityState.Added or EntityState.Deleted or EntityState.Unchanged)
+            .GroupBy(e => (e.Entity.ParentType, e.Entity.ParentId, e.Entity.Field));
+        foreach (var g in links)
+        {
+            if (!g.Any(e => e.State is EntityState.Added or EntityState.Deleted))
+                continue;
+            var old = g.Where(e => e.State != EntityState.Added).Select(e => e.Entity.ValueId).Order().ToList();
+            var @new = g.Where(e => e.State != EntityState.Deleted).Select(e => e.Entity.ValueId).Order().ToList();
+            var key = (g.Key.ParentType, g.Key.ParentId);
+            if (!result.TryGetValue(key, out var fields))
+                result[key] = fields = [];
+            fields[g.Key.Field] = [old.Count == 0 ? null : old, @new];
+        }
+        return result;
+    }
+
+    private static Dictionary<string, object?[]> Merge(
+        Dictionary<string, object?[]> changes, Dictionary<(string Type, Guid Id), Dictionary<string, object?[]>> linkChanges, Guid id)
+    {
+        var key = linkChanges.Keys.FirstOrDefault(k => k.Id == id);
+        if (key == default)
+            return changes;
+        foreach (var (field, value) in linkChanges[key])
+            changes[field] = value;
+        linkChanges.Remove(key);
+        return changes;
     }
 
     private static bool IsBeingVoided(EntityEntry<Entity> entry)

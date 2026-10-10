@@ -31,6 +31,7 @@ public class StockMovementConfiguration : IEntityTypeConfiguration<StockMovement
         b.HasIndex(x => x.MaterialLotId);
         b.HasIndex(x => new { x.MaterialLotId, x.WorkOrderId, x.Type });
         b.HasOne<WorkOrder>().WithMany().HasForeignKey(x => x.WorkOrderId).OnDelete(DeleteBehavior.Restrict);
-        // FK to production_entry is added with that table.
+        b.HasOne<ProductionEntry>().WithMany().HasForeignKey(x => x.ProductionEntryId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => x.ProductionEntryId);
     }
 }

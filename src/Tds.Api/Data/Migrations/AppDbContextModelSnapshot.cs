@@ -740,6 +740,145 @@ namespace Tds.Api.Data.Migrations
                     b.ToTable("number_sequence", (string)null);
                 });
 
+            modelBuilder.Entity("Tds.Api.Domain.ProductionEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<int>("GoodQty")
+                        .HasColumnType("integer")
+                        .HasColumnName("good_qty");
+
+                    b.Property<bool>("IsVoided")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_voided");
+
+                    b.Property<decimal>("LaborHours")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("labor_hours");
+
+                    b.Property<int>("LaserCutQty")
+                        .HasColumnType("integer")
+                        .HasColumnName("laser_cut_qty");
+
+                    b.Property<decimal?>("MaterialConsumed")
+                        .HasPrecision(12, 3)
+                        .HasColumnType("numeric(12,3)")
+                        .HasColumnName("material_consumed");
+
+                    b.Property<Guid?>("MaterialLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_lot_id");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("note");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("number");
+
+                    b.Property<Guid>("OperatorEmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("operator_employee_id");
+
+                    b.Property<int>("PressedQty")
+                        .HasColumnType("integer")
+                        .HasColumnName("pressed_qty");
+
+                    b.Property<int>("ScrapQty")
+                        .HasColumnType("integer")
+                        .HasColumnName("scrap_qty");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<DateTimeOffset?>("VoidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("voided_at");
+
+                    b.Property<Guid?>("VoidedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("voided_by");
+
+                    b.Property<string>("VoidedReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("voided_reason");
+
+                    b.Property<Guid>("WorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("work_order_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_production_entry");
+
+                    b.HasIndex("Date")
+                        .HasDatabaseName("ix_production_entry_date");
+
+                    b.HasIndex("MaterialLotId")
+                        .HasDatabaseName("ix_production_entry_material_lot_id");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_production_entry_number");
+
+                    b.HasIndex("OperatorEmployeeId")
+                        .HasDatabaseName("ix_production_entry_operator_employee_id");
+
+                    b.HasIndex("WorkOrderId")
+                        .HasDatabaseName("ix_production_entry_work_order_id");
+
+                    b.ToTable("production_entry", (string)null);
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.ProductionEntryEquipment", b =>
+                {
+                    b.Property<Guid>("ProductionEntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("production_entry_id");
+
+                    b.Property<Guid>("EquipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("equipment_id");
+
+                    b.HasKey("ProductionEntryId", "EquipmentId")
+                        .HasName("pk_production_entry_equipment");
+
+                    b.HasIndex("EquipmentId")
+                        .HasDatabaseName("ix_production_entry_equipment_equipment_id");
+
+                    b.ToTable("production_entry_equipment", (string)null);
+                });
+
             modelBuilder.Entity("Tds.Api.Domain.QualityCheck", b =>
                 {
                     b.Property<Guid>("Id")
@@ -947,6 +1086,9 @@ namespace Tds.Api.Data.Migrations
 
                     b.HasIndex("MaterialLotId")
                         .HasDatabaseName("ix_stock_movement_material_lot_id");
+
+                    b.HasIndex("ProductionEntryId")
+                        .HasDatabaseName("ix_stock_movement_production_entry_id");
 
                     b.HasIndex("WorkOrderId")
                         .HasDatabaseName("ix_stock_movement_work_order_id");
@@ -1313,6 +1455,46 @@ namespace Tds.Api.Data.Migrations
                         .HasConstraintName("fk_material_lot_suppliers_supplier_id");
                 });
 
+            modelBuilder.Entity("Tds.Api.Domain.ProductionEntry", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.MaterialLot", null)
+                        .WithMany()
+                        .HasForeignKey("MaterialLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_production_entry_material_lot_material_lot_id");
+
+                    b.HasOne("Tds.Api.Domain.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("OperatorEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_production_entry_employee_operator_employee_id");
+
+                    b.HasOne("Tds.Api.Domain.WorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_production_entry_work_orders_work_order_id");
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.ProductionEntryEquipment", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.Equipment", null)
+                        .WithMany()
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_production_entry_equipment_equipment_equipment_id");
+
+                    b.HasOne("Tds.Api.Domain.ProductionEntry", null)
+                        .WithMany("Equipment")
+                        .HasForeignKey("ProductionEntryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_production_entry_equipment_production_entries_production_en");
+                });
+
             modelBuilder.Entity("Tds.Api.Domain.QualityCheck", b =>
                 {
                     b.HasOne("Tds.Api.Domain.Employee", null)
@@ -1349,6 +1531,12 @@ namespace Tds.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_stock_movement_material_lot_material_lot_id");
+
+                    b.HasOne("Tds.Api.Domain.ProductionEntry", null)
+                        .WithMany()
+                        .HasForeignKey("ProductionEntryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_stock_movement_production_entry_production_entry_id");
 
                     b.HasOne("Tds.Api.Domain.WorkOrder", null)
                         .WithMany()
@@ -1396,6 +1584,11 @@ namespace Tds.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_work_order_material_work_order_work_order_id");
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.ProductionEntry", b =>
+                {
+                    b.Navigation("Equipment");
                 });
 #pragma warning restore 612, 618
         }

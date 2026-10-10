@@ -23,6 +23,7 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
     public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
     public DbSet<QualityCheck> QualityChecks => Set<QualityCheck>();
     public DbSet<WorkOrderMaterial> WorkOrderMaterials => Set<WorkOrderMaterial>();
+    public DbSet<ProductionEntry> ProductionEntries => Set<ProductionEntry>();
     public DbSet<NumberSequence> NumberSequences => Set<NumberSequence>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
