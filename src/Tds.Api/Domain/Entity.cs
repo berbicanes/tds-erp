@@ -17,4 +17,10 @@ public abstract class Entity
 
     /// <summary>User id; null = system action.</summary>
     public Guid? UpdatedBy { get; set; }
+
+    /// <summary>
+    /// Optimistic concurrency token = Postgres system column <c>xmin</c> (no real column).
+    /// Clients send it back on update; a mismatch is a 409 (CLAUDE.md "Istovremene izmjene").
+    /// </summary>
+    public uint Version { get; set; }
 }

@@ -12,12 +12,12 @@ namespace Tds.Api.Data;
 /// in the same SaveChanges (DATA_MODEL §15). Hard deletes of audited entities are rejected:
 /// AuditLog has no Delete action and QMS records are only voided (golden rule 4).
 /// </summary>
-public sealed class AuditInterceptor(IClock clock, ICurrentUser currentUser) : SaveChangesInterceptor
+public sealed class AuditInterceptor(IClock clock, ICurrentUser currentUser, AuditContext? auditContext = null) : SaveChangesInterceptor
 {
     private static readonly HashSet<string> AuditFieldNames =
     [
         nameof(Entity.CreatedAt), nameof(Entity.CreatedBy),
-        nameof(Entity.UpdatedAt), nameof(Entity.UpdatedBy),
+        nameof(Entity.UpdatedAt), nameof(Entity.UpdatedBy), nameof(Entity.Version),
         nameof(IVoidable.VoidedAt), nameof(IVoidable.VoidedBy),
     ];
 
@@ -69,6 +69,8 @@ public sealed class AuditInterceptor(IClock clock, ICurrentUser currentUser) : S
 
                     entry.Entity.UpdatedAt = now;
                     entry.Entity.UpdatedBy = userId;
+                    if (!string.IsNullOrWhiteSpace(auditContext?.Reason))
+                        changes["reason"] = [null, auditContext.Reason];
                     logs.Add(CreateLog(entry, action, changes, userId, now));
                     break;
 

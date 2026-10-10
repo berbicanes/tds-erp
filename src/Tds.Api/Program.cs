@@ -38,6 +38,7 @@ if (!string.IsNullOrWhiteSpace(keysPath))
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
+builder.Services.AddScoped<AuditContext>();
 builder.Services.AddScoped<AuditInterceptor>();
 builder.Services.AddScoped<DocumentNumberService>();
 builder.Services.AddSingleton<IFileStorage>(sp => new LocalFileStorage(

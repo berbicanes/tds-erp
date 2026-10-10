@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Tds.Api.Domain;
 
 namespace Tds.Api.Infrastructure;
@@ -10,12 +11,19 @@ public static class Problems
     public static IResult Unauthorized(string detail) =>
         TypedResults.Problem(detail: detail, statusCode: StatusCodes.Status401Unauthorized, title: "Neovlašten pristup");
 
-    public static Task WriteAsync(HttpContext http, int status, string title, string detail) =>
-        http.RequestServices.GetRequiredService<IProblemDetailsService>().WriteAsync(new ProblemDetailsContext
+    public const string ConcurrencyMessage = "Zapis je u međuvremenu izmijenjen. Osvježi i pokušaj ponovo.";
+
+    public static Task WriteAsync(HttpContext http, int status, string title, string detail, string? code = null)
+    {
+        var problem = new ProblemDetails { Status = status, Title = title, Detail = detail };
+        if (code is not null)
+            problem.Extensions["code"] = code;
+        return http.RequestServices.GetRequiredService<IProblemDetailsService>().WriteAsync(new ProblemDetailsContext
         {
             HttpContext = http,
-            ProblemDetails = new ProblemDetails { Status = status, Title = title, Detail = detail },
+            ProblemDetails = problem,
         }).AsTask();
+    }
 }
 
 /// <summary>Maps <see cref="DomainException"/> to 409 and hides details of unexpected errors.</summary>
@@ -23,6 +31,13 @@ public sealed class ProblemExceptionHandler(ILogger<ProblemExceptionHandler> log
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext http, Exception exception, CancellationToken ct)
     {
+        if (exception is DbUpdateConcurrencyException)
+        {
+            http.Response.StatusCode = StatusCodes.Status409Conflict;
+            await Problems.WriteAsync(http, StatusCodes.Status409Conflict, "Sukob izmjena", Problems.ConcurrencyMessage, "concurrency");
+            return true;
+        }
+
         if (exception is DomainException domain)
         {
             http.Response.StatusCode = StatusCodes.Status409Conflict;

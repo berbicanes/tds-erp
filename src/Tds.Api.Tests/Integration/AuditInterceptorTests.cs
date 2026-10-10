@@ -26,6 +26,7 @@ public class AuditInterceptorTests(PostgresFixture postgres)
     }
 
     private readonly FixedTimeProvider _time = new(new DateTimeOffset(2026, 10, 12, 8, 0, 0, TimeSpan.Zero));
+    private readonly AuditContext _auditContext = new();
     private readonly FakeUser _user = new() { UserId = Guid.CreateVersion7() };
 
     private async Task<Func<TestDbContext>> CreateContextFactory()
@@ -34,7 +35,7 @@ public class AuditInterceptorTests(PostgresFixture postgres)
         var options = new DbContextOptionsBuilder<TestDbContext>()
             .UseNpgsql(cs)
             .UseSnakeCaseNamingConvention()
-            .AddInterceptors(new AuditInterceptor(new SystemClock(_time), _user))
+            .AddInterceptors(new AuditInterceptor(new SystemClock(_time), _user, _auditContext))
             .Options;
         await using (var db = new TestDbContext(options))
             await db.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
@@ -195,5 +196,66 @@ public class AuditInterceptorTests(PostgresFixture postgres)
 
         await using var check = newContext();
         Assert.Equal(1, await check.Things.CountAsync(ct));
+    }
+
+    [Fact]
+    public async Task Reason_from_audit_context_is_logged_with_the_update()
+    {
+        var newContext = await CreateContextFactory();
+        var ct = TestContext.Current.CancellationToken;
+        await using (var db = newContext())
+        {
+            db.Things.Add(new TestThing { Name = "Lim" });
+            await db.SaveChangesAsync(ct);
+        }
+
+        _auditContext.Reason = "Nalog ide samo kroz plazmu";
+        await using (var db = newContext())
+        {
+            (await db.Things.SingleAsync(ct)).Name = "Lim 2";
+            await db.SaveChangesAsync(ct);
+        }
+
+        await using var check = newContext();
+        var log = await check.AuditLogs.SingleAsync(l => l.Action == AuditAction.Update, ct);
+        var changes = JsonDocument.Parse(log.ChangesJson).RootElement;
+        Assert.Equal("Nalog ide samo kroz plazmu", changes.GetProperty("reason")[1].GetString());
+    }
+
+    [Fact]
+    public async Task Stale_version_is_rejected_with_concurrency_exception()
+    {
+        var newContext = await CreateContextFactory();
+        var ct = TestContext.Current.CancellationToken;
+        var thing = new TestThing { Name = "Lim" };
+        await using (var db = newContext())
+        {
+            db.Things.Add(thing);
+            await db.SaveChangesAsync(ct);
+        }
+
+        uint versionSeenByUserA;
+        await using (var db = newContext())
+            versionSeenByUserA = (await db.Things.SingleAsync(ct)).Version;
+        Assert.NotEqual(0u, versionSeenByUserA);
+
+        // User B saves first.
+        await using (var db = newContext())
+        {
+            (await db.Things.SingleAsync(ct)).Name = "Izmjena B";
+            await db.SaveChangesAsync(ct);
+        }
+
+        // User A saves with the version they loaded.
+        await using (var db = newContext())
+        {
+            var t = await db.Things.SingleAsync(ct);
+            db.Entry(t).Property(x => x.Version).OriginalValue = versionSeenByUserA;
+            t.Name = "Izmjena A";
+            await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => db.SaveChangesAsync(ct));
+        }
+
+        await using var check = newContext();
+        Assert.Equal("Izmjena B", (await check.Things.SingleAsync(ct)).Name);
     }
 }

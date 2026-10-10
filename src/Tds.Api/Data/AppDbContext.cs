@@ -41,6 +41,7 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
                      .Where(t => typeof(Entity).IsAssignableFrom(t.ClrType)))
         {
             modelBuilder.Entity(entityType.ClrType).Property(nameof(Entity.Id)).ValueGeneratedNever();
+            modelBuilder.Entity(entityType.ClrType).Property(nameof(Entity.Version)).IsRowVersion();
             if (typeof(IVoidable).IsAssignableFrom(entityType.ClrType))
                 modelBuilder.Entity(entityType.ClrType).Property(nameof(IVoidable.VoidedReason))
                     .HasMaxLength(VoidableEntity.VoidedReasonMaxLength);
