@@ -134,6 +134,7 @@ app.MapFileEndpoints();
 app.MapWorkOrderEndpoints();
 app.MapQualityCheckEndpoints();
 app.MapWorkOrderMaterialEndpoints();
+app.MapWorkOrderStatusEndpoints();
 
 app.Run();
 

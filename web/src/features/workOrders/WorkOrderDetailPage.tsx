@@ -11,6 +11,7 @@ import { dueTone, isFinished } from "../../lib/workOrder";
 import { useSetQualityApproval, useWorkOrder, type WorkOrder } from "./api";
 import { WorkOrderQualityTab } from "../quality/WorkOrderQualityTab";
 import { WorkOrderMaterialsTab } from "./WorkOrderMaterialsTab";
+import { StatusChange } from "./StatusChange";
 
 function Info({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -72,6 +73,7 @@ export function WorkOrderDetailPage() {
           )}
         </div>
         <p className="text-sm text-slate-700">{w.customer} · {w.productDescription}</p>
+        {hasRole(me.data, "Admin", "Kontrolor") && w.status !== "Isporuceno" && <StatusChange key={w.version} wo={w} />}
       </div>
 
       <nav aria-label="Detalj naloga" className="flex gap-1 overflow-x-auto border-b border-slate-200 px-4">
