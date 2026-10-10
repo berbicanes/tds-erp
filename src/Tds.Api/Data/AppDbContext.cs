@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Tds.Api.Domain;
 
 namespace Tds.Api.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -25,6 +27,15 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
+        // Identity sets PascalCase table names explicitly; keep everything snake_case.
+        modelBuilder.Entity<AppUser>().ToTable("asp_net_users");
+        modelBuilder.Entity<IdentityRole<Guid>>().ToTable("asp_net_roles");
+        modelBuilder.Entity<IdentityUserRole<Guid>>().ToTable("asp_net_user_roles");
+        modelBuilder.Entity<IdentityUserClaim<Guid>>().ToTable("asp_net_user_claims");
+        modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("asp_net_user_logins");
+        modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable("asp_net_user_tokens");
+        modelBuilder.Entity<IdentityRoleClaim<Guid>>().ToTable("asp_net_role_claims");
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes()
                      .Where(t => typeof(Entity).IsAssignableFrom(t.ClrType)))
