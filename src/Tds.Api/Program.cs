@@ -10,6 +10,7 @@ using Tds.Api.Features.Auth;
 using Tds.Api.Features.Employees;
 using Tds.Api.Features.Equipment;
 using Tds.Api.Features.Materials;
+using Tds.Api.Features.Stock;
 using Tds.Api.Features.Suppliers;
 using Tds.Api.Features.Users;
 using Tds.Api.Infrastructure;
@@ -124,6 +125,7 @@ app.MapEquipmentEndpoints();
 app.MapSupplierEndpoints();
 app.MapMaterialItemEndpoints();
 app.MapLotEndpoints();
+app.MapStockMovementEndpoints();
 
 app.Run();
 
