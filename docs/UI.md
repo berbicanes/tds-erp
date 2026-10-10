@@ -45,13 +45,19 @@ Raspored (desktop, 12-kolonski grid; mobilni: sve jedno ispod drugog istim redom
 | Rok u 7 dana | aktivni sa `DueDate` ≤ danas+7 | Nalozi, filter |
 | Hitni | aktivni sa `Priority = Hitno` | Nalozi, filter |
 | Danas gotovo | Σ GoodQty danas | Dnevna proizvodnja, danas |
-| Materijal ispod minimuma | broj artikala `Ispod minimuma` ili `Nema` | Zalihe, filter |
+| Materijal ispod minimuma | broj aktivnih artikala koji **imaju definisan minimum** i nivo im je `Ispod minimuma` ili `Nema` | Zalihe, filter |
+
+"Danas gotovo" bez ijednog zapisa za danas prikazuje `0` uz napomenu "Još nema zapisa za danas".
+Artikal bez minimuma i sa stanjem 0 se **ne broji** u pločici "Materijal ispod minimuma" (inače bi svaki
+artikal koji se trenutno ne koristi stalno palio alarm); u listi Zalihe ispod se i dalje prikazuje kao "Nema".
 
 **Red 2 — Danas u proizvodnji** (lijevo 8 kolona):
 Tabela dnevnih zapisa za danas: operater, nalog, laser, presa, gotovo, škart, sati.
 Zbir na dnu. Ispod: stupčasti graf zadnjih 14 radnih dana — laser / presa / gotovo
 (Recharts, grupisani stupci), škart kao linija. Prazni dani se prikazuju kao 0 samo ako
 je dan prošao; budući/vikend se ne prikazuju.
+"Radni dan" = ponedjeljak–petak; subota/nedjelja se prikazuju samo ako tog dana postoji zapis.
+Praznici se ne računaju posebno (radni dan bez zapisa = 0). Danas se prikazuje sa onim što je do sada uneseno.
 
 **Red 2 desno — Upozorenja** (4 kolone), lista sortirana po hitnosti:
 - lotovi `NaKontroli` / `Karantin`
@@ -60,6 +66,10 @@ je dan prošao; budući/vikend se ne prikazuju.
 - rokovi ≤ 30 dana iz `DOMAIN.md` §7.6 (kalibracija, ocjena dobavljača, provjera dokumenta, popis)
 - mjerna sredstva van kalibracije
 Svaka stavka: ikona, tekst, datum/rok, link.
+Redoslijed: prvo crveno (prošli rokovi, mjerna sredstva van kalibracije, `Blokirano`, `Karantin`), zatim
+narandžasto (`NaKontroli`, rokovi u narednih 30 dana); unutar grupe po datumu, najraniji prvi. Mjerno
+sredstvo se pojavljuje jednom: "van kalibracije" (crveno) ili "kalibracija za X dana" (narandžasto).
+Faza 2: lotovi, `Blokirano` nalozi, rokovi ocjene dobavljača, kalibracije i popisa; NC i dokumenti u Fazi 3.
 
 **Red 3 — Nalozi po roku** (puna širina):
 Aktivni nalozi sortirani po `DueDate`. Kolone: broj, kupac, proizvod, status (badge),
@@ -72,7 +82,8 @@ Artikli sa nivoom ≠ OK prvo, zatim ostali. Kolone: artikal, kvalitet, debljina
 na stanju, rezervisano, raspoloživo, minimum, nivo (badge). Max 10 + "Sve zalihe →".
 
 **Bilješke** — mala lista (Notion "Notes"): dodaj u jednom polju + Enter, checkbox za
-završeno, završene se sakriju nakon 7 dana.
+završeno, završene se sakriju nakon 7 dana. Sve uloge dodaju i štikliraju; završena se može
+odštiklirati. Tekst se ne mijenja i bilješke se ne brišu.
 
 ## 4. Brzi unos (hala, mobilni) — `/brzi-unos`
 

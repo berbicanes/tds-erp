@@ -231,6 +231,7 @@ kontrola dobija trajnu oznaku upozorenja "Mjerno sredstvo van kalibracije". Ne b
 | Akcija | Operater | Kontrolor | Admin |
 |---|---|---|---|
 | Vidi dashboard, naloge, zalihe | ✓ | ✓ | ✓ |
+| Bilješke: dodavanje, štikliranje i odštikliravanje (bez izmjene teksta i brisanja) | ✓ | ✓ | ✓ |
 | Dnevni zapis: unos, izmjena i poništavanje svog zapisa isti dan | ✓ | ✓ | ✓ |
 | Dnevni zapis: izmjena i poništavanje bilo kojeg zapisa, bilo kad | | ✓ | ✓ |
 | Kreira/uređuje nalog, mijenja status | | ✓ | ✓ |

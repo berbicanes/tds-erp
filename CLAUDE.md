@@ -51,7 +51,8 @@ varenje/čelične konstrukcije. ISO 9001:2015 certifikovana (TÜV NORD). Kupci u
   `web/dist`, `/api` proxy na api, SPA fallback na `index.html`), dnevni `pg_dump` van servera
   (Hetzner Storage Box, rsync preko SSH-a)
 - **Testovi:** xUnit + Testcontainers (pravi Postgres) + Microsoft.AspNetCore.Mvc.Testing
-  (`WebApplicationFactory`), Vitest za frontend logiku
+  (`WebApplicationFactory`), Vitest za frontend logiku; za testove koji renderuju komponente
+  `@testing-library/react` (+ obavezni peer `@testing-library/dom`) i `jsdom` (samo devDependencies)
 
 Tačne verzije paketa su pinovane u `*.csproj` i `web/package.json`.
 
