@@ -59,11 +59,18 @@ Interni cilj: 2 sedmice intenzivnog rada. Klijentu komunicirano: 4 sedmice.
 
 ## Faza 2 — Dashboard (dan 7–8)
 
-- [ ] `GET /api/dashboard` — jedan upit po sekciji, ukupno < 200 ms sa 5.000 dnevnih zapisa (seed za test)
-- [ ] KPI pločice, Danas u proizvodnji + graf 14 dana, Nalozi po roku, Zalihe, Bilješke (UI §3)
-- [ ] Svaki broj vodi na filtriranu listu (filter u URL-u)
-- [ ] Prazna stanja i `—` za nepostojeće podatke
-- [ ] Upozorenja sekcija (za sad samo iz Faze 1 podataka; QMS rokovi se dodaju u Fazi 3)
+- [x] `GET /api/dashboard` — jedan upit po sekciji, ukupno < 200 ms sa 5.000 dnevnih zapisa (seed za test)
+      > Mjereno 12.10.2026. (`scripts/perf-dashboard.sh`, Release, API u procesu, Postgres 17 u Dockeru,
+      > MacBook Air): 5.000 dnevnih zapisa, 2.150 pokreta zalihe, 300 naloga (45 aktivnih), 150 lotova,
+      > 40 artikala, 600 kontrola, 8.582 reda AuditLog-a — 30 poziva nakon 5 zagrijavanja:
+      > **p50 = 8,3 ms, p95 = 9,8 ms, max = 12,6 ms**. 7 SQL upita po pozivu (jedan po sekciji, test
+      > `One_query_per_section`). Vrijeme mreže i Caddyja nije uključeno.
+- [x] KPI pločice, Danas u proizvodnji + graf 14 dana, Nalozi po roku, Zalihe, Bilješke (UI §3)
+- [x] Svaki broj vodi na filtriranu listu (filter u URL-u)
+- [x] Prazna stanja i `—` za nepostojeće podatke
+- [x] Upozorenja sekcija (za sad samo iz Faze 1 podataka; QMS rokovi se dodaju u Fazi 3)
+      > Faza 2: lotovi Na kontroli/Karantin, `Blokirano` nalozi, rokovi ocjene dobavljača, kalibracije i
+      > popisa (≤ 30 dana ili prošli), mjerna sredstva van kalibracije. NC i dokumenti dolaze u Fazi 3.
 
 ## Faza 3 — Kvalitet i QMS (dan 9–10)
 

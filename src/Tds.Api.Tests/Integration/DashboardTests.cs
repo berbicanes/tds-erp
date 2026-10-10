@@ -104,6 +104,11 @@ public class DashboardTests(PostgresFixture postgres)
         Assert.Equal("Lim crni", d.Warnings.Single(w => w.Kind == "LotKarantin").ItemName);
 
         Assert.Equal("Hladnjak ispuhati", Assert.Single(d.Notes).Text);
+
+        // The tile link shows exactly what the tile counts.
+        var tileList = await (await admin.GetAsync("/api/stock/items?stockLevel=IspodMinimuma&stockLevel=Nema&hasMinimum=true", Ct))
+            .ReadAsync<PagedResult<Tds.Api.Features.Stock.ItemStockDto>>();
+        Assert.Equal(d.Kpi.ItemsBelowMinimum, tileList.Total);
     }
 
     [Fact]

@@ -17,6 +17,7 @@ const stock = () => import("./features/stock/pages");
 const equipment = () => import("./features/equipment/pages");
 const suppliers = () => import("./features/suppliers/pages");
 const settings = () => import("./features/settings/pages");
+const dashboard = () => import("./features/dashboard/pages");
 
 export const router = createBrowserRouter([
   { path: "/prijava", element: <LoginPage /> },
@@ -26,7 +27,7 @@ export const router = createBrowserRouter([
       {
         element: <Layout />,
         children: [
-          { path: "/", element: <EmptyModulePage title="Pregled" /> },
+          { path: "/", ...page(dashboard, (m) => m.DashboardPage) },
           { path: "/brzi-unos", element: <EmptyModulePage title="Brzi unos" /> },
           { path: "/nalozi", ...page(workOrders, (m) => m.WorkOrderListPage) },
           { path: "/nalozi/novi", ...page(workOrders, (m) => m.WorkOrderFormPage) },

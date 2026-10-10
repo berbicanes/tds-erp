@@ -42,6 +42,10 @@ export function ItemsPage() {
       toolbar={
         <>
           <FilterChips name="stockLevel" options={stockLevel} state={state} onStateChange={setState} />
+          {state.filters.hasMinimum?.[0] === "true" && (
+            <button type="button" aria-pressed onClick={() => { const filters = { ...state.filters }; delete filters.hasMinimum; setState({ ...state, filters, page: 1 }); }}
+              className="min-h-8 rounded-full border border-blue-700 bg-blue-700 px-3 text-xs text-white">Samo sa minimumom ✕</button>
+          )}
           {hasRole(me.data, "Admin", "Kontrolor") && (
             <Link to="/zalihe/artikli/novi" className="ml-auto flex min-h-10 items-center rounded bg-blue-700 px-4 text-sm font-medium text-white">Novi artikal</Link>
           )}

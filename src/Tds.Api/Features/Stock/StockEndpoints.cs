@@ -18,7 +18,7 @@ public static class StockEndpoints
     /// then the rest by name (UI §3 "Zalihe"). Computed in memory: the workshop has hundreds of lots, not millions.
     /// </summary>
     private static async Task<PagedResult<ItemStockDto>> Items(
-        AppDbContext db, [AsParameters] ListQuery list, StockLevel[]? stockLevel, bool? includeInactive, CancellationToken ct)
+        AppDbContext db, [AsParameters] ListQuery list, StockLevel[]? stockLevel, bool? includeInactive, bool? hasMinimum, CancellationToken ct)
     {
         IEnumerable<ItemStockDto> rows = await StockQueries.ItemStocksAsync(db, ct);
         if (includeInactive != true)
@@ -27,6 +27,9 @@ public static class StockEndpoints
             rows = rows.Where(r => r.Name.Contains(s, StringComparison.OrdinalIgnoreCase) || (r.Grade?.Contains(s, StringComparison.OrdinalIgnoreCase) ?? false));
         if (stockLevel is { Length: > 0 })
             rows = rows.Where(r => stockLevel.Contains(r.StockLevel));
+        // Dashboard tile "Materijal ispod minimuma" counts only items with a minimum (UI §3); its link uses this.
+        if (hasMinimum is { } hm)
+            rows = rows.Where(r => (r.MinimumStock is not null) == hm);
 
         var sorted = (list.Sort?.TrimStart('-'), list.Sort?.StartsWith('-') == true) switch
         {
