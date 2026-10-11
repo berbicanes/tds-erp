@@ -144,7 +144,7 @@ Izvedeno po artiklu (IZV, vidi DOMAIN §2.4):
 | SupplierId | FK → Supplier, req | N* (`Dobavljač u registru`) | Notion ima i text `Dobavljač` — duplikat, uklonjeno |
 | ReceivedDate | DateOnly, req | N (`Datum prijema`) | |
 | DimensionsDescription | string(200)? | N (`Dimenzije / količina`) | npr. "3000×1500, 10 tabli" — opis |
-| ReceivedQty | decimal(12,3)? > 0 | **NOVO** | brojčana količina prijema u jedinici artikla; generiše `Prijem` pokret; ne mijenja se nakon kreiranja (ispravka = `Korekcija`). Obavezna pri svakom prijemu u aplikaciji; `null` (= nepoznato, UI "—") samo za lotove uvezene iz Notiona, koji nemaju `Prijem` nego početno stanje kao `Korekcija` (vidi `NOTION_SOURCE.md` „Import”). *(nocna odluka — za potvrdu)* |
+| ReceivedQty | decimal(12,3)? > 0 | **NOVO** | brojčana količina prijema u jedinici artikla; generiše `Prijem` pokret; ne mijenja se nakon kreiranja (ispravka = `Korekcija`). Obavezna pri svakom prijemu u aplikaciji; `null` (= nepoznato, UI "—") samo za lotove uvezene iz Notiona, koji nemaju `Prijem` nego početno stanje kao `Korekcija` (vidi `NOTION_SOURCE.md` „Import”). Potvrđeno 11.10.2026.: ostaje prazno dok klijent ne odluči (DOMAIN §9.9). |
 | ReceiptDecision | enum `ReceiptDecision` | N (`Odluka prijema`) | `NaKontroli`, `Prihvacen`, `Karantin`, `Odbijen` |
 | InspectedByEmployeeId | FK → Employee? | N (`Kontrolisao`) | obavezno kad odluka ≠ `NaKontroli` |
 | StorageLocation | string(60)? | N (`Skladišna lokacija`) | |

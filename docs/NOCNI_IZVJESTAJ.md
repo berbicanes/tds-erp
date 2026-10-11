@@ -48,6 +48,9 @@ Kako radi import:
 
 ## 2. Odluke za tvoju potvrdu
 
+> **Potvrđeno 11.10.2026.:** količina prijema lotova iz Notiona ostaje prazna dok klijent ne odluči
+> (DOMAIN §9.9); pravila importa ostaju kako su opisana ispod.
+
 - **Količina prijema lotova iz Notiona** ([DATA_MODEL.md §6](DATA_MODEL.md), "(nocna odluka — za potvrdu)"):
   - Notion lot nema brojčanu količinu prijema, samo tekst "Dimenzije / količina". Početno stanje ide kao `Korekcija`.
   - Zato je `ReceivedQty` za uvezene lotove `null` (UI prikazuje "—"), a ne izmišljen broj ili 0 (zlatno pravilo 6).
@@ -129,3 +132,4 @@ Kako radi import:
    6. Šta iz sekcije "03 · Resursi i QMS" stvarno koriste?
    7. Pragovi "Nisko" / "Ispod minimuma".
    8. Ko su korisnici, koliko ih je, ko je Kontrolor?
+   9. Može li dati brojčanu količinu prijema za lotove iz Notiona? Do tada je prazna.

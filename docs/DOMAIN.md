@@ -303,3 +303,6 @@ Pretpostavka: Sanel = Admin. Mala firma — vjerovatno 1–2 Kontrolora, ostalo 
    nedostupna. Šta od toga stvarno koristi?
 7. Pragovi "Nisko" / "Ispod minimuma" (§2.4).
 8. Ko su korisnici, koliko ih je, ko je Kontrolor?
+9. Količina prijema za lotove iz Notiona: Notion ima samo tekst `Dimenzije / količina`. Da li Sanel može dati
+   brojčanu količinu prijema za postojeće lotove? Do odgovora uvezeni lotovi imaju `ReceivedQty` prazno (UI "—"),
+   a stanje dolazi iz početne `Korekcije`.
