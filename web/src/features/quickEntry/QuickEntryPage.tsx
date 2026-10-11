@@ -16,6 +16,8 @@ import { useWorkOrder, useWorkOrderOptions, type WorkOrderOption } from "../work
 import { useWorkOrderMaterials } from "../workOrders/materialsApi";
 import { quickEntryProblems, PRODUCTION_STATUSES } from "./quickEntry";
 
+const isHours = (v: unknown): v is string => isString(v) && (parseDecimal(v) ?? -1) >= 0;
+
 const big = "min-h-12 rounded border px-3 text-left";
 
 function OrderPicker({ orders, recent, onPick }: { orders: WorkOrderOption[]; recent: string[]; onPick: (o: WorkOrderOption) => void }) {
@@ -66,7 +68,8 @@ export function QuickEntryPage() {
   const [pressed, setPressed] = useState("");
   const [good, setGood] = useState("");
   const [scrap, setScrap] = useState("");
-  const [hours, setHours] = useState("");
+  // Last saved labor hours stay on the device like operator and machines (UI §4); only a valid number is reused.
+  const [hours, setHours] = useState(() => readMemory("quick.hours", isHours) ?? "");
   const [consumed, setConsumed] = useState("");
   const [note, setNote] = useState("");
   const [more, setMore] = useState(false);
@@ -118,9 +121,10 @@ export function QuickEntryPage() {
         const nextRecent = pushRecent(recent, orderId!);
         setRecent(nextRecent);
         writeMemory("quick.recentOrders", nextRecent);
+        writeMemory("quick.hours", hours);
         setSaved({ number: r.data.number, warnings: r.warnings });
-        // Same order and operator stay for the next entry (UI §4).
-        setLaser(""); setPressed(""); setGood(""); setScrap(""); setHours(""); setConsumed(""); setNote("");
+        // Same order, operator, machines and hours stay for the next entry (UI §4).
+        setLaser(""); setPressed(""); setGood(""); setScrap(""); setConsumed(""); setNote("");
         window.scrollTo({ top: 0 });
       },
     });

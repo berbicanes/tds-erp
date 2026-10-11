@@ -68,6 +68,8 @@ describe("QuickEntryPage (UI §4)", () => {
     expect((screen.getByLabelText("Presa — obrađeno") as HTMLInputElement).value).toBe("");
     expect(window.localStorage.getItem("tds.quick.operator")).toBe('"e1"');
     expect(window.localStorage.getItem("tds.quick.recentOrders")).toBe('["w1"]');
+    expect((screen.getByLabelText("Radni sati *") as HTMLInputElement).value).toBe("1,5");
+    expect(window.localStorage.getItem("tds.quick.hours")).toBe('"1,5"');
   });
 
   it("explains what is missing above the button instead of sending", async () => {
@@ -78,5 +80,17 @@ describe("QuickEntryPage (UI §4)", () => {
     expect(alert.textContent).toContain("Odaberi operatera.");
     expect(alert.textContent).toContain("Unesi barem jednu količinu");
     expect(posts).toHaveLength(0);
+  });
+
+  it("prefills the last saved labor hours and ignores a stored value that is not a number", async () => {
+    window.localStorage.setItem("tds.quick.hours", '"7,5"');
+    setup({ finalPassed: true });
+    fireEvent.click(await screen.findByRole("button", { name: /RN-2026-0001/ }));
+    expect(((await screen.findByLabelText("Radni sati *")) as HTMLInputElement).value).toBe("7,5");
+    cleanup();
+    window.localStorage.setItem("tds.quick.hours", '"abc"');
+    setup({ finalPassed: true });
+    fireEvent.click(await screen.findByRole("button", { name: /RN-2026-0001/ }));
+    expect(((await screen.findByLabelText("Radni sati *")) as HTMLInputElement).value).toBe("");
   });
 });

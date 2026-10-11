@@ -98,7 +98,8 @@ Najvažniji ekran za usvajanje. Ako je sporiji od papira, neće se koristiti.
   5. Brojevi: Laser · Presa · Gotovo · Škart — stepper (− / broj / +) + direktan unos, `inputmode="numeric"`
   6. Sati, utrošak materijala (opcionalno, sklopljeno), napomena (sklopljeno)
      — Radni sati su vidljivi i obavezni (server ih traži, a prazno ≠ 0); sklopljeni su samo utrošak i napomena.
-     *(nocna odluka — za potvrdu)*
+     Zadnja spremljena vrijednost sati se pamti na uređaju (localStorage, try/catch), kao operater i oprema,
+     i ostaje u formi nakon spremanja.
 - Datum = danas, prikazan ali ne fokusiran.
 - `Gotovo` je onemogućeno sa objašnjenjem kad nalog nema prihvaćenu završnu kontrolu (DOMAIN §5.3).
 - Nakon spremanja: zeleni toast "Spremljeno DP-…", forma ostaje sa istim nalogom/operaterom
