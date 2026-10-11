@@ -31,7 +31,8 @@ export function Combobox({ id, options, value, onChange, placeholder, invalid, a
     const list = t
       ? options.filter((o) => `${o.label} ${o.detail ?? ""}`.toLocaleLowerCase("bs").includes(t))
       : options;
-    return allowEmpty ? [{ value: "", label: emptyLabel }, ...list] : list;
+    // While searching, Enter must pick the first match, not the empty choice.
+    return allowEmpty && !t ? [{ value: "", label: emptyLabel }, ...list] : list;
   }, [options, text, allowEmpty, emptyLabel]);
 
   const choose = (o: Option | undefined) => {

@@ -74,14 +74,14 @@ Interni cilj: 2 sedmice intenzivnog rada. Klijentu komunicirano: 4 sedmice.
 
 ## Faza 3 — Kvalitet i QMS (dan 9–10)
 
-- [ ] QualityCheck: puni ekrani (lista, filteri, poništavanje, dodavanje dokaza — kontrola se ne uređuje, ispravka = poništavanje + nova, DOMAIN §7.0); osnova i izvedene oznake su iz Faze 1
-- [ ] Neuspjela kontrola nudi kreiranje NC (DOMAIN §7.1)
-- [ ] NonConformity sa prelazima (DOMAIN §7.3)
-- [ ] Mjerna sredstva + kalibracija sa istorijom kalibracija (`EquipmentCalibration`, DOMAIN §7.5)
-- [ ] ControlledDocument sa verzijama (DOMAIN §7.4)
-- [ ] Fajlovi na svim QMS entitetima (certifikati, dokazi)
-- [ ] Tab Kvalitet na detalju naloga, tab Istorija (AuditLog) — objedinjena istorija i na detaljima NC-a, dokumenta i lota
-- [ ] Dashboard upozorenja: svi rokovi iz DOMAIN §7.6
+- [x] QualityCheck: puni ekrani (lista, filteri, poništavanje, dodavanje dokaza — kontrola se ne uređuje, ispravka = poništavanje + nova, DOMAIN §7.0); osnova i izvedene oznake su iz Faze 1
+- [x] Neuspjela kontrola nudi kreiranje NC (DOMAIN §7.1)
+- [x] NonConformity sa prelazima (DOMAIN §7.3)
+- [x] Mjerna sredstva + kalibracija sa istorijom kalibracija (`EquipmentCalibration`, DOMAIN §7.5)
+- [x] ControlledDocument sa verzijama (DOMAIN §7.4)
+- [x] Fajlovi na svim QMS entitetima (certifikati, dokazi)
+- [x] Tab Kvalitet na detalju naloga, tab Istorija (AuditLog) — objedinjena istorija i na detaljima NC-a, dokumenta i lota
+- [x] Dashboard upozorenja: svi rokovi iz DOMAIN §7.6
 
 ## Faza 4 — Hala i dorada (dan 11–12)
 
