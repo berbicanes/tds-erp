@@ -40,6 +40,13 @@
   dry-run izvrši upis u transakciji i vrati je nazad; broj naloga iz Notiona se zadržava (DOMAIN §9.4 još otvoreno);
   status naloga se uvozi bez provjere prelaza; nepoznata osoba u neobaveznom polju = upozorenje, u obaveznom = greška;
   brojevi samo sa decimalnom tačkom (zarez je dvosmislen: `1,234`).
+- **Notion import** urađen kao `import-notion <folder> --dry-run | --apply` (u Docker-u: `docker compose run --rm … api
+  import-notion /import --dry-run`, `deploy/README.md` §5b). Testovi na sintetičkim fixtureima
+  (`src/Tds.Api.Tests/Fixtures/Notion`): čist export (dry-run ne piše ništa, apply upiše sve, ponovni apply = samo
+  duplikati, izmjena u aplikaciji → konflikt) i export sa problemima (normalan red, duplikat, konflikt, nepoznat enum,
+  prazno obavezno polje, pogrešan datum, stanje bez lota, nepoznata osoba). Ručno pokrenut i dry-run nad dev bazom:
+  ispravno prijavio konflikte sa dev seedom (`H-4471`, `Lim crni`) i ništa nije upisao. **Nije testirano sa stvarnim
+  Notion exportom** — format datuma/brojeva u pravom exportu treba provjeriti prvim dry-runom.
 - **Restore test** (`deploy/restore-test.sh`): lokalno na dev bazi prošao — svjež dump i postojeći dump fajl,
   29 tabela, 197 redova, isti broj redova kao u živoj bazi, zadnja migracija `…DropLegacyEquipmentCalibrationColumns`.
   Privremena baza `tds_restore_test` se briše na kraju (provjereno: ostale su samo `tds` i sistemske).

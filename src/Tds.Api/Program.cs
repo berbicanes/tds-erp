@@ -12,6 +12,7 @@ using Tds.Api.Features.Employees;
 using Tds.Api.Features.Equipment;
 using Tds.Api.Features.Files;
 using Tds.Api.Features.Health;
+using Tds.Api.Features.Import;
 using Tds.Api.Features.Materials;
 using Tds.Api.Features.Notes;
 using Tds.Api.Features.ProductionEntries;
@@ -25,7 +26,17 @@ using Tds.Api.Features.Users;
 using Tds.Api.Features.WorkOrders;
 using Tds.Api.Infrastructure;
 
-var builder = WebApplication.CreateBuilder(args);
+// Admin command "import-notion" (ROADMAP Faza 5): same configuration and migrations, then exits instead of serving.
+var import = ImportCommand.Parse(args, out var importUsage);
+if (importUsage is not null)
+{
+    Console.Error.WriteLine(importUsage);
+    return 2;
+}
+
+var builder = WebApplication.CreateBuilder(import is null ? args : []);
+if (import is not null)
+    builder.Logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
 
 var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Connection string 'Default' is not configured.");
@@ -109,6 +120,7 @@ builder.Services
 builder.Services.AddScoped<IdentitySeeder>();
 builder.Services.AddScoped<EquipmentSeeder>();
 builder.Services.AddScoped<DevDataSeeder>();
+builder.Services.AddScoped<NotionImporter>();
 
 var app = builder.Build();
 
@@ -125,6 +137,9 @@ await using (var scope = app.Services.CreateAsyncScope())
     if (app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("Seed:DevData"))
         await scope.ServiceProvider.GetRequiredService<DevDataSeeder>().SeedAsync();
 }
+
+if (import is not null)
+    return await import.RunAsync(app.Services);
 
 app.UseForwardedHeaders();
 app.UseExceptionHandler();
@@ -155,5 +170,6 @@ app.MapNoteEndpoints();
 app.MapDashboardEndpoints();
 
 app.Run();
+return 0;
 
 public partial class Program;

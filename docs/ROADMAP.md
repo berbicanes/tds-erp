@@ -93,12 +93,15 @@ Interni cilj: 2 sedmice intenzivnog rada. Klijentu komunicirano: 4 sedmice.
 
 ## Faza 5 — Predaja (dan 13–14)
 
-- [ ] Import iz Notion CSV exporta (nalozi, lotovi, dobavljači, zalihe → početna `Korekcija`)
+- [x] Import iz Notion CSV exporta (nalozi, lotovi, dobavljači, zalihe → početna `Korekcija`)
       — jednokratna admin komanda, ne UI. Prvo dry-run sa izvještajem.
+      **Urađeno, netestirano sa stvarnim podacima** (samo sintetički CSV fixture). Mapiranje: `NOTION_SOURCE.md` „Import”.
 - [ ] Test sa stvarnim podacima klijenta, ispravke
-- [ ] Restore test backupa na čistu bazu — mora raditi
-- [ ] Kratko uputstvo za korisnike (1 strana): brzi unos, prijem lota, status naloga
+- [x] Restore test backupa na čistu bazu — mora raditi
+      (`deploy/restore-test.sh`, lokalno na dev bazi prošao; ponoviti na VPS-u sa pravim backupom nakon deploya)
+- [x] Kratko uputstvo za korisnike (1 strana): brzi unos, prijem lota, status naloga (`docs/UPUTSTVO.md`)
 - [ ] Monitoring: healthcheck endpoint + vanjski uptime ping; greške u log fajl sa rotacijom
+      (urađeno: `/api/health` i Docker logovi sa rotacijom; čeka domen: vanjski uptime ping)
 
 ---
 

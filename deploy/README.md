@@ -132,6 +132,19 @@ Pokrenuti nakon prvog deploya i nakon toga jednom mjesečno. Lokalno (dev baza):
 - Logovi (i greške API-ja) su Docker log fajlovi sa rotacijom: najviše 5 × 10 MB po servisu
   (`x-logging` u `docker-compose.yml`). Čitanje: `docker compose logs --since 24h api | grep -E "fail|error"`.
 
+## 5b. Import iz Notiona (jednom, pri predaji)
+
+Mapiranje i pravila: `docs/NOTION_SOURCE.md` „Import”. Prije importa: backup, i u aplikaciji unesi zaposlenike
+(osobe iz Notiona se traže po punom imenu).
+
+```bash
+# Notion: "Export → Markdown & CSV", raspakuj na server, npr. u /opt/tds/import
+cd /opt/tds/app/deploy
+docker compose run --rm -v /opt/tds/import:/import:ro api import-notion /import --dry-run   # izvještaj, ništa se ne upisuje
+docker compose run --rm -v /opt/tds/import:/import:ro api import-notion /import --apply     # tek kad dry-run nema grešaka
+```
+Izlazni kod: 0 = OK, 1 = greške (ništa nije upisano), 2 = pogrešni argumenti.
+
 ## 6. Ažuriranje
 
 **Prije svakog deploya obavezno ručno pokreni backup** — migracije se primjenjuju same pri

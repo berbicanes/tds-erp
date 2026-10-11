@@ -1,0 +1,6 @@
+Broj naloga,Kupac,Proizvod / opis,Kolicina Narudzbe,Naručena količina,Rok isporuke,Status,Prioritet,Odobrenje kvaliteta
+RN-2026-0001,Metalbau AG,Konzola,10,,2026-11-01,Spreman,Normalan,Čeka
+RN-2026-0002,Metalbau AG,Konzola,10,,2026-11-01,Plazma,Normalan,Čeka
+RN-2026-0003,,Konzola,10,,2026-11-01,Spreman,Normalan,Čeka
+RN-2026-0004,Metalbau AG,Konzola,10,12,2026-11-01,Spreman,Normalan,Čeka
+RN-2026-0005,Metalbau AG,Konzola,10,,12/01/2026,Spreman,Normalan,Čeka
