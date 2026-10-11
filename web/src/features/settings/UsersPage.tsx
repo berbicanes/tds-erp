@@ -6,6 +6,7 @@ import { Field, inputClass } from "../../components/form/Field";
 import { ErrorBanner } from "../../components/ErrorBanner";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { ApiError } from "../../lib/api";
+import { formatTime } from "../../lib/format";
 import { useMe, type Role } from "../../lib/auth";
 import { requiredText } from "../../lib/schema";
 import { useCreateUser, useSetPassword, useUpdateUser, useUsers, type User } from "./api";
@@ -157,7 +158,7 @@ export function UsersPage() {
                     </select>
                   </td>
                   <td data-label="Zaposlenik" className="px-2 py-1.5">{u.employeeName ?? "Nije vezan"}</td>
-                  <td data-label="Status" className="px-2 py-1.5">{u.isActive ? "Aktivan" : "Deaktiviran"}</td>
+                  <td data-label="Status" className="px-2 py-1.5">{!u.isActive ? "Deaktiviran" : u.lockedUntil ? `Zaključan do ${formatTime(u.lockedUntil)}` : "Aktivan"}</td>
                   <td className="space-x-2 whitespace-nowrap px-2 py-1.5 text-right">
                     <button type="button" onClick={() => setPasswordFor(u)} className="min-h-9 rounded border border-slate-300 px-2">
                       Nova lozinka

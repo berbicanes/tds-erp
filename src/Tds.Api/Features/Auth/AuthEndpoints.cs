@@ -30,22 +30,17 @@ public static class AuthEndpoints
         app.MapGet("/api/me", Me).RequireAuthorization();
     }
 
+    public const string WrongCredentials = "Pogrešno korisničko ime ili lozinka.";
+
     private static async Task<IResult> Login(
         LoginRequest request, SignInManager<AppUser> signInManager, UserManager<AppUser> userManager)
     {
-        var existing = await userManager.FindByNameAsync(request.UserName.Trim());
-        if (existing is not null && Users.UserEndpoints.IsDeactivated(existing)
-            && await userManager.CheckPasswordAsync(existing, request.Password))
-            return Problems.Unauthorized("Nalog je deaktiviran. Javi se administratoru.");
-
+        // DOMAIN §8 (PREGLED N4): one message for every failure. A deactivated account is locked "forever" and a
+        // locked account's password is never checked, so neither can be guessed nor told apart from a missing one.
         var result = await signInManager.PasswordSignInAsync(
             request.UserName.Trim(), request.Password, isPersistent: true, lockoutOnFailure: true);
-
-        if (result.IsLockedOut)
-            return Problems.Unauthorized(
-                "Nalog je zaključan zbog 5 neuspjelih pokušaja prijave. Pokušaj ponovo za 15 minuta ili se javi administratoru.");
         if (!result.Succeeded)
-            return Problems.Unauthorized("Pogrešno korisničko ime ili lozinka.");
+            return Problems.Unauthorized(WrongCredentials);
 
         var user = (await userManager.FindByNameAsync(request.UserName.Trim()))!;
         return TypedResults.Ok(await ToMe(user, userManager));

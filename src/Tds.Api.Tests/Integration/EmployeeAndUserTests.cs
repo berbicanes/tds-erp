@@ -148,12 +148,12 @@ public class EmployeeAndUserTests(PostgresFixture postgres)
         var off = await (await admin.PutAsJsonAsync($"/api/users/{user.Id}", new { role = "Operater", isActive = false }, Ct)).ReadAsync<UserDto>();
         Assert.False(off.IsActive);
 
+        // PREGLED N4 / DOMAIN §8: the correct password of a deactivated account gets the same answer as a wrong one,
+        // so its password cannot be confirmed by guessing.
         var login = await factory.CreateClient().PostAsJsonAsync("/api/auth/login", new { userName = "bivsi", password = "lozinka-123" }, Ct);
-        Assert.Equal("Nalog je deaktiviran. Javi se administratoru.", (await login.ProblemAsync(HttpStatusCode.Unauthorized)).Detail());
-
-        // Wrong password for a deactivated account does not reveal that it is deactivated.
+        Assert.Equal(Features.Auth.AuthEndpoints.WrongCredentials, (await login.ProblemAsync(HttpStatusCode.Unauthorized)).Detail());
         var wrong = await factory.CreateClient().PostAsJsonAsync("/api/auth/login", new { userName = "bivsi", password = "pogresna-12" }, Ct);
-        Assert.NotEqual("Nalog je deaktiviran. Javi se administratoru.", (await wrong.ProblemAsync(HttpStatusCode.Unauthorized)).Detail());
+        Assert.Equal(Features.Auth.AuthEndpoints.WrongCredentials, (await wrong.ProblemAsync(HttpStatusCode.Unauthorized)).Detail());
 
         var me = await admin.GetFromJsonAsync<Features.Auth.MeResponse>("/api/me", Ct);
         var self = await admin.PutAsJsonAsync($"/api/users/{me!.Id}", new { role = "Admin", isActive = false }, Ct);

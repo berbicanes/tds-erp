@@ -32,6 +32,8 @@ export interface User {
   userName: string;
   role: Role;
   isActive: boolean;
+  /** Temporary lockout after 5 failed logins (DOMAIN §8); only the Admin sees it. */
+  lockedUntil: string | null;
   employeeId: string | null;
   employeeName: string | null;
 }

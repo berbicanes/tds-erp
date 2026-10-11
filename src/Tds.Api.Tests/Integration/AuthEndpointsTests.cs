@@ -91,17 +91,28 @@ public class AuthEndpointsTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Sixth_attempt_after_five_failures_reports_lockout_even_with_correct_password()
+    public async Task Locked_account_refuses_even_the_correct_password_with_the_same_message_and_only_admin_sees_the_lock()
     {
         await using var factory = await TdsApiFactory.CreateAsync(postgres);
+        var admin = await factory.AdminAsync();
+        await admin.PostAsJsonAsync("/api/users", new { userName = "laserist", role = "Operater", password = "lozinka-123" }, ApiClientExtensions.Ct);
         var client = factory.CreateClient();
 
         for (var i = 0; i < 5; i++)
-            await Login(client, TdsApiFactory.AdminUserName, "pogresna-lozinka");
-        var response = await Login(client, TdsApiFactory.AdminUserName, TdsApiFactory.AdminPassword);
+            await Login(client, "laserist", "pogresna-lozinka");
+        var locked = await Login(client, "laserist", "lozinka-123");
+        var missing = await Login(client, "ne-postoji", "lozinka-123");
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        Assert.Contains("zaključan", (await Problem(response)).GetProperty("detail").GetString());
+        // PREGLED N4 / DOMAIN §8: locked and non-existing look the same.
+        Assert.Equal(HttpStatusCode.Unauthorized, locked.StatusCode);
+        Assert.Equal(AuthEndpoints.WrongCredentials, (await Problem(locked)).GetProperty("detail").GetString());
+        Assert.Equal(AuthEndpoints.WrongCredentials, (await Problem(missing)).GetProperty("detail").GetString());
+
+        var users = await (await admin.GetAsync("/api/users", ApiClientExtensions.Ct)).Content.ReadFromJsonAsync<List<Features.Users.UserDto>>(ApiClientExtensions.Ct);
+        var lockedUser = users!.Single(u => u.UserName == "laserist");
+        Assert.True(lockedUser.IsActive);
+        Assert.True(lockedUser.LockedUntil > DateTimeOffset.UtcNow.AddMinutes(14));
+        Assert.Null(users!.Single(u => u.UserName == TdsApiFactory.AdminUserName).LockedUntil);
     }
 
     [Fact]

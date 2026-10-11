@@ -7,7 +7,8 @@ using Tds.Api.Infrastructure;
 
 namespace Tds.Api.Features.Users;
 
-public sealed record UserDto(Guid Id, string UserName, string Role, bool IsActive, Guid? EmployeeId, string? EmployeeName);
+/// <param name="LockedUntil">Temporary lockout after failed logins (DOMAIN §8); shown only here, to the Admin.</param>
+public sealed record UserDto(Guid Id, string UserName, string Role, bool IsActive, DateTimeOffset? LockedUntil, Guid? EmployeeId, string? EmployeeName);
 
 public sealed record CreateUserRequest(string UserName, string Role, string Password);
 public sealed record UpdateUserRequest(string Role, bool? IsActive);
@@ -54,7 +55,7 @@ public static class UserEndpoints
     /// <summary>Deactivated = locked out "forever"; LockoutEnd at max value is our marker.</summary>
     public static bool IsDeactivated(AppUser u) => u.LockoutEnd == DateTimeOffset.MaxValue;
 
-    private static async Task<List<UserDto>> List(AppDbContext db, CancellationToken ct)
+    private static async Task<List<UserDto>> List(AppDbContext db, IClock clock, CancellationToken ct)
     {
         var rows = await (
             from u in db.Users
@@ -67,10 +68,12 @@ public static class UserEndpoints
             orderby u.UserName
             select new { u.Id, u.UserName, Role = r.Name, u.LockoutEnd, EmployeeId = (Guid?)e.Id, EmployeeName = e.FullName }
         ).ToListAsync(ct);
-        return rows.Select(x => new UserDto(x.Id, x.UserName!, x.Role ?? "", x.LockoutEnd != DateTimeOffset.MaxValue, x.EmployeeId, x.EmployeeName)).ToList();
+        var now = clock.UtcNow;
+        return rows.Select(x => new UserDto(x.Id, x.UserName!, x.Role ?? "", x.LockoutEnd != DateTimeOffset.MaxValue,
+            x.LockoutEnd is { } end && end != DateTimeOffset.MaxValue && end > now ? end : null, x.EmployeeId, x.EmployeeName)).ToList();
     }
 
-    private static async Task<IResult> Create(CreateUserRequest req, UserManager<AppUser> users, AppDbContext db, CancellationToken ct)
+    private static async Task<IResult> Create(CreateUserRequest req, UserManager<AppUser> users, AppDbContext db, IClock clock, CancellationToken ct)
     {
         var userName = req.UserName.Trim();
         if (await users.FindByNameAsync(userName) is not null)
@@ -81,11 +84,11 @@ public static class UserEndpoints
         if (!created.Succeeded)
             return PasswordProblem(created);
         await users.AddToRoleAsync(user, req.Role);
-        return TypedResults.Created($"/api/users/{user.Id}", (await List(db, ct)).Single(u => u.Id == user.Id));
+        return TypedResults.Created($"/api/users/{user.Id}", (await List(db, clock, ct)).Single(u => u.Id == user.Id));
     }
 
     private static async Task<IResult> Update(
-        Guid id, UpdateUserRequest req, UserManager<AppUser> users, ICurrentUser current, AppDbContext db, CancellationToken ct)
+        Guid id, UpdateUserRequest req, UserManager<AppUser> users, ICurrentUser current, AppDbContext db, IClock clock, CancellationToken ct)
     {
         var user = await users.FindByIdAsync(id.ToString());
         if (user is null)
@@ -109,7 +112,7 @@ public static class UserEndpoints
 
         // Role or status change: existing sessions must re-validate (SecurityStampValidator).
         await users.UpdateSecurityStampAsync(user);
-        return TypedResults.Ok((await List(db, ct)).Single(u => u.Id == id));
+        return TypedResults.Ok((await List(db, clock, ct)).Single(u => u.Id == id));
     }
 
     private static async Task<IResult> SetPassword(Guid id, SetPasswordRequest req, UserManager<AppUser> users)
