@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type Paged } from "../../lib/api";
-import type { EquipmentKind } from "../../lib/labels";
+import type { CalibrationResult, CalibrationStatusAtCheck, EquipmentKind } from "../../lib/labels";
 import { toApiQuery, type ListState } from "../../lib/listParams";
 
 export interface Equipment {
@@ -11,10 +11,27 @@ export interface Equipment {
   manufacturer: string | null;
   serialNumber: string | null;
   calibrationIntervalMonths: number | null;
+  /** Derived from the latest non-voided calibration. */
   lastCalibrationDate: string | null;
   nextCalibrationDate: string | null;
-  calibrationCertificateFileId: string | null;
+  lastCalibrationResult: CalibrationResult | null;
+  calibrationStatus: CalibrationStatusAtCheck | null;
   isActive: boolean;
+  version: number;
+}
+
+export interface Calibration {
+  id: string;
+  calibrationDate: string;
+  nextCalibrationDate: string | null;
+  performedBy: string;
+  result: CalibrationResult;
+  certificateFileId: string | null;
+  certificateFileName: string | null;
+  note: string | null;
+  createdByName: string | null;
+  isVoided: boolean;
+  voidedReason: string | null;
   version: number;
 }
 
@@ -23,9 +40,10 @@ export interface EquipmentOption {
   code: string;
   name: string;
   kind: EquipmentKind;
+  calibrationStatus: CalibrationStatusAtCheck | null;
 }
 
-export type SaveEquipment = Omit<Equipment, "id" | "calibrationCertificateFileId">;
+export type SaveEquipment = Pick<Equipment, "code" | "name" | "kind" | "manufacturer" | "serialNumber" | "calibrationIntervalMonths" | "isActive" | "version">;
 
 const key = ["equipment"] as const;
 
@@ -54,5 +72,36 @@ export function useSaveEquipment(id: string | undefined) {
   return useMutation({
     mutationFn: (body: SaveEquipment) => (id ? api.put<Equipment>(`/api/equipment/${id}`, body) : api.post<Equipment>("/api/equipment", body)),
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+  });
+}
+
+export function useCalibrations(equipmentId: string | undefined) {
+  return useQuery({
+    queryKey: [...key, equipmentId, "calibrations"],
+    queryFn: () => api.get<Calibration[]>(`/api/equipment/${equipmentId}/calibrations`),
+    enabled: !!equipmentId,
+  });
+}
+
+export function useRecordCalibration(equipmentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { calibrationDate: string; nextCalibrationDate: string | null; performedBy: string; result: CalibrationResult; certificateFileId: string | null; note: string | null }) =>
+      api.post<Calibration>(`/api/equipment/${equipmentId}/calibrations`, body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: key });
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useVoidCalibration() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string; reason: string; version: number }) => api.post<Calibration>(`/api/equipment-calibrations/${id}/void`, body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: key });
+      void qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
   });
 }

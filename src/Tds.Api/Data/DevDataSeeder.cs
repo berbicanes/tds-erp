@@ -30,9 +30,12 @@ public sealed class DevDataSeeder(AppDbContext db, IHostEnvironment env, IClock 
         db.Employees.AddRange(marko, edin, amra, selma);
 
         // Measuring instrument
-        var caliper = new Equipment { Code = "MS-001", Name = "Pomično mjerilo 150 mm", Kind = EquipmentKind.MjernoSredstvo, Manufacturer = "Mitutoyo" };
-        caliper.SetCalibration(12, today.AddMonths(-11), null);
-        db.Equipment.Add(caliper);
+        var caliper = new Equipment { Code = "MS-001", Name = "Pomično mjerilo 150 mm", Kind = EquipmentKind.MjernoSredstvo, Manufacturer = "Mitutoyo", CalibrationIntervalMonths = 12 };
+        var micrometer = new Equipment { Code = "MS-002", Name = "Mikrometar 0–25 mm", Kind = EquipmentKind.MjernoSredstvo, Manufacturer = "Mitutoyo", CalibrationIntervalMonths = 12 };
+        db.Equipment.AddRange(caliper, micrometer);
+        db.EquipmentCalibrations.Add(EquipmentCalibration.Record(caliper, today.AddMonths(-23), null, "Metrološki laboratorij Sarajevo", CalibrationResult.Uskladjeno, null, null, today));
+        db.EquipmentCalibrations.Add(EquipmentCalibration.Record(caliper, today.AddMonths(-11), null, "Metrološki laboratorij Sarajevo", CalibrationResult.Uskladjeno, null, "Certifikat br. 2025/118", today));
+        db.EquipmentCalibrations.Add(EquipmentCalibration.Record(micrometer, today.AddMonths(-13), null, "Metrološki laboratorij Sarajevo", CalibrationResult.Uskladjeno, null, null, today));
 
         // Suppliers
         var salzgitter = new Supplier { Name = "Salzgitter Mannesmann Stahlhandel", MaterialOrService = "Lim S235, inox 1.4301", ApprovalStatus = SupplierApprovalStatus.Odobren, NextEvaluationDate = today.AddDays(20), ResponsibleEmployeeId = amra.Id };

@@ -13,22 +13,14 @@ public class Equipment : Entity
     public EquipmentKind Kind { get; set; }
     public string? Manufacturer { get; set; }
     public string? SerialNumber { get; set; }
+    /// <summary>Proposes the next date of a new calibration (DATA_MODEL §9a).</summary>
     public int? CalibrationIntervalMonths { get; set; }
-    public DateOnly? LastCalibrationDate { get; set; }
 
-    /// <summary>Derived from Last + interval when both are set; otherwise entered manually (DATA_MODEL §9).</summary>
-    public DateOnly? NextCalibrationDate { get; set; }
+    // Last/next calibration and the calibration state are derived from EquipmentCalibration (DATA_MODEL §9).
+    // The old columns last_calibration_date, next_calibration_date, calibration_certificate_file_id stay in the
+    // database as unused shadow properties until the owner confirms the DROP (CLAUDE.md).
 
-    public Guid? CalibrationCertificateFileId { get; set; }
     public bool IsActive { get; set; } = true;
-
-    /// <summary>Applies the calibration rule; <paramref name="manualNext"/> is used only without an interval.</summary>
-    public void SetCalibration(int? intervalMonths, DateOnly? last, DateOnly? manualNext)
-    {
-        CalibrationIntervalMonths = intervalMonths;
-        LastCalibrationDate = last;
-        NextCalibrationDate = intervalMonths is > 0 && last is { } l ? l.AddMonths(intervalMonths.Value) : manualNext;
-    }
 
     /// <summary>Seed from tdsproducts.com (DATA_MODEL §9, to be confirmed with the client).</summary>
     public static readonly (string Code, string Name)[] SeedMachines =

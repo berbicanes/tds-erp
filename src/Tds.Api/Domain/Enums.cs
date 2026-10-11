@@ -14,3 +14,10 @@ public enum StockMovementType { Prijem, Izdavanje, Korekcija, Otpis }
 public enum EquipmentKind { Masina, MjernoSredstvo }
 public enum InspectionPhase { UlazniMaterijal, LaserskoRezanje, HidraulicnoPresanje, ZavrsnaKontrola }
 public enum InspectionResult { Ceka, Prihvaceno, Neuskladjeno }
+public enum NcSource { Dobavljac, UlazniMaterijal, Laser, Presanje, ZavrsnaKontrola, Kupac, Audit, Ostalo }
+public enum ProductDecision { CekaOdluku, Dorada, Skart, PovratDobavljacu, OdstupanjeOdobreno }
+public enum NcStatus { Otvorena, RadnjaUToku, ProvjeraEfektivnosti, Zatvorena }
+public enum DocumentKind { Procedura, RadnoUputstvo, ObrazacZapis, EksterniDokument }
+public enum DocumentStatus { Nacrt, NaPregledu, Odobren, Povucen }
+public enum CalibrationResult { Uskladjeno, Neuskladjeno }
+public enum CalibrationStatusAtCheck { UKalibraciji, VanKalibracije, BezDatumaKalibracije, BezMjernogSredstva }

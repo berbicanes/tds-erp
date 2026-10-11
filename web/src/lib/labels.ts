@@ -148,6 +148,22 @@ export const stockLevel = {
 
 export type StockLevel = keyof typeof stockLevel;
 
+export const calibrationResult = {
+  Uskladjeno: l("Usklađeno", "green"),
+  Neuskladjeno: l("Neusklađeno", "red"),
+} as const satisfies Record<string, Label>;
+
+/** UI §8 / DOMAIN §7.5: warning tones for VanKalibracije and BezDatumaKalibracije. */
+export const calibrationStatusAtCheck = {
+  UKalibraciji: l("U kalibraciji", "green"),
+  VanKalibracije: l("Van kalibracije", "red"),
+  BezDatumaKalibracije: l("Bez datuma kalibracije", "amber"),
+  BezMjernogSredstva: l("Bez mjernog sredstva"),
+} as const satisfies Record<string, Label>;
+
+export type CalibrationResult = keyof typeof calibrationResult;
+export type CalibrationStatusAtCheck = keyof typeof calibrationStatusAtCheck;
+
 export type WorkOrderStatus = keyof typeof workOrderStatus;
 export type Priority = keyof typeof priority;
 export type QualityApproval = keyof typeof qualityApproval;
@@ -181,6 +197,8 @@ export const enumLabels = {
   ncStatus,
   documentKind,
   documentStatus,
+  calibrationResult,
+  calibrationStatusAtCheck,
 } as const;
 
 /** Label for a value; unknown values are shown as-is in slate, never hidden. */

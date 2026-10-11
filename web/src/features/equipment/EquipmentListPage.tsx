@@ -4,7 +4,7 @@ import { FilterChips } from "../../components/FilterChips";
 import { PageHeader } from "../../components/PageHeader";
 import { Badge } from "../../components/Badge";
 import { useListState } from "../../hooks/useListState";
-import { equipmentKind, labelOf } from "../../lib/labels";
+import { calibrationStatusAtCheck, equipmentKind, labelOf } from "../../lib/labels";
 import { EMPTY, formatDate } from "../../lib/format";
 import { hasRole, useMe } from "../../lib/auth";
 import { useEquipmentList, type Equipment } from "./api";
@@ -14,7 +14,8 @@ const columns: Column<Equipment>[] = [
   { key: "name", header: "Naziv", sortKey: "name", render: (e) => e.name },
   { key: "kind", header: "Vrsta", sortKey: "kind", render: (e) => <Badge label={labelOf(equipmentKind, e.kind)} /> },
   { key: "manufacturer", header: "Proizvođač", render: (e) => e.manufacturer ?? EMPTY },
-  { key: "next", header: "Sljedeća kalibracija", sortKey: "nextCalibrationDate", render: (e) => formatDate(e.nextCalibrationDate) },
+  { key: "next", header: "Sljedeća kalibracija", sortKey: "nextCalibrationDate", render: (e) => (e.kind === "MjernoSredstvo" ? formatDate(e.nextCalibrationDate) : "") },
+  { key: "cal", header: "Kalibracija", render: (e) => (e.calibrationStatus ? <Badge label={labelOf(calibrationStatusAtCheck, e.calibrationStatus)} /> : "") },
   { key: "active", header: "Status", sortKey: "isActive", render: (e) => (e.isActive ? "Aktivna" : "Neaktivna") },
 ];
 
@@ -38,7 +39,14 @@ export function EquipmentListPage() {
         rowHref={(e) => `/oprema/${e.id}`}
         emptyText="Nema opreme."
         searchPlaceholder="Oznaka, naziv ili serijski broj"
-        toolbar={<FilterChips name="kind" options={equipmentKind} state={state} onStateChange={setState} />}
+        toolbar={
+          <>
+            <FilterChips name="kind" options={equipmentKind} state={state} onStateChange={setState} />
+            <FilterChips name="calibrationStatus"
+              options={{ VanKalibracije: calibrationStatusAtCheck.VanKalibracije, BezDatumaKalibracije: calibrationStatusAtCheck.BezDatumaKalibracije }}
+              state={state} onStateChange={setState} />
+          </>
+        }
       />
     </>
   );

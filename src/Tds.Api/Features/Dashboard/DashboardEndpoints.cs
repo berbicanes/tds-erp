@@ -132,7 +132,8 @@ public static class DashboardEndpoints
 
     /// <summary>
     /// One UNION query over everything that needs attention (UI §3, DOMAIN §7.6). Phase 2 sources: lots NaKontroli/
-    /// Karantin, Blokirano orders, supplier evaluation, calibration, stocktake (≤ 30 days or past).
+    /// Karantin, Blokirano orders, supplier evaluation, calibration state from the latest calibration (DOMAIN §7.5:
+    /// missing date, Neuskladjeno or due ≤ 30 days / past), stocktake (≤ 30 days or past).
     /// Order: red first (past deadlines, out of calibration, Blokirano, Karantin), then amber; earliest date first.
     /// </summary>
     private static async Task<List<DashboardWarning>> Warnings(AppDbContext db, DateOnly today, CancellationToken ct)
@@ -156,9 +157,20 @@ public static class DashboardEndpoints
             FROM supplier s
             WHERE s.approval_status <> 'Blokiran' AND s.next_evaluation_date <= @limit
             UNION ALL
-            SELECT 'Calibration', e.id, e.code, e.name, NULL, NULL, NULL, e.next_calibration_date, e.next_calibration_date < @today
+            SELECT CASE WHEN lc.id IS NULL OR lc.next_calibration_date IS NULL THEN 'CalibrationMissing'
+                        WHEN lc.result = 'Neuskladjeno' THEN 'CalibrationFailed'
+                        ELSE 'Calibration' END,
+                   e.id, e.code, e.name, NULL, NULL, NULL, lc.next_calibration_date,
+                   lc.id IS NULL OR lc.next_calibration_date IS NULL OR lc.result = 'Neuskladjeno' OR lc.next_calibration_date < @today
             FROM equipment e
-            WHERE e.is_active AND e.kind = 'MjernoSredstvo' AND e.next_calibration_date <= @limit
+            LEFT JOIN LATERAL (
+                SELECT c.id, c.next_calibration_date, c.result
+                FROM equipment_calibration c
+                WHERE c.equipment_id = e.id AND NOT c.is_voided
+                ORDER BY c.calibration_date DESC, c.created_at DESC
+                LIMIT 1) lc ON true
+            WHERE e.is_active AND e.kind = 'MjernoSredstvo'
+              AND (lc.id IS NULL OR lc.next_calibration_date IS NULL OR lc.result = 'Neuskladjeno' OR lc.next_calibration_date <= @limit)
             UNION ALL
             SELECT 'Stocktake', i.id, i.name, NULL, i.name, i.grade, i.thickness_mm, i.next_stocktake_date, i.next_stocktake_date < @today
             FROM material_item i

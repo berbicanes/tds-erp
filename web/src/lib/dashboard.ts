@@ -44,6 +44,10 @@ export function warningText(w: WarningLike, today: string): string {
       return w.severity === "red"
         ? `Mjerno sredstvo ${w.title} (${w.detail ?? ""}) je van kalibracije — ${dueText(w.date, today)}`
         : `Kalibracija ${w.title} (${w.detail ?? ""}) ${dueText(w.date, today)}`;
+    case "CalibrationMissing":
+      return `Mjerno sredstvo ${w.title} (${w.detail ?? ""}) nema datum sljedeće kalibracije`;
+    case "CalibrationFailed":
+      return `Mjerno sredstvo ${w.title} (${w.detail ?? ""}) je van kalibracije — zadnja kalibracija neusklađena`;
     case "Stocktake":
       return w.severity === "red" ? `Popis artikla ${item} — ${dueText(w.date, today)}` : `Popis artikla ${item} ${dueText(w.date, today)}`;
     default:
@@ -62,6 +66,8 @@ export function warningHref(w: WarningLike): string {
     case "SupplierEvaluation":
       return `/dobavljaci/${w.entityId}`;
     case "Calibration":
+    case "CalibrationMissing":
+    case "CalibrationFailed":
       return `/oprema/${w.entityId}`;
     case "Stocktake":
       return `/zalihe/artikli/${w.entityId}`;

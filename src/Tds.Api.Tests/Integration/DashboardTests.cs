@@ -77,7 +77,9 @@ public class DashboardTests(PostgresFixture postgres)
         await admin.PostAsJsonAsync("/api/production-entries", Entry(8, 0), Ct);
 
         // Deadlines: calibration overdue, supplier evaluation in 10 days, stocktake in 40 days (not shown).
-        await admin.PostAsJsonAsync("/api/equipment", new { code = "MS-001", name = "Pomično mjerilo", kind = "MjernoSredstvo", nextCalibrationDate = Day(-1), isActive = true }, Ct);
+        var ms = await (await admin.PostAsJsonAsync("/api/equipment", new { code = "MS-001", name = "Pomično mjerilo", kind = "MjernoSredstvo", isActive = true }, Ct))
+            .ReadAsync<EquipmentDto>(HttpStatusCode.Created);
+        await admin.PostAsJsonAsync($"/api/equipment/{ms.Id}/calibrations", new { calibrationDate = Day(-366), nextCalibrationDate = Day(-1), performedBy = "Lab", result = "Uskladjeno" }, Ct);
         await admin.PutAsJsonAsync($"/api/suppliers/{supplier.Id}", new { name = supplier.Name, approvalStatus = "Odobren", nextEvaluationDate = Day(10), version = supplier.Version }, Ct);
         await admin.PostAsJsonAsync("/api/notes", new { text = "Hladnjak ispuhati" }, Ct);
 

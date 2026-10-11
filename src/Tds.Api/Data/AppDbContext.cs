@@ -16,6 +16,7 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
     public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Equipment> Equipment => Set<Equipment>();
+    public DbSet<EquipmentCalibration> EquipmentCalibrations => Set<EquipmentCalibration>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<MaterialItem> MaterialItems => Set<MaterialItem>();
     public DbSet<MaterialLot> MaterialLots => Set<MaterialLot>();

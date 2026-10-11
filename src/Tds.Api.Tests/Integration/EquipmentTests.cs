@@ -43,7 +43,7 @@ public class EquipmentTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Kontrolor_creates_measuring_instrument_with_derived_next_calibration()
+    public async Task Kontrolor_creates_measuring_instrument_and_its_calibration_history_drives_the_dates()
     {
         await using var factory = await TdsApiFactory.CreateAsync(postgres);
         var kontrolor = await factory.ClientAsAsync(Roles.Kontrolor);
@@ -51,10 +51,16 @@ public class EquipmentTests(PostgresFixture postgres)
         var ms = await (await kontrolor.PostAsJsonAsync("/api/equipment", new
         {
             code = "MS-001", name = "Pomično mjerilo 150 mm", kind = "MjernoSredstvo", manufacturer = "Mitutoyo",
-            calibrationIntervalMonths = 12, lastCalibrationDate = "2026-03-15", isActive = true,
+            calibrationIntervalMonths = 12, isActive = true,
         }, Ct)).ReadAsync<EquipmentDto>(HttpStatusCode.Created);
+        Assert.Equal(CalibrationStatusAtCheck.BezDatumaKalibracije, ms.CalibrationStatus);
+        Assert.Null(ms.NextCalibrationDate);
 
-        Assert.Equal(new DateOnly(2027, 3, 15), ms.NextCalibrationDate);
+        await kontrolor.PostAsJsonAsync($"/api/equipment/{ms.Id}/calibrations", new { calibrationDate = "2025-03-15", performedBy = "Metrološki lab", result = "Uskladjeno" }, Ct);
+        await kontrolor.PostAsJsonAsync($"/api/equipment/{ms.Id}/calibrations", new { calibrationDate = "2026-03-15", performedBy = "Metrološki lab", result = "Uskladjeno" }, Ct);
+        ms = await (await kontrolor.GetAsync($"/api/equipment/{ms.Id}", Ct)).ReadAsync<EquipmentDto>();
+        Assert.Equal((new DateOnly(2026, 3, 15), new DateOnly(2027, 3, 15)), (ms.LastCalibrationDate!.Value, ms.NextCalibrationDate!.Value));
+        Assert.Equal(CalibrationStatusAtCheck.UKalibraciji, ms.CalibrationStatus);
 
         var machines = await kontrolor.GetFromJsonAsync<List<EquipmentOption>>("/api/equipment/options?kind=Masina", JsonOptions, Ct);
         Assert.DoesNotContain(machines!, o => o.Code == "MS-001");

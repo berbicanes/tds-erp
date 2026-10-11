@@ -8,11 +8,11 @@ import { PageHeader } from "../../components/PageHeader";
 import { ApiError } from "../../lib/api";
 import { hasRole, useMe } from "../../lib/auth";
 import { equipmentKind } from "../../lib/labels";
-import { formatDate } from "../../lib/format";
-import { dateInput, intInput, optionalText, requiredText } from "../../lib/schema";
+import { intInput, optionalText, requiredText } from "../../lib/schema";
 import { ChangedOnServerNotice, useUnsavedChanges } from "../../components/UnsavedChanges";
 import { useServerForm } from "../../hooks/useServerForm";
 import { useEquipment, useSaveEquipment } from "./api";
+import { CalibrationSection } from "./CalibrationSection";
 
 // Mirrors SaveEquipmentValidator.
 const schema = z
@@ -23,24 +23,12 @@ const schema = z
     manufacturer: optionalText(80),
     serialNumber: optionalText(60),
     calibrationIntervalMonths: intInput({ min: 1, minMessage: "Interval kalibracije mora biti između 1 i 120 mjeseci." }),
-    lastCalibrationDate: dateInput(),
-    nextCalibrationDate: dateInput(),
     isActive: z.boolean(),
   })
-  .transform((v) =>
-    v.kind === "Masina" ? { ...v, calibrationIntervalMonths: null, lastCalibrationDate: null, nextCalibrationDate: null } : v,
-  );
+  .transform((v) => (v.kind === "Masina" ? { ...v, calibrationIntervalMonths: null } : v));
 type FormIn = z.input<typeof schema>;
 type FormOut = z.output<typeof schema>;
 
-/** Same rule as Equipment.SetCalibration on the server; shown only as a preview. */
-function addMonths(date: string, months: number): string {
-  const [y, m, d] = date.split("-").map(Number) as [number, number, number];
-  const target = new Date(Date.UTC(y, m - 1 + months, 1));
-  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
-  target.setUTCDate(Math.min(d, lastDay));
-  return target.toISOString().slice(0, 10);
-}
 
 export function EquipmentFormPage() {
   const { id } = useParams();
@@ -52,21 +40,18 @@ export function EquipmentFormPage() {
 
   const form = useForm<FormIn, unknown, FormOut>({
     resolver: zodResolver(schema),
-    defaultValues: { code: "", name: "", kind: "Masina", manufacturer: "", serialNumber: "", calibrationIntervalMonths: "", lastCalibrationDate: "", nextCalibrationDate: "", isActive: true },
+    defaultValues: { code: "", name: "", kind: "Masina", manufacturer: "", serialNumber: "", calibrationIntervalMonths: "", isActive: true },
   });
   const { register, handleSubmit, control, setError, formState: { errors, isDirty } } = form;
 
   // Never overwrite unsaved input with refetched data (lib/formSync.ts).
   const sync = useServerForm(form, equipment.data, (e) => ({
         code: e.code, name: e.name, kind: e.kind, manufacturer: e.manufacturer ?? "", serialNumber: e.serialNumber ?? "",
-        calibrationIntervalMonths: e.calibrationIntervalMonths?.toString() ?? "", lastCalibrationDate: e.lastCalibrationDate ?? "",
-        nextCalibrationDate: e.nextCalibrationDate ?? "", isActive: e.isActive,
+        calibrationIntervalMonths: e.calibrationIntervalMonths?.toString() ?? "", isActive: e.isActive,
       }));
 
   const markSaved = useUnsavedChanges(canEdit && isDirty && !save.isSuccess);
-  const [kind, interval, last] = useWatch({ control, name: ["kind", "calibrationIntervalMonths", "lastCalibrationDate"] });
-  const intervalNumber = Number(interval);
-  const derivedNext = kind === "MjernoSredstvo" && Number.isInteger(intervalNumber) && intervalNumber > 0 && last ? addMonths(last, intervalNumber) : null;
+  const kind = useWatch({ control, name: "kind" });
 
   const onSubmit = handleSubmit((values) =>
     save.mutate({ ...values, version: sync.baseVersion }, {
@@ -109,22 +94,10 @@ export function EquipmentFormPage() {
           </div>
 
           {kind === "MjernoSredstvo" && (
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Field label="Interval kalibracije (mjeseci)" htmlFor="interval" error={errors.calibrationIntervalMonths?.message}>
-                <input id="interval" inputMode="numeric" className={inputClass} {...register("calibrationIntervalMonths")} />
-              </Field>
-              <Field label="Zadnja kalibracija" htmlFor="last" error={errors.lastCalibrationDate?.message}>
-                <input id="last" type="date" className={inputClass} {...register("lastCalibrationDate")} />
-              </Field>
-              <Field label="Sljedeća kalibracija" htmlFor="next" error={errors.nextCalibrationDate?.message}
-                hint={derivedNext ? `Računa se: ${formatDate(derivedNext)}` : "Unesi ručno ako nema intervala."}>
-                {derivedNext ? (
-                  <input id="next" className={`${inputClass} bg-slate-50`} value={formatDate(derivedNext)} readOnly />
-                ) : (
-                  <input id="next" type="date" className={inputClass} {...register("nextCalibrationDate")} />
-                )}
-              </Field>
-            </div>
+            <Field label="Interval kalibracije (mjeseci)" htmlFor="interval" error={errors.calibrationIntervalMonths?.message}
+              hint="Predlaže datum sljedeće kalibracije pri unosu kalibracije.">
+              <input id="interval" inputMode="numeric" className={inputClass} {...register("calibrationIntervalMonths")} />
+            </Field>
           )}
 
           <label className="flex min-h-11 items-center gap-2 text-sm">
@@ -147,6 +120,7 @@ export function EquipmentFormPage() {
           </button>
         </div>
       </form>
+      {id && equipment.data?.kind === "MjernoSredstvo" && <CalibrationSection equipment={equipment.data} canEdit={canEdit} />}
     </>
   );
 }

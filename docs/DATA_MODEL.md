@@ -225,6 +225,7 @@ Istorija kalibracija kao jedna čitljiva lista ("pokaži istoriju kalibracije za
 | Note | string(1000)? | |
 
 Ne uređuje se; pogrešan unos se poništi (Admin, razlog) i unese novi.
+`Equipment.Kind` se ne može promijeniti čim oprema ima ijednu kalibraciju.
 
 ## 10. QualityCheck — Kontrola kvaliteta 🔒 (`Kontrole kvaliteta`)
 

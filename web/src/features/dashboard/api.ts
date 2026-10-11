@@ -36,7 +36,9 @@ export interface ChartDay {
   scrapQty: number;
 }
 
-export type WarningKind = "LotKarantin" | "LotNaKontroli" | "OrderBlocked" | "SupplierEvaluation" | "Calibration" | "Stocktake";
+export type WarningKind =
+  | "LotKarantin" | "LotNaKontroli" | "OrderBlocked" | "SupplierEvaluation"
+  | "Calibration" | "CalibrationMissing" | "CalibrationFailed" | "Stocktake";
 
 export interface DashboardWarning {
   kind: WarningKind;
