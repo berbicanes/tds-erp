@@ -24,6 +24,15 @@
 
 ### Faza 5 — odluke
 
+- **Health** je `/api/health`, ne `/health`: Caddy na API šalje samo `/api/*`, sve ostalo ide SPA-u. Anoniman, GET bez
+  izmjena. Odgovor samo `status`, `database`, `disk` (`ok` / `greska` / `malo-prostora`), 503 kad nešto nije ok. Prag
+  diska 1 GiB (`Health:MinFreeDiskBytes`), mjeri se na storage rootu fajlova (isti disk kao baza na jednom VPS-u).
+- **Logovi sa rotacijom** kroz Docker `json-file` (5 × 10 MB po servisu) — bez Seriloga (novi paket). Docker
+  healthcheck za `api` nije dodan: .NET slika nema `curl`/`wget`; vanjski uptime ping je pravi monitor (čeka domen).
+- **Restore test** (`deploy/restore-test.sh`): lokalno na dev bazi prošao — svjež dump i postojeći dump fajl,
+  29 tabela, 197 redova, isti broj redova kao u živoj bazi, zadnja migracija `…DropLegacyEquipmentCalibrationColumns`.
+  Privremena baza `tds_restore_test` se briše na kraju (provjereno: ostale su samo `tds` i sistemske).
+
 ## STOP — 11.10.2026. oko 03:15 (riješeno restartom Dockera, vidi gore)
 
 **Razlog:** Docker Desktop više ne pokreće nove kontejnere. Svaki novi kontejner ostaje u stanju "Created":

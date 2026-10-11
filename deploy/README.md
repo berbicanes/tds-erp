@@ -110,7 +110,17 @@ rsync -a /opt/tds/backup/files/YYYYMMDD-HHMMSS/ /opt/tds/data/files/
 chown -R 1654:1654 /opt/tds/data/files
 docker compose start api
 ```
-(Automatski restore test je u Fazi 5.)
+### Restore test
+
+`deploy/restore-test.sh [dump]` vraća dump u privremenu bazu `tds_restore_test` pored prave, uporedi broj redova
+svake tabele i na kraju obriše privremenu bazu. Prava baza se samo čita. Bez argumenta prvo napravi svjež dump.
+
+```bash
+/opt/tds/app/deploy/restore-test.sh                                   # svjež dump, poređenje sa živom bazom
+/opt/tds/app/deploy/restore-test.sh /opt/tds/backup/db/tds-YYYYMMDD-HHMMSS.dump   # da li se zadnji backup vraća
+```
+Pokrenuti nakon prvog deploya i nakon toga jednom mjesečno. Lokalno (dev baza):
+`COMPOSE_FILE=deploy/docker-compose.dev.yml deploy/restore-test.sh`.
 
 ## 5a. Monitoring
 
