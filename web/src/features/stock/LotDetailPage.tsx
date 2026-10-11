@@ -87,7 +87,7 @@ function DecisionPanel({ lot, onWarnings }: { lot: Lot; onWarnings: (w: string[]
         Spremi odluku
       </button>
       <ConfirmDialog open={confirm} title={`Odbiti lot ${lot.lotNumber}?`} confirmText="Odbij i otpiši" danger onConfirm={submit} onCancel={() => setConfirm(false)}>
-        Otpisaće se {qtyWithUnit(lot.onHand, lot.unit)}. Odbijen lot se više ne može vratiti.
+        Otpisat će se {qtyWithUnit(lot.onHand, lot.unit)}. Odbijen lot se više ne može vratiti.
       </ConfirmDialog>
     </div>
   );
