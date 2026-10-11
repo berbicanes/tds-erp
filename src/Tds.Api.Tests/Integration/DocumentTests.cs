@@ -112,6 +112,25 @@ public class DocumentTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Future_approval_date_is_rejected_also_on_a_draft()
+    {
+        await using var factory = await TdsApiFactory.CreateAsync(postgres);
+        var k = await factory.ClientAsAsync(Roles.Kontrolor);
+        var tomorrow = new SystemClock(TimeProvider.System).Today.AddDays(1).ToString("yyyy-MM-dd");
+
+        var create = await k.PostAsJsonAsync("/api/documents",
+            new { title = "Radno uputstvo laser", code = "RU-02", kind = "RadnoUputstvo", docVersion = "01", approvalDate = tomorrow }, Ct);
+        Assert.Equal("Datum odobrenja ne može biti u budućnosti.", (await create.ProblemAsync(HttpStatusCode.BadRequest)).FieldError("approvalDate"));
+
+        var d = await (await k.PostAsJsonAsync("/api/documents",
+            new { title = "Radno uputstvo laser", code = "RU-02", kind = "RadnoUputstvo", docVersion = "01", approvalDate = Today }, Ct)).ReadAsync<DocumentDto>(HttpStatusCode.Created);
+        var update = await k.PutAsJsonAsync($"/api/documents/{d.Id}",
+            new { title = "Radno uputstvo laser", code = "RU-02", kind = "RadnoUputstvo", docVersion = "01", approvalDate = tomorrow, version = d.Version }, Ct);
+        Assert.Equal("Datum odobrenja ne može biti u budućnosti.", (await update.ProblemAsync(HttpStatusCode.BadRequest)).FieldError("approvalDate"));
+        Assert.Equal(Today, (await (await k.GetAsync($"/api/documents/{d.Id}", Ct)).ReadAsync<DocumentDetailDto>()).Document.ApprovalDate!.Value.ToString("yyyy-MM-dd"));
+    }
+
+    [Fact]
     public async Task Approval_conditions_and_duplicate_versions_are_rejected()
     {
         await using var factory = await TdsApiFactory.CreateAsync(postgres);

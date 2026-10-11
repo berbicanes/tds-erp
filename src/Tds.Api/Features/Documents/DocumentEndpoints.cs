@@ -56,7 +56,7 @@ public sealed record NewVersionRequest(string DocVersion);
 
 public sealed class SaveDocumentValidator : AbstractValidator<SaveDocumentRequest>
 {
-    public SaveDocumentValidator(IHttpContextAccessor http)
+    public SaveDocumentValidator(IHttpContextAccessor http, IClock clock)
     {
         RuleFor(x => x.Title).NotEmpty().WithMessage("Unesi naziv dokumenta.")
             .MaximumLength(ControlledDocument.TitleMax).WithMessage($"Najviše {ControlledDocument.TitleMax} znakova.");
@@ -66,6 +66,8 @@ public sealed class SaveDocumentValidator : AbstractValidator<SaveDocumentReques
         RuleFor(x => x.DocVersion).NotEmpty().WithMessage("Unesi verziju, npr. 01.")
             .MaximumLength(ControlledDocument.DocVersionMax).WithMessage($"Najviše {ControlledDocument.DocVersionMax} znakova.");
         RuleFor(x => x.ChangeDescription).MaximumLength(ControlledDocument.ChangeDescriptionMax).WithMessage($"Najviše {ControlledDocument.ChangeDescriptionMax} znakova.");
+        // DOMAIN §7.4: never in the future, also on a draft (PREGLED N3).
+        RuleFor(x => x.ApprovalDate).Must(d => d is null || d <= clock.Today).WithMessage("Datum odobrenja ne može biti u budućnosti.");
         this.VersionOnUpdate(http, x => x.Version);
     }
 }
