@@ -52,6 +52,17 @@
   "dashboard" u "NC bez roka se ne prati na dashboardu" (tekst koji je vlasnik doslovno zadao).
   Server: svi FluentValidation validatori imaju bosanske poruke (provjereno skriptom); engleske poruke postoje samo u
   internim iznimkama koje korisnik ne vidi (vraća se opća bosanska poruka).
+- **Provjera ekrana na 360×740 i 375×812** (iframe u Chromeu na localhostu; mjereno: širina stranice i svaki element
+  sa horizontalnim skrolanjem): Pregled, Brzi unos, Nalozi, detalj naloga (Osnovno, Proizvodnja, Materijal, Kvalitet,
+  Istorija), Novi nalog, Dnevna proizvodnja (lista, detalj, novi), Zalihe (artikli, detalj artikla, lotovi, detalj lota,
+  prijem), Kvalitet (kontrole, detalj kontrole, NC lista, detalj NC, nova NC), Dobavljači (lista, detalj), Oprema (lista,
+  detalj MS-001), Dokumenti (lista, detalj, novi), Podešavanja (zaposlenici, detalj, korisnici) — 56 provjera.
+  Jedini nalaz: tabovi detalja naloga su na telefonu skrolali horizontalno → sada se prelamaju. Ponovna provjera OK.
+  Vizuelno pregledane kartice liste naloga i taba Kvalitet na 375 px.
+- **Brzi unos u browseru (localhost, dev baza):** izbor naloga RN-2026-0001 → operater → M-01 → laser +2 (lot se
+  pojavio i sam izabrao jedini prihvaćeni) → sati +1 → Spremi → "Spremljeno DP-20261011-04", nalog/operater/mašina
+  ostali, brojevi očišćeni. `Gotovo` onemogućeno sa objašnjenjem (nalog bez završne kontrole).
+  < 20 s: procjena po broju dodira (~9 prvi zapis, ~5 sljedeći); stvarno mjerenje u hali nije moguće bez korisnika.
 - Usput u Fazi 3: `Combobox` s praznom opcijom je na Enter tokom pretrage birao praznu opciju — ispravljeno (commit 149e66e).
 
 Pravila rada: vlasnikove upute od 11.10.2026. (plan faze na vrh, odluke ovdje, promjene pravila u docs sa

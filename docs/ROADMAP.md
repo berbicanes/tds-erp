@@ -85,11 +85,11 @@ Interni cilj: 2 sedmice intenzivnog rada. Klijentu komunicirano: 4 sedmice.
 
 ## Faza 4 — Hala i dorada (dan 11–12)
 
-- [ ] Brzi unos (UI §4), testiran na 360 i 375 px, < 20 s po zapisu
-- [ ] PWA manifest + ikona (dodavanje na početni ekran telefona); bez offline režima
-- [ ] Mobilni prikaz svih lista (kartice)
-- [ ] CSV export lista
-- [ ] Prolaz kroz sve tekstove: bosanski, ijekavica, bez engleskih ostataka
+- [x] Brzi unos (UI §4), testiran na 360 i 375 px, < 20 s po zapisu (procjena: ~9 dodira za prvi zapis, ~5 za sljedeći na istom nalogu; potvrditi mjerenjem u hali)
+- [x] PWA manifest + ikona (dodavanje na početni ekran telefona); bez offline režima
+- [x] Mobilni prikaz svih lista (kartice)
+- [x] CSV export lista
+- [x] Prolaz kroz sve tekstove: bosanski, ijekavica, bez engleskih ostataka
 
 ## Faza 5 — Predaja (dan 13–14)
 
