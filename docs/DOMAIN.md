@@ -96,6 +96,20 @@ Dozvoljeno samo iz lota sa `ReceiptDecision = Prihvacen`. `Karantin`, `NaKontrol
 → odbiti sa porukom "Lot {broj} nije prihvaćen ({odluka}) i ne smije se koristiti."
 Izdavanje veće od `OnHand` → odbiti ("Na lotu ima samo X {jedinica}").
 
+### 2.6 Lot sa nepoznatim stanjem (import iz Notiona)
+Lot uvezen iz Notiona nema količinu prijema (`ReceivedQty = null`). Ako uz to nema nijednog neponištenog pokreta,
+**stanje mu nije poznato** (DATA_MODEL §6). Lotovi primljeni u aplikaciji uvijek imaju poznato stanje.
+- Na lotu se za "Na stanju" i "Raspoloživo" prikazuje `—`, nikad 0.
+- Stanje artikla (§2.4) se računa samo iz lotova sa poznatim stanjem. Artikal dobija oznaku
+  **"Nepotpuno: X lotova bez količine"** (lista Zalihe i dashboard), gdje se broje neponišteni lotovi koji nisu
+  `Odbijen`.
+- Takav artikal se **ne broji** u KPI pločici "Materijal ispod minimuma" (stanje nije poznato); svaki takav lot je
+  u Upozorenjima kao "Lot bez količine prijema" (UI §3).
+- Izdavanje i otpis iz takvog lota se odbijaju: "Stanje lota {broj} nije poznato. Prvo upiši stvarno stanje
+  korekcijom."
+- **Korekcija sa stvarnom količinom** (razlog obavezan) ga pretvara u normalan lot. Za takav lot korekcija smije biti
+  i **0** (stanje utvrđeno: nema materijala); negativna ne smije. Poništavanje te korekcije vraća lot u "nepoznato".
+
 ## 3. Izvedene vrijednosti na nalogu
 - `CompletedQty = Σ GoodQty` neponištenih dnevnih zapisa.
 - `LaserFirstPieceApproved` = postoji neponištena `QualityCheck` (Phase = `LaserskoRezanje`,
@@ -224,7 +238,8 @@ dobavljač lota, kontrola. NC se veže samo za neponištenu kontrolu sa rezultat
 
 7.4 Kontrolisani dokumenti: za jedan `Code` najviše **jedna** verzija `Odobren`.
 Odobravanje nove verzije u istoj transakciji prebacuje prethodnu `Odobren` u `Povucen`.
-`Odobren` zahtijeva `ApprovalDate` (ne u budućnosti) i fajl.
+`Odobren` zahtijeva `ApprovalDate` i fajl. `ApprovalDate` nikad nije u budućnosti — odbija se pri svakom spremanju,
+i na nacrtu.
 
 | Iz | U |
 |---|---|
@@ -261,6 +276,13 @@ crvena upozorenja; kalibracija u narednih 30 dana je narandžasto.
 7.7 Fajlovi na QMS zapisima (certifikati dobavljača, dokazi kontrole i NC, certifikat kalibracije, fajl
 dokumenta): dodaje Kontrolor/Admin; vezu fajla sa zapisom uklanja samo Admin (bilježi se u AuditLog),
 sam fajl ostaje sačuvan.
+
+7.8 **Nevezani fajlovi — jedini izuzetak od pravila o brisanju.** Upload pravi fajl prije nego što je vezan za
+zapis; ako se zapis nikad ne spremi, fajl ostaje "siroče". Pozadinski posao jednom dnevno briše fajl (sadržaj na
+disku i red `FileAttachment`) koji je stariji od 24 sata i **nikad nije bio vezan** ni za jedan zapis: nema ga ni
+u jednoj vezi (crtež naloga, certifikat lota/dobavljača/kalibracije, fajl dokumenta, dokazi kontrole i NC) ni u
+istoriji izmjena (AuditLog) nekog drugog zapisa. Fajl čija je veza uklonjena (§7.7) se nikad ne briše. Svako
+brisanje se zapisuje u log aplikacije (Id, ime, veličina). Ništa drugo se ne briše.
 Neaktivna oprema i neaktivni artikli također ne dobijaju upozorenja za kalibraciju i popis.
 
 ## 8. Uloge i ovlasti
@@ -286,6 +308,10 @@ prijaviti; korisnici se ne brišu.
 
 Login: korisničko ime + lozinka (min. 10 znakova, barem jedna cifra i jedno malo slovo; bez obaveznih
 specijalnih znakova i velikih slova). 5 neuspjelih pokušaja → nalog zaključan 15 minuta.
+Svaki neuspjeh prijave vraća istu poruku **"Pogrešno korisničko ime ili lozinka."** — nepostojeći nalog, pogrešna
+lozinka, deaktiviran i zaključan nalog se ne razlikuju (ne otkriva se ni da nalog postoji ni da je lozinka tačna).
+Lozinka deaktiviranog ili zaključanog naloga se ne provjerava, pa se ne može ni pogađati. Zaključanost (do kada)
+vidi samo Admin u listi korisnika.
 
 Pretpostavka: Sanel = Admin. Mala firma — vjerovatno 1–2 Kontrolora, ostalo Operateri.
 

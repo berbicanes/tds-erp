@@ -45,7 +45,7 @@ Raspored (desktop, 12-kolonski grid; mobilni: sve jedno ispod drugog istim redom
 | Rok u 7 dana | aktivni sa `DueDate` ≤ danas+7 | Nalozi, filter |
 | Hitni | aktivni sa `Priority = Hitno` | Nalozi, filter |
 | Danas gotovo | Σ GoodQty danas | Dnevna proizvodnja, danas |
-| Materijal ispod minimuma | broj aktivnih artikala koji **imaju definisan minimum** i nivo im je `Ispod minimuma` ili `Nema` | Zalihe, filter |
+| Materijal ispod minimuma | broj aktivnih artikala koji **imaju definisan minimum**, nemaju lotova bez količine (DOMAIN §2.6) i nivo im je `Ispod minimuma` ili `Nema` | Zalihe, filter |
 
 "Danas gotovo" bez ijednog zapisa za danas prikazuje `0` uz napomenu "Još nema zapisa za danas".
 Artikal bez minimuma i sa stanjem 0 se **ne broji** u pločici "Materijal ispod minimuma" (inače bi svaki
@@ -65,6 +65,7 @@ Praznici se ne računaju posebno (radni dan bez zapisa = 0). Danas se prikazuje 
 - `QualityApproval = Blokirano` nalozi
 - rokovi ≤ 30 dana iz `DOMAIN.md` §7.6 (kalibracija, ocjena dobavljača, provjera dokumenta, popis)
 - mjerna sredstva van kalibracije
+- lotovi bez količine prijema (DOMAIN §2.6), narandžasto, link na lot
 Svaka stavka: ikona, tekst, datum/rok, link.
 Redoslijed: prvo crveno (prošli rokovi, mjerna sredstva van kalibracije, `Blokirano`, `Karantin`), zatim
 narandžasto (`NaKontroli`, rokovi u narednih 30 dana); unutar grupe po datumu, najraniji prvi. Mjerno
@@ -80,6 +81,8 @@ Max 15 redova + "Svi nalozi →".
 **Red 4 — Zalihe** (puna širina):
 Artikli sa nivoom ≠ OK prvo, zatim ostali. Kolone: artikal, kvalitet, debljina,
 na stanju, rezervisano, raspoloživo, minimum, nivo (badge). Max 10 + "Sve zalihe →".
+Artikal sa lotovima bez količine (DOMAIN §2.6) dobija uz nivo oznaku "Nepotpuno: X lotova bez količine"
+(isto u listi Zalihe → Artikli). Lot bez poznatog stanja prikazuje `—` za Na stanju i Raspoloživo.
 
 **Bilješke** — mala lista (Notion "Notes"): dodaj u jednom polju + Enter, checkbox za
 završeno, završene se sakriju nakon 7 dana. Sve uloge dodaju i štikliraju; završena se može

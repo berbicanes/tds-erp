@@ -98,6 +98,8 @@ cd web && npm run build && npm run typecheck && npm test
 
 - **API:** REST pod `/api/...`, JSON camelCase, greške kao `ProblemDetails` (RFC 9457) sa
   porukom na bosanskom u `detail`. Validacijske greške po polju u `errors`.
+  Obavezna polja u request DTO-ima su nullable tipovi sa validatorom: izostavljeno polje daje 400 sa porukom po
+  polju, nikad podrazumijevanu vrijednost (0, 0001-01-01, `false`, prazan Guid).
 - **GET ne mijenja stanje.** Nijedan GET endpoint ne smije ništa upisati ni promijeniti.
   (CSRF zaštita se oslanja na ovo + cookie `HttpOnly`, `Secure`, `SameSite=Strict`; nema
   posebnog antiforgery tokena.)

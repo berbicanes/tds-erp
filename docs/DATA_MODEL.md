@@ -134,6 +134,8 @@ Izvedeno po artiklu (IZV, vidi DOMAIN §2.4):
 - `OnHand`, `Reserved`, `Available`, `StockLevel` — samo nad lotovima sa odlukom `Prihvacen`
 - `OnHoldQty` ("Na kontroli / karantin") — Σ OnHand lotova sa odlukom `NaKontroli` ili `Karantin`,
   da materijal koji fizički stoji u hali ne bude nevidljiv. Ne ulazi u `Available` ni `StockLevel`.
+- `UnknownLotCount` — broj neponištenih lotova (osim `Odbijen`) sa nepoznatim stanjem (DOMAIN §2.6). Ti lotovi
+  ne ulaze ni u jedan od gornjih zbirova; > 0 → oznaka "Nepotpuno".
 
 ## 6. MaterialLot — Ulazni lot 🔒 (`Ulazni materijal u proizvodnji`)
 
@@ -152,6 +154,9 @@ Izvedeno po artiklu (IZV, vidi DOMAIN §2.4):
 
 Uklonjeno: `Broj naloga` (text) — veza ide kroz WorkOrderMaterial i ProductionEntry.
 Relacije `Dnevni zapisi proizvodnje` i `Radni nalozi` su obrnute strane tih veza.
+
+Izvedeno po lotu (IZV): `OnHand` = Σ neponištenih pokreta; **`null` (nepoznato)** kad je `ReceivedQty = null` i
+lot nema nijednog neponištenog pokreta (DOMAIN §2.6). Isto važi za `Available` lota.
 
 **Nepromjenjivo nakon kreiranja:** `MaterialItemId`, `ReceivedDate`, `ReceivedQty`. Mijenjaju se samo
 `LotNumber`, `SupplierId`, `DimensionsDescription`, `StorageLocation` (odluka prijema i certifikat kroz
@@ -329,6 +334,8 @@ Provjera na serveru pri uploadu (sve mora proći, inače 400 sa razlogom):
 | `.dxf` | ASCII DXF: prvih 4 KB je tekst (bez NUL bajtova) i sadrži `SECTION`; binarni DXF: počinje sa `AutoCAD Binary DXF` |
 
 `ContentType` se postavlja na serveru prema ekstenziji, ne prema onome što pošalje browser.
+Download šalje `Cache-Control: private, no-store`. Fajl koji nikad nije vezan za zapis briše se nakon 24 sata
+(DOMAIN §7.8 — jedini izuzetak od pravila o brisanju).
 Ime fajla na disku je Guid, originalno ime se čuva samo u `OriginalName` (za download).
 
 ## 15. AuditLog
