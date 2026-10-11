@@ -45,7 +45,7 @@ public class ProductionEntryTests(PostgresFixture postgres)
         laborHours = 7.5m, materialConsumed = consumed, note = "Smjena 1", version,
     };
 
-    private static async Task<decimal> OnHand(HttpClient c, Guid lotId) => (await (await c.GetAsync($"/api/lots/{lotId}", Ct)).ReadAsync<LotDto>()).OnHand;
+    private static async Task<decimal> OnHand(HttpClient c, Guid lotId) => (await (await c.GetAsync($"/api/lots/{lotId}", Ct)).ReadAsync<LotDto>()).OnHand!.Value;
 
     [Fact]
     public async Task Entry_with_consumption_issues_stock_links_lot_and_gets_a_daily_number()

@@ -273,7 +273,7 @@ public static class ProductionEntryEndpoints
             var unit = await db.MaterialItems.Where(i => i.Id == lot.MaterialItemId).Select(i => i.Unit).SingleAsync(ct);
             var alreadyConsumed = existing?.MaterialLotId == lotId ? existing.MaterialConsumed ?? 0m : 0m;
             onHandForEntry = await db.OnHandAsync(lotId, ct) + alreadyConsumed;
-            lotUse = new LotUse(lot.LotNumber, lot.ReceiptDecision, lot.IsVoided, onHandForEntry, unit);
+            lotUse = new LotUse(lot.LotNumber, lot.ReceiptDecision, lot.IsVoided, onHandForEntry, unit, await db.StockKnownAsync(lotId, ct));
         }
 
         var otherGood = await db.ProductionEntries.Where(p => p.WorkOrderId == req.WorkOrderId && !p.IsVoided && p.Id != entry.Id).SumAsync(p => (int?)p.GoodQty, ct) ?? 0;

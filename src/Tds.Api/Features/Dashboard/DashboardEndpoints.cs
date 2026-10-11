@@ -64,7 +64,9 @@ public static class DashboardEndpoints
         var kpi = counts with
         {
             // UI §3: only items WITH a minimum; an unused item without a minimum never raises this alarm.
-            ItemsBelowMinimum = activeStock.Count(s => s.MinimumStock is not null && s.StockLevel is StockLevel.IspodMinimuma or StockLevel.Nema),
+            // An item with lots of unknown stock (DOMAIN §2.6) is not counted: its stock is not known.
+            ItemsBelowMinimum = activeStock.Count(s => s.MinimumStock is not null && s.UnknownLotCount == 0
+                && s.StockLevel is StockLevel.IspodMinimuma or StockLevel.Nema),
         };
         var totals = new ProductionTotalsDto(todayEntries.Sum(e => e.LaserCutQty), todayEntries.Sum(e => e.PressedQty),
             todayEntries.Sum(e => e.GoodQty), todayEntries.Sum(e => e.ScrapQty), todayEntries.Sum(e => e.LaborHours));
@@ -150,6 +152,11 @@ public static class DashboardEndpoints
             SELECT 'LotNaKontroli', l.id, l.lot_number, NULL, i.name, i.grade, i.thickness_mm, l.received_date, false
             FROM material_lot l JOIN material_item i ON i.id = l.material_item_id
             WHERE NOT l.is_voided AND l.receipt_decision = 'NaKontroli'
+            UNION ALL
+            SELECT 'LotBezKolicine', l.id, l.lot_number, NULL, i.name, i.grade, i.thickness_mm, l.received_date, false
+            FROM material_lot l JOIN material_item i ON i.id = l.material_item_id
+            WHERE NOT l.is_voided AND l.receipt_decision <> 'Odbijen' AND l.received_qty IS NULL
+              AND NOT EXISTS (SELECT 1 FROM stock_movement m WHERE m.material_lot_id = l.id AND NOT m.is_voided)
             UNION ALL
             SELECT 'OrderBlocked', w.id, w.number, w.customer, NULL, NULL, NULL, w.due_date, true
             FROM work_order w

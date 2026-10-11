@@ -9,6 +9,7 @@ describe("dashboard warnings", () => {
   it.each([
     [{ kind: "LotKarantin", severity: "red", title: "AL-2291", itemName: "Lim aluminij", itemGrade: "AlMg3", itemThicknessMm: 4, date: "2026-10-08" }, "Lot AL-2291 (Lim aluminij AlMg3 4 mm) je u karantinu", "/zalihe/lotovi/x1"],
     [{ kind: "LotNaKontroli", title: "T-77940", itemName: "Lim inox", itemGrade: "1.4301", itemThicknessMm: 2.5 }, "Lot T-77940 (Lim inox 1.4301 2,5 mm) čeka ulaznu kontrolu", "/zalihe/lotovi/x1"],
+    [{ kind: "LotBezKolicine", title: "AL-77", itemName: "Aluminij lim", itemGrade: "AlMg3", itemThicknessMm: 2 }, "Lot AL-77 (Aluminij lim AlMg3 2 mm) nema količinu prijema — upiši stvarno stanje korekcijom", "/zalihe/lotovi/x1"],
     [{ kind: "OrderBlocked", severity: "red", title: "RN-2026-0007", detail: "Metalbau AG" }, "Nalog RN-2026-0007 (Metalbau AG) — kvalitet blokiran", "/nalozi/x1"],
     [{ kind: "Calibration", severity: "red", title: "MS-001", detail: "Pomično mjerilo", date: "2026-10-09" }, "Mjerno sredstvo MS-001 (Pomično mjerilo) je van kalibracije — kasni 3 dana (09.10.2026.)", "/oprema/x1"],
     [{ kind: "Calibration", title: "MS-002", detail: "Mikrometar", date: "2026-10-13" }, "Kalibracija MS-002 (Mikrometar) za 1 dan (13.10.2026.)", "/oprema/x1"],
@@ -33,6 +34,7 @@ describe("KPI links (UI §3: every number leads to its filtered list)", () => {
   });
   it("material tile filters exactly what it counts", () => {
     const state = readListState(new URL(links.itemsBelowMinimum, "http://x").searchParams);
-    expect(state.filters).toEqual({ hasMinimum: ["true"], stockLevel: ["IspodMinimuma", "Nema"] });
+    // DOMAIN §2.6: items with lots of unknown stock are not counted, so the list leaves them out too.
+    expect(state.filters).toEqual({ hasMinimum: ["true"], complete: ["true"], stockLevel: ["IspodMinimuma", "Nema"] });
   });
 });

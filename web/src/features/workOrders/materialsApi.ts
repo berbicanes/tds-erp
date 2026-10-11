@@ -15,8 +15,8 @@ export interface WorkOrderMaterial {
   reservedQty: number;
   consumedQty: number;
   effectiveReservation: number;
-  lotOnHand: number;
-  lotAvailable: number;
+  lotOnHand: number | null;
+  lotAvailable: number | null;
   version: number;
 }
 

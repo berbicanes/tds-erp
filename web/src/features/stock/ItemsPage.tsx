@@ -2,12 +2,12 @@ import { Link } from "react-router";
 import { csvNumber } from "../../lib/csv";
 import { DataTable, type Column } from "../../components/DataTable";
 import { FilterChips } from "../../components/FilterChips";
-import { Badge } from "../../components/Badge";
 import { useListState } from "../../hooks/useListState";
 import { EMPTY, formatQuantity } from "../../lib/format";
 import { hasRole, useMe } from "../../lib/auth";
 import { labelOf, stockLevel } from "../../lib/labels";
-import { qtyWithUnit } from "../../lib/material";
+import { incompleteLabel, qtyWithUnit } from "../../lib/material";
+import { LevelWithIncomplete } from "../../components/LevelWithIncomplete";
 import { useItemStock, type ItemStock } from "./stockApi";
 
 const columns: Column<ItemStock>[] = [
@@ -21,7 +21,7 @@ const columns: Column<ItemStock>[] = [
     render: (m) => <span className={m.available < 0 ? "font-semibold text-red-700" : ""}>{qtyWithUnit(m.available, m.unit)}</span>,
   },
   { key: "min", header: "Minimum", align: "right", render: (m) => qtyWithUnit(m.minimumStock, m.unit) },
-  { key: "level", header: "Nivo", render: (m) => <Badge label={labelOf(stockLevel, m.stockLevel)} />, mobile: true },
+  { key: "level", header: "Nivo", render: (m) => <LevelWithIncomplete item={m} />, mobile: true, csv: (m) => [labelOf(stockLevel, m.stockLevel).text, incompleteLabel(m.unknownLotCount)].filter(Boolean).join(" · ") },
   { key: "onHold", header: "Na kontroli / karantin", align: "right", render: (m) => (m.onHoldQty === 0 ? EMPTY : qtyWithUnit(m.onHoldQty, m.unit)) },
 ];
 

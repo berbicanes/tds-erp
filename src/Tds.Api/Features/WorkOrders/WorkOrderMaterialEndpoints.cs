@@ -21,8 +21,10 @@ public sealed record WorkOrderMaterialDto
     /// <summary>Issued from this lot for this order (positive).</summary>
     public required decimal ConsumedQty { get; init; }
     public required decimal EffectiveReservation { get; init; }
-    public required decimal LotOnHand { get; init; }
-    public required decimal LotAvailable { get; init; }
+    /// <summary>Null = unknown (DOMAIN §2.6).</summary>
+    public decimal? LotOnHand { get; init; }
+    /// <summary>Null = unknown (DOMAIN §2.6).</summary>
+    public decimal? LotAvailable { get; init; }
     public required uint Version { get; init; }
 }
 
@@ -75,8 +77,8 @@ public static class WorkOrderMaterialEndpoints
             Id = r.u.LinkId, MaterialLotId = r.u.MaterialLotId, LotNumber = r.LotNumber, ItemName = r.Name, ItemGrade = r.Grade,
             ItemThicknessMm = r.ThicknessMm, Unit = r.Unit, ReceiptDecision = r.ReceiptDecision, ReservedQty = r.u.ReservedQty,
             ConsumedQty = r.u.IssuedQty, EffectiveReservation = r.u.Effective,
-            LotOnHand = stock.TryGetValue(r.u.MaterialLotId, out var s) ? s.OnHand : 0m,
-            LotAvailable = stock.TryGetValue(r.u.MaterialLotId, out var s2) ? s2.Available : 0m,
+            LotOnHand = stock.TryGetValue(r.u.MaterialLotId, out var s) ? s.KnownOnHand : null,
+            LotAvailable = stock.TryGetValue(r.u.MaterialLotId, out var s2) ? s2.KnownAvailable : null,
             Version = r.Version,
         }).ToList();
     }
@@ -130,12 +132,14 @@ public static class WorkOrderMaterialEndpoints
         return TypedResults.Ok(new WithWarnings<WorkOrderMaterialDto>(dto, Warnings(lot, newEffective, availableWithoutThis, dto.Unit)));
     }
 
-    private static async Task<decimal> AvailableAsync(AppDbContext db, Guid lotId, CancellationToken ct) =>
-        (await StockQueries.LotStocksAsync(db, null, ct, lotId)).SingleOrDefault()?.Available ?? 0m;
+    private static async Task<decimal?> AvailableAsync(AppDbContext db, Guid lotId, CancellationToken ct) =>
+        (await StockQueries.LotStocksAsync(db, null, ct, lotId)).SingleOrDefault()?.KnownAvailable;
 
     /// <summary>Reserving more than is available is allowed but shown (DOMAIN §2.3).</summary>
-    private static IReadOnlyList<string> Warnings(MaterialLot lot, decimal reserving, decimal availableBefore, Unit unit) =>
-        reserving > availableBefore
-            ? [$"Rezervacija je veća od raspoloživog na lotu {lot.LotNumber} (raspoloživo {Domain.Stock.Format(availableBefore)} {unit})."]
-            : [];
+    private static IReadOnlyList<string> Warnings(MaterialLot lot, decimal reserving, decimal? availableBefore, Unit unit) =>
+        availableBefore is not { } available
+            ? reserving > 0 ? [$"Stanje lota {lot.LotNumber} nije poznato, pa se rezervacija ne može provjeriti."] : []
+            : reserving > available
+                ? [$"Rezervacija je veća od raspoloživog na lotu {lot.LotNumber} (raspoloživo {Domain.Stock.Format(available)} {unit})."]
+                : [];
 }

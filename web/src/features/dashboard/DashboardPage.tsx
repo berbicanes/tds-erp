@@ -6,9 +6,10 @@ import { ErrorBanner } from "../../components/ErrorBanner";
 import { ProgressBar, QualityMarks } from "../../components/ProgressBar";
 import { kpiLinks, warningHref, warningText } from "../../lib/dashboard";
 import { EMPTY, formatHours, formatPieces, formatQuantity, formatTime, formatDate } from "../../lib/format";
-import { labelOf, priority, stockLevel, workOrderStatus } from "../../lib/labels";
+import { labelOf, priority, workOrderStatus } from "../../lib/labels";
 import { dueTone, isFinished } from "../../lib/workOrder";
 import { qtyWithUnit } from "../../lib/material";
+import { LevelWithIncomplete } from "../../components/LevelWithIncomplete";
 import { useDashboard, type Dashboard } from "./api";
 import { useAddNote, useSetNoteDone } from "./notesApi";
 import { ProductionChart } from "./ProductionChart";
@@ -177,7 +178,7 @@ function StockTable({ d }: { d: Dashboard }) {
               <td data-label="Rezervisano" className="px-2 py-1 text-right tabular-nums">{qtyWithUnit(s.reserved, s.unit)}</td>
               <td data-label="Raspoloživo" className={`px-2 py-1 text-right tabular-nums ${s.available < 0 ? "font-semibold text-red-700" : ""}`}>{qtyWithUnit(s.available, s.unit)}</td>
               <td data-label="Minimum" className="px-2 py-1 text-right tabular-nums">{qtyWithUnit(s.minimumStock, s.unit)}</td>
-              <td data-label="Nivo" className="px-2 py-1"><Badge label={labelOf(stockLevel, s.stockLevel)} /></td>
+              <td data-label="Nivo" className="px-2 py-1"><LevelWithIncomplete item={s} /></td>
             </tr>
           ))}
         </tbody>

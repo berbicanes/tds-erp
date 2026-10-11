@@ -73,9 +73,10 @@ public static class StockMovementEndpoints
             return ApiResults.NotFound("Lot ne postoji.");
 
         var onHand = await db.OnHandAsync(id, ct);
+        var known = await db.StockKnownAsync(id, ct);
         var movement = req.Type == StockMovementType.Otpis
-            ? Domain.Stock.WriteOff(lot, req.Quantity!.Value, req.Reason, req.Date!.Value, onHand, clock.Today)
-            : Domain.Stock.Correction(lot, req.Quantity!.Value, req.Reason, req.Date!.Value, onHand, clock.Today);
+            ? Domain.Stock.WriteOff(lot, req.Quantity!.Value, req.Reason, req.Date!.Value, onHand, clock.Today, known)
+            : Domain.Stock.Correction(lot, req.Quantity!.Value, req.Reason, req.Date!.Value, onHand, clock.Today, known);
         db.StockMovements.Add(movement);
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);

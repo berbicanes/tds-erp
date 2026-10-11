@@ -52,7 +52,7 @@ public sealed record ProductionEntryInput(
     DateOnly Date, int LaserCutQty, int PressedQty, int GoodQty, int ScrapQty, decimal LaborHours, decimal? MaterialConsumed,
     int MachineCount, bool AllMachinesActive);
 
-public sealed record LotUse(string LotNumber, ReceiptDecision Decision, bool IsVoided, decimal OnHand, Unit Unit);
+public sealed record LotUse(string LotNumber, ReceiptDecision Decision, bool IsVoided, decimal OnHand, Unit Unit, bool StockKnown = true);
 
 public sealed record OrderFacts(string Number, WorkOrderStatus Status, bool FinalInspectionPassed, int OrderedQty, int GoodQtyOfOtherEntries);
 
@@ -103,6 +103,8 @@ public static class ProductionEntryRules
                 throw new DomainException($"Lot {lot.LotNumber} je poništen.");
             if (lot.Decision != ReceiptDecision.Prihvacen)
                 throw new DomainException($"Lot {lot.LotNumber} nije prihvaćen ({DisplayNames.Of(lot.Decision)}) i ne smije se koristiti.");
+            if (e.MaterialConsumed is > 0 && !lot.StockKnown)
+                throw new DomainException(Stock.UnknownMessage(lot.LotNumber));
             if (e.MaterialConsumed is { } c && c > onHandAvailableForThisEntry)
                 throw new DomainException($"Na lotu ima samo {Stock.Format(onHandAvailableForThisEntry)} {lot.Unit}.");
         }

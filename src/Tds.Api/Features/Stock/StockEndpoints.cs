@@ -18,7 +18,7 @@ public static class StockEndpoints
     /// then the rest by name (UI §3 "Zalihe"). Computed in memory: the workshop has hundreds of lots, not millions.
     /// </summary>
     private static async Task<PagedResult<ItemStockDto>> Items(
-        AppDbContext db, [AsParameters] ListQuery list, StockLevel[]? stockLevel, bool? includeInactive, bool? hasMinimum, CancellationToken ct)
+        AppDbContext db, [AsParameters] ListQuery list, StockLevel[]? stockLevel, bool? includeInactive, bool? hasMinimum, bool? complete, CancellationToken ct)
     {
         IEnumerable<ItemStockDto> rows = await StockQueries.ItemStocksAsync(db, ct);
         if (includeInactive != true)
@@ -30,6 +30,9 @@ public static class StockEndpoints
         // Dashboard tile "Materijal ispod minimuma" counts only items with a minimum (UI §3); its link uses this.
         if (hasMinimum is { } hm)
             rows = rows.Where(r => (r.MinimumStock is not null) == hm);
+        // complete=true: only items whose stock is fully known (DOMAIN §2.6), as counted by the dashboard tile.
+        if (complete is { } c)
+            rows = rows.Where(r => (r.UnknownLotCount == 0) == c);
 
         var sorted = (list.Sort?.TrimStart('-'), list.Sort?.StartsWith('-') == true) switch
         {
@@ -46,6 +49,6 @@ public static class StockEndpoints
     private static async Task<IResult> Lot(Guid id, AppDbContext db, CancellationToken ct)
     {
         var lot = (await StockQueries.LotStocksAsync(db, null, ct, lotId: id)).SingleOrDefault();
-        return lot is null ? ApiResults.NotFound("Lot ne postoji ili je poništen.") : TypedResults.Ok(new { lot.OnHand, lot.Reserved, lot.Available });
+        return lot is null ? ApiResults.NotFound("Lot ne postoji ili je poništen.") : TypedResults.Ok(new { OnHand = lot.KnownOnHand, lot.Reserved, Available = lot.KnownAvailable });
     }
 }

@@ -17,6 +17,14 @@ public class ProductionEntryRulesTests
 
     private static readonly LotUse AcceptedLot = new("H-4471", ReceiptDecision.Prihvacen, false, 10m, Unit.tabla);
 
+    [Fact]
+    public void Consumption_from_a_lot_with_unknown_stock_is_rejected_cutting_without_consumption_is_not()
+    {
+        var unknown = AcceptedLot with { LotNumber = "AL-77", OnHand = 0m, StockKnown = false };
+        Assert.Equal("Stanje lota AL-77 nije poznato. Prvo upiši stvarno stanje korekcijom.", Reject(Input(laser: 5, consumed: 1m), lot: unknown, onHand: 0m));
+        Assert.Empty(ProductionEntryRules.Check(Input(laser: 5), Order(), unknown, 0m, Today, false));
+    }
+
     private static string Reject(ProductionEntryInput e, OrderFacts? o = null, LotUse? lot = null, decimal onHand = 10m, bool admin = false) =>
         Assert.Throws<DomainException>(() => ProductionEntryRules.Check(e, o ?? Order(), lot, onHand, Today, admin)).Message;
 

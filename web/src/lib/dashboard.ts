@@ -34,6 +34,8 @@ export function warningText(w: WarningLike, today: string): string {
       return `Lot ${w.title} (${item}) je u karantinu`;
     case "LotNaKontroli":
       return `Lot ${w.title} (${item}) čeka ulaznu kontrolu`;
+    case "LotBezKolicine":
+      return `Lot ${w.title} (${item}) nema količinu prijema — upiši stvarno stanje korekcijom`;
     case "OrderBlocked":
       return `Nalog ${w.title} (${w.detail ?? ""}) — kvalitet blokiran`;
     case "SupplierEvaluation":
@@ -64,6 +66,7 @@ export function warningHref(w: WarningLike): string {
   switch (w.kind) {
     case "LotKarantin":
     case "LotNaKontroli":
+    case "LotBezKolicine":
       return `/zalihe/lotovi/${w.entityId}`;
     case "OrderBlocked":
       return `/nalozi/${w.entityId}`;
@@ -92,6 +95,6 @@ export function kpiLinks(today: string) {
     dueIn7Days: "/nalozi?dueWithinDays=7",
     urgentOrders: "/nalozi?active=true&priority=Hitno",
     goodToday: `/proizvodnja?from=${today}&to=${today}`,
-    itemsBelowMinimum: "/zalihe/artikli?hasMinimum=true&stockLevel=IspodMinimuma&stockLevel=Nema",
+    itemsBelowMinimum: "/zalihe/artikli?hasMinimum=true&complete=true&stockLevel=IspodMinimuma&stockLevel=Nema",
   } as const;
 }

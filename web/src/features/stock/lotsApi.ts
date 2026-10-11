@@ -18,7 +18,8 @@ export interface Lot {
   dimensionsDescription: string | null;
   /** null = unknown (lot imported from Notion). */
   receivedQty: number | null;
-  onHand: number;
+  /** null = unknown: lot imported from Notion without quantity (DOMAIN §2.6). */
+  onHand: number | null;
   receiptDecision: ReceiptDecision;
   inspectedByEmployeeId: string | null;
   inspectedByName: string | null;

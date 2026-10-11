@@ -121,7 +121,7 @@ export function WorkOrderMaterialsTab({ wo }: { wo: WorkOrder }) {
                 <td data-label="Rezervisano" className="px-2 py-1.5 tabular-nums"><ReservationCell wo={wo} m={m} canEdit={canEdit} onWarnings={setWarnings} /></td>
                 <td data-label="Utrošeno" className="px-2 py-1.5 text-right tabular-nums">{formatQuantity(m.consumedQty)} {m.unit}</td>
                 <td data-label="Na stanju lota" className="px-2 py-1.5 text-right tabular-nums">{qtyWithUnit(m.lotOnHand, m.unit)}</td>
-                <td data-label="Raspoloživo" className={`px-2 py-1.5 text-right tabular-nums ${m.lotAvailable < 0 ? "font-semibold text-red-700" : ""}`}>{qtyWithUnit(m.lotAvailable, m.unit)}</td>
+                <td data-label="Raspoloživo" className={`px-2 py-1.5 text-right tabular-nums ${m.lotAvailable != null && m.lotAvailable < 0 ? "font-semibold text-red-700" : ""}`}>{qtyWithUnit(m.lotAvailable, m.unit)}</td>
               </tr>
             ))}
           </tbody>

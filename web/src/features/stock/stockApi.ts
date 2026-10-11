@@ -15,6 +15,8 @@ export interface ItemStock {
   available: number;
   stockLevel: StockLevel;
   onHoldQty: number;
+  /** Lots with unknown stock (DOMAIN §2.6), not part of the sums. */
+  unknownLotCount: number;
   isActive: boolean;
 }
 

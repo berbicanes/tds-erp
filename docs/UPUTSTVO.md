@@ -34,6 +34,10 @@ svako, kasnije samo kontrolor ili admin. Zatim se upiše novi.
 Stanje lota se nikad ne kuca ručno: računa se iz prijema, utroška, korekcija i otpisa.
 Pogrešna količina se ispravlja **korekcijom** na lotu (uz razlog).
 
+**Lot bez količine (iz Notiona):** lot prenesen iz Notiona bez stanja pokazuje "—" za Na stanju, artikal ima oznaku
+"Nepotpuno", a lot je u Upozorenjima na Pregledu. Izmjeri stvarno stanje i na lotu upiši **Korekciju** sa tom
+količinom (može i 0) i razlogom, npr. "Popis". Od tada je to običan lot; prije toga se iz njega ne može trošiti.
+
 ## 3. Status naloga
 
 Na detalju naloga dugme **Promijeni status** nudi samo dozvoljene korake; nedozvoljeni pišu zašto.

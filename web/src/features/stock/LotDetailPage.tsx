@@ -87,7 +87,7 @@ function DecisionPanel({ lot, onWarnings }: { lot: Lot; onWarnings: (w: string[]
         Spremi odluku
       </button>
       <ConfirmDialog open={confirm} title={`Odbiti lot ${lot.lotNumber}?`} confirmText="Odbij i otpiši" danger onConfirm={submit} onCancel={() => setConfirm(false)}>
-        Otpisat će se {qtyWithUnit(lot.onHand, lot.unit)}. Odbijen lot se više ne može vratiti.
+        {lot.onHand == null ? "Stanje lota nije poznato, pa se ništa ne otpisuje." : `Otpisat će se ${qtyWithUnit(lot.onHand, lot.unit)}.`} Odbijen lot se više ne može vratiti.
       </ConfirmDialog>
     </div>
   );
@@ -174,7 +174,8 @@ export function LotDetailPage() {
           <Info label="Dobavljač">{l.supplierName}</Info>
           <Info label="Datum prijema">{formatDate(l.receivedDate)}</Info>
           <Info label="Primljeno">{qtyWithUnit(l.receivedQty, l.unit)}</Info>
-          <Info label="Na stanju"><span className={l.onHand < 0 ? "text-red-700" : ""}>{qtyWithUnit(l.onHand, l.unit)}</span></Info>
+          <Info label="Na stanju"><span className={l.onHand != null && l.onHand < 0 ? "text-red-700" : ""}>{qtyWithUnit(l.onHand, l.unit)}</span>
+            {l.onHand == null && <span className="block text-xs text-amber-800">Nije poznato (lot iz Notiona bez količine). Upiši stvarno stanje korekcijom ispod.</span>}</Info>
           <Info label="Dimenzije / količina">{l.dimensionsDescription ?? EMPTY}</Info>
           <Info label="Skladišna lokacija">{l.storageLocation ?? EMPTY}</Info>
           <Info label="Kontrolisao">{l.inspectedByName ?? EMPTY}</Info>

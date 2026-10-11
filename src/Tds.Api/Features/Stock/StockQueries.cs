@@ -7,9 +7,14 @@ using Tds.Api.Infrastructure;
 namespace Tds.Api.Features.Stock;
 
 /// <summary>Stock per lot, computed only from stock_movement (golden rule 1).</summary>
-public sealed record LotStock(Guid LotId, Guid MaterialItemId, ReceiptDecision Decision, decimal OnHand, decimal Reserved)
+/// <param name="StockKnown">False for an imported lot without received quantity and movements (DOMAIN §2.6).</param>
+public sealed record LotStock(Guid LotId, Guid MaterialItemId, ReceiptDecision Decision, decimal OnHand, decimal Reserved, bool StockKnown)
 {
     public decimal Available => OnHand - Reserved;
+
+    /// <summary>What the UI shows: null ("—") when the stock is unknown, never 0.</summary>
+    public decimal? KnownOnHand => StockKnown ? OnHand : null;
+    public decimal? KnownAvailable => StockKnown ? Available : null;
 }
 
 public sealed record ItemStockDto
@@ -27,6 +32,8 @@ public sealed record ItemStockDto
     public required StockLevel StockLevel { get; init; }
     /// <summary>"Na kontroli / karantin": OnHand of NaKontroli + Karantin lots; not part of Available.</summary>
     public required decimal OnHoldQty { get; init; }
+    /// <summary>Lots (not voided, not Odbijen) with unknown stock (DOMAIN §2.6); they are left out of every sum above.</summary>
+    public required int UnknownLotCount { get; init; }
     public required bool IsActive { get; init; }
 }
 
@@ -40,7 +47,8 @@ public static class StockQueries
     private const string LotCte = """
         lot_onhand AS (
             SELECT l.id, l.material_item_id, l.receipt_decision,
-                   COALESCE(SUM(m.quantity) FILTER (WHERE NOT m.is_voided), 0) AS on_hand
+                   COALESCE(SUM(m.quantity) FILTER (WHERE NOT m.is_voided), 0) AS on_hand,
+                   l.received_qty IS NOT NULL OR COUNT(m.id) FILTER (WHERE NOT m.is_voided) > 0 AS stock_known
             FROM material_lot l
             LEFT JOIN stock_movement m ON m.material_lot_id = l.id
             WHERE NOT l.is_voided
@@ -61,13 +69,13 @@ public static class StockQueries
     public static async Task<List<LotStock>> LotStocksAsync(AppDbContext db, Guid? materialItemId, CancellationToken ct, Guid? lotId = null) =>
         await Sql.QueryAsync(db, $"""
             WITH {LotCte}
-            SELECT lo.id, lo.material_item_id, lo.receipt_decision, lo.on_hand, COALESCE(lr.reserved, 0) AS reserved
+            SELECT lo.id, lo.material_item_id, lo.receipt_decision, lo.on_hand, COALESCE(lr.reserved, 0) AS reserved, lo.stock_known
             FROM lot_onhand lo
             LEFT JOIN lot_reserved lr ON lr.material_lot_id = lo.id
             WHERE (@item::uuid IS NULL OR lo.material_item_id = @item) AND (@lot::uuid IS NULL OR lo.id = @lot)
             """,
             r => new LotStock(r.Get<Guid>("id"), r.Get<Guid>("material_item_id"), Enum.Parse<ReceiptDecision>(r.Get<string>("receipt_decision")),
-                r.Get<decimal>("on_hand"), r.Get<decimal>("reserved")),
+                r.Get<decimal>("on_hand"), r.Get<decimal>("reserved"), r.Get<bool>("stock_known")),
             ct,
             new NpgsqlParameter("item", (object?)materialItemId ?? DBNull.Value) { NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid },
             new NpgsqlParameter("lot", (object?)lotId ?? DBNull.Value) { NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid });
@@ -77,9 +85,10 @@ public static class StockQueries
         await Sql.QueryAsync(db, $"""
             WITH {LotCte}
             SELECT mi.id, mi.name, mi.grade, mi.thickness_mm, mi.unit, mi.minimum_stock, mi.is_active,
-                   COALESCE(SUM(lo.on_hand) FILTER (WHERE lo.receipt_decision = 'Prihvacen'), 0) AS on_hand,
-                   COALESCE(SUM(lr.reserved) FILTER (WHERE lo.receipt_decision = 'Prihvacen'), 0) AS reserved,
-                   COALESCE(SUM(lo.on_hand) FILTER (WHERE lo.receipt_decision IN ('NaKontroli', 'Karantin')), 0) AS on_hold
+                   COALESCE(SUM(lo.on_hand) FILTER (WHERE lo.stock_known AND lo.receipt_decision = 'Prihvacen'), 0) AS on_hand,
+                   COALESCE(SUM(lr.reserved) FILTER (WHERE lo.stock_known AND lo.receipt_decision = 'Prihvacen'), 0) AS reserved,
+                   COALESCE(SUM(lo.on_hand) FILTER (WHERE lo.stock_known AND lo.receipt_decision IN ('NaKontroli', 'Karantin')), 0) AS on_hold,
+                   COUNT(lo.id) FILTER (WHERE NOT lo.stock_known AND lo.receipt_decision <> 'Odbijen') AS unknown_lots
             FROM material_item mi
             LEFT JOIN lot_onhand lo ON lo.material_item_id = mi.id
             LEFT JOIN lot_reserved lr ON lr.material_lot_id = lo.id
@@ -96,6 +105,7 @@ public static class StockQueries
                     ThicknessMm = r.Nullable<decimal>("thickness_mm"), Unit = Enum.Parse<Unit>(r.Get<string>("unit")),
                     MinimumStock = minimum, OnHand = onHand, Reserved = reserved, Available = onHand - reserved,
                     StockLevel = StockLevels.Level(onHand - reserved, minimum), OnHoldQty = r.Get<decimal>("on_hold"),
+                    UnknownLotCount = (int)r.Get<long>("unknown_lots"),
                     IsActive = r.Get<bool>("is_active"),
                 };
             }, ct);

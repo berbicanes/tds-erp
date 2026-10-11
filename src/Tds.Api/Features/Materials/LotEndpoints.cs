@@ -21,8 +21,8 @@ public sealed record LotDto
     public string? DimensionsDescription { get; init; }
     /// <summary>Null = unknown (lot imported from Notion).</summary>
     public decimal? ReceivedQty { get; init; }
-    /// <summary>IZV: Σ non-voided movements.</summary>
-    public required decimal OnHand { get; init; }
+    /// <summary>IZV: Σ non-voided movements; null = unknown (imported lot without quantity, DOMAIN §2.6).</summary>
+    public decimal? OnHand { get; init; }
     public required ReceiptDecision ReceiptDecision { get; init; }
     public Guid? InspectedByEmployeeId { get; init; }
     public string? InspectedByName { get; init; }
@@ -142,7 +142,9 @@ public static class LotEndpoints
             ItemName = i.Name, ItemGrade = i.Grade, ItemThicknessMm = i.ThicknessMm, Unit = i.Unit,
             SupplierId = l.SupplierId, SupplierName = s.Name, ReceivedDate = l.ReceivedDate,
             DimensionsDescription = l.DimensionsDescription, ReceivedQty = l.ReceivedQty,
-            OnHand = db.StockMovements.Where(m => m.MaterialLotId == l.Id && !m.IsVoided).Sum(m => (decimal?)m.Quantity) ?? 0m,
+            OnHand = l.ReceivedQty == null && !db.StockMovements.Any(m => m.MaterialLotId == l.Id && !m.IsVoided)
+                ? null
+                : db.StockMovements.Where(m => m.MaterialLotId == l.Id && !m.IsVoided).Sum(m => (decimal?)m.Quantity) ?? 0m,
             ReceiptDecision = l.ReceiptDecision, InspectedByEmployeeId = l.InspectedByEmployeeId, InspectedByName = e.FullName,
             StorageLocation = l.StorageLocation, CertificateFileId = l.CertificateFileId, CertificateFileName = f.OriginalName,
             IsVoided = l.IsVoided, VoidedReason = l.VoidedReason, Version = l.Version,

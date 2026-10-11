@@ -28,6 +28,7 @@ interface Movement {
 function ManualMovementForm({ lot }: { lot: Lot }) {
   const qc = useQueryClient();
   const [type, setType] = useState<"Korekcija" | "Otpis">("Korekcija");
+  const unknown = lot.onHand == null;
   const [qty, setQty] = useState("");
   const [date, setDate] = useState(todaySarajevo());
   const [reason, setReason] = useState("");
@@ -46,6 +47,12 @@ function ManualMovementForm({ lot }: { lot: Lot }) {
 
   const submit = () => {
     const n = parseDecimal(qty);
+    // DOMAIN §2.6: on a lot with unknown stock the correction records the real stock, which may be 0.
+    if (unknown && type === "Korekcija" && n !== null && n >= 0) {
+      if (!reason.trim()) return setError("Upiši razlog korekcije ili otpisa.");
+      setError(null);
+      return save.mutate({ type, quantity: n, date, reason: reason.trim() });
+    }
     if (n === null || n === 0) return setError(type === "Otpis" ? "Unesi količinu otpisa veću od 0." : "Unesi količinu korekcije, npr. -1,5 ili 2.");
     if (type === "Otpis" && n < 0) return setError("Količina otpisa se unosi kao pozitivan broj.");
     if (!reason.trim()) return setError("Upiši razlog korekcije ili otpisa.");
@@ -65,7 +72,7 @@ function ManualMovementForm({ lot }: { lot: Lot }) {
         ))}
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
-        <Field label={`Količina (${lot.unit})`} htmlFor="mv-qty" required hint={type === "Korekcija" ? "+ dodaje, − oduzima" : `Najviše ${formatQuantity(lot.onHand)}`}>
+        <Field label={`Količina (${lot.unit})`} htmlFor="mv-qty" required hint={unknown ? "Stanje nije poznato: upiši stvarnu količinu na stanju (može i 0)." : type === "Korekcija" ? "+ dodaje, − oduzima" : `Najviše ${formatQuantity(lot.onHand)}`}>
           <input id="mv-qty" inputMode="decimal" className={inputClass} value={qty} onChange={(e) => setQty(e.target.value)} />
         </Field>
         <Field label="Datum" htmlFor="mv-date" required>

@@ -37,7 +37,7 @@ export interface ChartDay {
 }
 
 export type WarningKind =
-  | "LotKarantin" | "LotNaKontroli" | "OrderBlocked" | "SupplierEvaluation"
+  | "LotKarantin" | "LotNaKontroli" | "LotBezKolicine" | "OrderBlocked" | "SupplierEvaluation"
   | "Calibration" | "CalibrationMissing" | "CalibrationFailed" | "NcDue" | "DocumentReview" | "Stocktake";
 
 export interface DashboardWarning {

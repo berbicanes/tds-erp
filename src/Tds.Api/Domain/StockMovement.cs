@@ -23,11 +23,23 @@ public static class Stock
     public static decimal OnHand(IEnumerable<StockMovement> movements) =>
         movements.Where(m => !m.IsVoided).Sum(m => m.Quantity);
 
-    /// <summary>Korekcija: ± quantity, reason required, result never below 0, date not in the future.</summary>
-    public static StockMovement Correction(MaterialLot lot, decimal quantity, string? reason, DateOnly date, decimal onHand, DateOnly today)
+    /// <summary>
+    /// DOMAIN §2.6: stock is unknown only for a lot imported from Notion (no received quantity) that has no
+    /// non-voided movement yet. Every lot received in the application has a known stock.
+    /// </summary>
+    public static bool IsKnown(decimal? receivedQty, bool hasMovements) => receivedQty is not null || hasMovements;
+
+    public static string UnknownMessage(string lotNumber) =>
+        $"Stanje lota {lotNumber} nije poznato. Prvo upiši stvarno stanje korekcijom.";
+
+    /// <summary>
+    /// Korekcija: ± quantity, reason required, result never below 0, date not in the future. On a lot with unknown
+    /// stock (§2.6) it records the real stock, which may be 0.
+    /// </summary>
+    public static StockMovement Correction(MaterialLot lot, decimal quantity, string? reason, DateOnly date, decimal onHand, DateOnly today, bool stockKnown = true)
     {
         CheckManual(lot, reason, date, today);
-        if (quantity == 0)
+        if (quantity == 0 && stockKnown)
             throw new DomainException("Korekcija ne može biti 0.");
         if (onHand + quantity < 0)
             throw new DomainException($"Korekcija bi spustila stanje lota {lot.LotNumber} ispod 0 (na stanju je {Format(onHand)}).");
@@ -35,9 +47,11 @@ public static class Stock
     }
 
     /// <summary>Otpis: quantity &gt; 0 and ≤ OnHand, reason required, date not in the future.</summary>
-    public static StockMovement WriteOff(MaterialLot lot, decimal quantity, string? reason, DateOnly date, decimal onHand, DateOnly today)
+    public static StockMovement WriteOff(MaterialLot lot, decimal quantity, string? reason, DateOnly date, decimal onHand, DateOnly today, bool stockKnown = true)
     {
         CheckManual(lot, reason, date, today);
+        if (!stockKnown)
+            throw new DomainException(UnknownMessage(lot.LotNumber));
         if (quantity <= 0)
             throw new DomainException("Količina otpisa mora biti veća od 0.");
         if (quantity > onHand)

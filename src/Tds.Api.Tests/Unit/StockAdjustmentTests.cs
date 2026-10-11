@@ -27,6 +27,33 @@ public class StockAdjustmentTests
         Assert.Equal("Korekcija bi spustila stanje lota H-1 ispod 0 (na stanju je 3,5).",
             Assert.Throws<DomainException>(() => Stock.Correction(Lot(), -3.501m, "Popis", Today, 3.5m, Today)).Message);
 
+    private static MaterialLot Imported() => MaterialLot.ImportedFromNotion("AL-77", Guid.CreateVersion7(), Guid.CreateVersion7(), Today, Today);
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(12.5)]
+    public void Correction_on_a_lot_with_unknown_stock_records_the_real_stock_even_zero(decimal qty)
+    {
+        var m = Stock.Correction(Imported(), qty, "Popis nakon importa", Today, onHand: 0m, Today, stockKnown: false);
+        Assert.Equal((StockMovementType.Korekcija, qty), (m.Type, m.Quantity));
+    }
+
+    [Fact]
+    public void Negative_correction_on_a_lot_with_unknown_stock_is_rejected() =>
+        Assert.Throws<DomainException>(() => Stock.Correction(Imported(), -1, "Popis", Today, 0m, Today, stockKnown: false));
+
+    [Fact]
+    public void WriteOff_from_a_lot_with_unknown_stock_is_rejected() =>
+        Assert.Equal("Stanje lota AL-77 nije poznato. Prvo upiši stvarno stanje korekcijom.",
+            Assert.Throws<DomainException>(() => Stock.WriteOff(Imported(), 1, "Oštećenje", Today, 0m, Today, stockKnown: false)).Message);
+
+    [Theory]
+    [InlineData(null, false, false)]
+    [InlineData(null, true, true)]
+    [InlineData(10.0, false, true)]
+    public void Stock_is_unknown_only_without_received_quantity_and_without_movements(double? received, bool hasMovements, bool known) =>
+        Assert.Equal(known, Stock.IsKnown((decimal?)received, hasMovements));
+
     [Fact]
     public void Zero_correction_is_rejected() =>
         Assert.Throws<DomainException>(() => Stock.Correction(Lot(), 0, "Popis", Today, 10, Today));
