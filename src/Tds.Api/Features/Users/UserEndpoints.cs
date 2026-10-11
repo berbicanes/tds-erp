@@ -10,7 +10,7 @@ namespace Tds.Api.Features.Users;
 public sealed record UserDto(Guid Id, string UserName, string Role, bool IsActive, Guid? EmployeeId, string? EmployeeName);
 
 public sealed record CreateUserRequest(string UserName, string Role, string Password);
-public sealed record UpdateUserRequest(string Role, bool IsActive);
+public sealed record UpdateUserRequest(string Role, bool? IsActive);
 public sealed record SetPasswordRequest(string Password);
 
 public sealed class CreateUserValidator : AbstractValidator<CreateUserRequest>
@@ -27,8 +27,11 @@ public sealed class CreateUserValidator : AbstractValidator<CreateUserRequest>
 
 public sealed class UpdateUserValidator : AbstractValidator<UpdateUserRequest>
 {
-    public UpdateUserValidator() =>
+    public UpdateUserValidator()
+    {
         RuleFor(x => x.Role).Must(r => Roles.All.Contains(r)).WithMessage("Odaberi ulogu.");
+        RuleFor(x => x.IsActive).Required("Odaberi da li je nalog aktivan.");
+    }
 }
 
 public sealed class SetPasswordValidator : AbstractValidator<SetPasswordRequest>
@@ -87,7 +90,7 @@ public static class UserEndpoints
         var user = await users.FindByIdAsync(id.ToString());
         if (user is null)
             return ApiResults.NotFound("Korisnik ne postoji.");
-        if (id == current.UserId && (!req.IsActive || req.Role != Roles.Admin))
+        if (id == current.UserId && (req.IsActive == false || req.Role != Roles.Admin))
             return ApiResults.Conflict("Ne možeš sebi ukloniti ulogu Admin niti deaktivirati svoj nalog.");
 
         var roles = await users.GetRolesAsync(user);
@@ -101,7 +104,7 @@ public static class UserEndpoints
         if (wasActive != req.IsActive)
         {
             await users.SetLockoutEnabledAsync(user, true);
-            await users.SetLockoutEndDateAsync(user, req.IsActive ? null : DateTimeOffset.MaxValue);
+            await users.SetLockoutEndDateAsync(user, req.IsActive!.Value ? null : DateTimeOffset.MaxValue);
         }
 
         // Role or status change: existing sessions must re-validate (SecurityStampValidator).

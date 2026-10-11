@@ -97,7 +97,7 @@ export function ProductionEntryFormPage() {
       {
         workOrderId: v.workOrderId!, date: v.date!, operatorEmployeeId: v.operatorEmployeeId!, equipmentIds: v.equipmentIds,
         materialLotId: v.materialLotId, laserCutQty: v.laserCutQty ?? 0, pressedQty: v.pressedQty ?? 0, goodQty: v.goodQty ?? 0,
-        scrapQty: v.scrapQty ?? 0, laborHours: v.laborHours ?? 0, materialConsumed: v.materialConsumed, note: v.note,
+        scrapQty: v.scrapQty ?? 0, laborHours: v.laborHours ?? null, materialConsumed: v.materialConsumed, note: v.note,
         version: sync.baseVersion,
       },
       {

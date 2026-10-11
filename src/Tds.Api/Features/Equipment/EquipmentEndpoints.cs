@@ -60,8 +60,8 @@ public sealed record EquipmentDto
 public sealed record EquipmentOption(Guid Id, string Code, string Name, EquipmentKind Kind, CalibrationStatusAtCheck? CalibrationStatus);
 
 public sealed record SaveEquipmentRequest(
-    string Code, string Name, EquipmentKind Kind, string? Manufacturer, string? SerialNumber,
-    int? CalibrationIntervalMonths, bool IsActive, uint Version);
+    string Code, string Name, EquipmentKind? Kind, string? Manufacturer, string? SerialNumber,
+    int? CalibrationIntervalMonths, bool? IsActive, uint? Version);
 
 public sealed record CalibrationDto
 {
@@ -80,19 +80,21 @@ public sealed record CalibrationDto
 }
 
 public sealed record RecordCalibrationRequest(
-    DateOnly CalibrationDate, DateOnly? NextCalibrationDate, string PerformedBy, CalibrationResult Result, Guid? CertificateFileId, string? Note);
+    DateOnly? CalibrationDate, DateOnly? NextCalibrationDate, string PerformedBy, CalibrationResult? Result, Guid? CertificateFileId, string? Note);
 
 public sealed class SaveEquipmentValidator : AbstractValidator<SaveEquipmentRequest>
 {
-    public SaveEquipmentValidator()
+    public SaveEquipmentValidator(IHttpContextAccessor http)
     {
         RuleFor(x => x.Code).NotEmpty().WithMessage("Unesi oznaku, npr. M-05 ili MS-001.")
             .MaximumLength(EquipmentEntity.CodeMax).WithMessage($"Oznaka može imati najviše {EquipmentEntity.CodeMax} znakova.");
         RuleFor(x => x.Name).NotEmpty().WithMessage("Unesi naziv.")
             .MaximumLength(EquipmentEntity.NameMax).WithMessage($"Naziv može imati najviše {EquipmentEntity.NameMax} znakova.");
-        RuleFor(x => x.Kind).IsInEnum().WithMessage("Odaberi vrstu opreme.");
+        RuleFor(x => x.Kind).Required("Odaberi vrstu opreme.").IsInEnum().WithMessage("Odaberi vrstu opreme.");
         RuleFor(x => x.Manufacturer).MaximumLength(EquipmentEntity.ManufacturerMax).WithMessage($"Proizvođač može imati najviše {EquipmentEntity.ManufacturerMax} znakova.");
         RuleFor(x => x.SerialNumber).MaximumLength(EquipmentEntity.SerialNumberMax).WithMessage($"Serijski broj može imati najviše {EquipmentEntity.SerialNumberMax} znakova.");
+        RuleFor(x => x.IsActive).Required("Odaberi da li je oprema aktivna.");
+        this.VersionOnUpdate(http, x => x.Version);
         RuleFor(x => x.CalibrationIntervalMonths)
             .Null().When(x => x.Kind == EquipmentKind.Masina).WithMessage("Interval kalibracije se unosi samo za mjerna sredstva.")
             .InclusiveBetween(1, 120).When(x => x.CalibrationIntervalMonths is not null).WithMessage("Interval kalibracije mora biti između 1 i 120 mjeseci.");
@@ -106,7 +108,7 @@ public sealed class RecordCalibrationValidator : AbstractValidator<RecordCalibra
         RuleFor(x => x.CalibrationDate).NotEmpty().WithMessage("Unesi datum kalibracije.");
         RuleFor(x => x.PerformedBy).NotEmpty().WithMessage("Upiši ko je izvršio kalibraciju.")
             .MaximumLength(EquipmentCalibration.PerformedByMax).WithMessage($"Najviše {EquipmentCalibration.PerformedByMax} znakova.");
-        RuleFor(x => x.Result).IsInEnum().WithMessage("Odaberi rezultat kalibracije.");
+        RuleFor(x => x.Result).Required("Odaberi rezultat kalibracije.").IsInEnum().WithMessage("Odaberi rezultat kalibracije.");
         RuleFor(x => x.Note).MaximumLength(EquipmentCalibration.NoteMax).WithMessage($"Napomena može imati najviše {EquipmentCalibration.NoteMax} znakova.");
     }
 }
@@ -219,7 +221,7 @@ public static class EquipmentEndpoints
             return ApiResults.Validation("code", $"Oznaka {req.Code.Trim()} je već zauzeta.");
         if (e.Kind != req.Kind && await db.EquipmentCalibrations.AnyAsync(c => c.EquipmentId == id, ct))
             return ApiResults.Validation("kind", "Vrsta se ne može promijeniti jer oprema ima zabilježene kalibracije.");
-        db.Entry(e).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(e).Property(x => x.Version).OriginalValue = req.Version!.Value;
         e.Code = req.Code.Trim();
         e.Name = req.Name.Trim();
         Apply(e, req);
@@ -257,7 +259,7 @@ public static class EquipmentEndpoints
             return ApiResults.NotFound("Oprema ne postoji.");
         if (req.CertificateFileId is { } f && !await db.FileAttachments.AnyAsync(x => x.Id == f, ct))
             return ApiResults.Validation("certificateFileId", "Fajl certifikata ne postoji.");
-        var c = EquipmentCalibration.Record(e, req.CalibrationDate, req.NextCalibrationDate, req.PerformedBy, req.Result,
+        var c = EquipmentCalibration.Record(e, req.CalibrationDate!.Value, req.NextCalibrationDate, req.PerformedBy, req.Result!.Value,
             req.CertificateFileId, req.Note, clock.Today);
         db.EquipmentCalibrations.Add(c);
         await db.SaveChangesAsync(ct);
@@ -269,7 +271,7 @@ public static class EquipmentEndpoints
         var c = await db.EquipmentCalibrations.SingleOrDefaultAsync(x => x.Id == id, ct);
         if (c is null)
             return ApiResults.NotFound("Kalibracija ne postoji.");
-        db.Entry(c).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(c).Property(x => x.Version).OriginalValue = req.Version!.Value;
         c.Void(req.Reason);
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(await CalibrationRows(db).SingleAsync(x => x.Id == id, ct));
@@ -277,10 +279,10 @@ public static class EquipmentEndpoints
 
     private static void Apply(EquipmentEntity e, SaveEquipmentRequest req)
     {
-        e.Kind = req.Kind;
+        e.Kind = req.Kind!.Value;
         e.Manufacturer = Clean(req.Manufacturer);
         e.SerialNumber = Clean(req.SerialNumber);
-        e.IsActive = req.IsActive;
+        e.IsActive = req.IsActive!.Value;
         e.CalibrationIntervalMonths = req.CalibrationIntervalMonths;
     }
 

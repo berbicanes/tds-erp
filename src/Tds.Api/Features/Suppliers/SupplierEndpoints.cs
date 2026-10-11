@@ -25,19 +25,20 @@ public sealed record SupplierDto
 public sealed record SupplierOption(Guid Id, string Name, SupplierApprovalStatus ApprovalStatus);
 
 public sealed record SaveSupplierRequest(
-    string Name, string? MaterialOrService, SupplierApprovalStatus ApprovalStatus,
+    string Name, string? MaterialOrService, SupplierApprovalStatus? ApprovalStatus,
     DateOnly? InitialEvaluationDate, DateOnly? NextEvaluationDate, string? EvaluationCriteria,
-    Guid? ResponsibleEmployeeId, string? Notes, uint Version);
+    Guid? ResponsibleEmployeeId, string? Notes, uint? Version);
 
 public sealed class SaveSupplierValidator : AbstractValidator<SaveSupplierRequest>
 {
-    public SaveSupplierValidator()
+    public SaveSupplierValidator(IHttpContextAccessor http)
     {
         RuleFor(x => x.Name).NotEmpty().WithMessage("Unesi naziv dobavljača.")
             .MaximumLength(Supplier.NameMax).WithMessage($"Naziv može imati najviše {Supplier.NameMax} znakova.");
         RuleFor(x => x.MaterialOrService).MaximumLength(Supplier.MaterialOrServiceMax)
             .WithMessage($"Materijal / usluga može imati najviše {Supplier.MaterialOrServiceMax} znakova.");
-        RuleFor(x => x.ApprovalStatus).IsInEnum().WithMessage("Odaberi status odobrenja.");
+        RuleFor(x => x.ApprovalStatus).Required("Odaberi status odobrenja.").IsInEnum().WithMessage("Odaberi status odobrenja.");
+        this.VersionOnUpdate(http, x => x.Version);
         RuleFor(x => x.EvaluationCriteria).MaximumLength(Supplier.TextMax).WithMessage($"Najviše {Supplier.TextMax} znakova.");
         RuleFor(x => x.Notes).MaximumLength(Supplier.TextMax).WithMessage($"Najviše {Supplier.TextMax} znakova.");
         RuleFor(x => x.NextEvaluationDate)
@@ -59,7 +60,7 @@ public static class SupplierEndpoints
         write.MapPost("/", Create).Validate<SaveSupplierRequest>();
         write.MapPut("/{id:guid}", Update).Validate<SaveSupplierRequest>();
         read.MapGet("/{id:guid}/certificates", Certificates);
-        write.MapPost("/{id:guid}/certificates", AddCertificate);
+        write.MapPost("/{id:guid}/certificates", AddCertificate).Validate<FileIdRequest>();
         // DOMAIN §7.7: only Admin removes the link; the file itself stays.
         app.MapPost("/api/suppliers/{id:guid}/certificates/{fileId:guid}/remove", RemoveCertificate).RequireAuthorization(Policies.Admin);
     }
@@ -121,7 +122,7 @@ public static class SupplierEndpoints
             return ApiResults.NotFound("Dobavljač ne postoji.");
         if (await Check(req, id, db, ct) is { } problem)
             return problem;
-        db.Entry(s).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(s).Property(x => x.Version).OriginalValue = req.Version!.Value;
         s.Name = req.Name.Trim();
         Apply(s, req);
         await db.SaveChangesAsync(ct);
@@ -140,7 +141,7 @@ public static class SupplierEndpoints
     private static void Apply(Supplier s, SaveSupplierRequest req)
     {
         s.MaterialOrService = Clean(req.MaterialOrService);
-        s.ApprovalStatus = req.ApprovalStatus;
+        s.ApprovalStatus = req.ApprovalStatus!.Value;
         s.InitialEvaluationDate = req.InitialEvaluationDate;
         s.NextEvaluationDate = req.NextEvaluationDate;
         s.EvaluationCriteria = Clean(req.EvaluationCriteria);
@@ -171,7 +172,7 @@ public static class SupplierEndpoints
         var existing = await db.Set<SupplierCertificate>().Where(c => c.SupplierId == id).ToListAsync(ct);
         if (existing.All(c => c.FileId != req.FileId))
         {
-            db.Add(new SupplierCertificate { SupplierId = id, FileId = req.FileId });
+            db.Add(new SupplierCertificate { SupplierId = id, FileId = req.FileId!.Value });
             await db.SaveChangesAsync(ct);
         }
         return TypedResults.NoContent();

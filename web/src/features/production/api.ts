@@ -43,7 +43,8 @@ export interface SaveProductionEntry {
   pressedQty: number;
   goodQty: number;
   scrapQty: number;
-  laborHours: number;
+  /** Required: null is sent as-is and rejected by the server, never turned into 0 (golden rule 6). */
+  laborHours: number | null;
   materialConsumed: number | null;
   note: string | null;
   version: number;

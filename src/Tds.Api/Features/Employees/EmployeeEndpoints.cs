@@ -20,16 +20,18 @@ public sealed record EmployeeDto
 
 public sealed record EmployeeOption(Guid Id, string FullName, string? Position);
 
-public sealed record SaveEmployeeRequest(string FullName, string? Position, bool IsActive, Guid? UserId, uint Version);
+public sealed record SaveEmployeeRequest(string FullName, string? Position, bool? IsActive, Guid? UserId, uint? Version);
 
 public sealed class SaveEmployeeValidator : AbstractValidator<SaveEmployeeRequest>
 {
-    public SaveEmployeeValidator()
+    public SaveEmployeeValidator(IHttpContextAccessor http)
     {
         RuleFor(x => x.FullName).NotEmpty().WithMessage("Unesi ime i prezime.")
             .MaximumLength(Employee.FullNameMax).WithMessage($"Ime i prezime može imati najviše {Employee.FullNameMax} znakova.");
         RuleFor(x => x.Position).MaximumLength(Employee.PositionMax)
             .WithMessage($"Radno mjesto može imati najviše {Employee.PositionMax} znakova.");
+        RuleFor(x => x.IsActive).Required("Odaberi da li je zaposlenik aktivan.");
+        this.VersionOnUpdate(http, x => x.Version);
     }
 }
 
@@ -88,7 +90,7 @@ public static class EmployeeEndpoints
     {
         if (await CheckUser(req.UserId, null, db, ct) is { } problem)
             return problem;
-        var e = new Employee { FullName = req.FullName.Trim(), Position = Clean(req.Position), IsActive = req.IsActive, UserId = req.UserId };
+        var e = new Employee { FullName = req.FullName.Trim(), Position = Clean(req.Position), IsActive = req.IsActive!.Value, UserId = req.UserId };
         db.Employees.Add(e);
         await db.SaveChangesAsync(ct);
         return TypedResults.Created($"/api/employees/{e.Id}", await Project(db).SingleAsync(x => x.Id == e.Id, ct));
@@ -102,10 +104,10 @@ public static class EmployeeEndpoints
         if (await CheckUser(req.UserId, id, db, ct) is { } problem)
             return problem;
 
-        db.Entry(e).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(e).Property(x => x.Version).OriginalValue = req.Version!.Value;
         e.FullName = req.FullName.Trim();
         e.Position = Clean(req.Position);
-        e.IsActive = req.IsActive;
+        e.IsActive = req.IsActive!.Value;
         e.UserId = req.UserId;
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(await Project(db).SingleAsync(x => x.Id == id, ct));

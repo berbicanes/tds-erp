@@ -22,12 +22,12 @@ public sealed record MaterialItemDto
 public sealed record MaterialItemOption(Guid Id, string Name, string? Grade, decimal? ThicknessMm, Unit Unit);
 
 public sealed record SaveMaterialItemRequest(
-    string Name, string? Grade, decimal? ThicknessMm, Unit Unit, decimal? MinimumStock,
-    DateOnly? NextStocktakeDate, bool IsActive, uint Version);
+    string Name, string? Grade, decimal? ThicknessMm, Unit? Unit, decimal? MinimumStock,
+    DateOnly? NextStocktakeDate, bool? IsActive, uint? Version);
 
 public sealed class SaveMaterialItemValidator : AbstractValidator<SaveMaterialItemRequest>
 {
-    public SaveMaterialItemValidator()
+    public SaveMaterialItemValidator(IHttpContextAccessor http)
     {
         RuleFor(x => x.Name).NotEmpty().WithMessage("Unesi naziv artikla, npr. Lim crni.")
             .MaximumLength(MaterialItem.NameMax).WithMessage($"Naziv može imati najviše {MaterialItem.NameMax} znakova.");
@@ -35,7 +35,9 @@ public sealed class SaveMaterialItemValidator : AbstractValidator<SaveMaterialIt
         RuleFor(x => x.ThicknessMm).GreaterThan(0).When(x => x.ThicknessMm is not null).WithMessage("Debljina mora biti veća od 0.")
             .LessThan(10000).WithMessage("Debljina je prevelika.")
             .Must(t => t is null || decimal.Round(t.Value, 2) == t).WithMessage("Debljina može imati najviše 2 decimale.");
-        RuleFor(x => x.Unit).IsInEnum().WithMessage("Odaberi jedinicu.");
+        RuleFor(x => x.Unit).Required("Odaberi jedinicu.").IsInEnum().WithMessage("Odaberi jedinicu.");
+        RuleFor(x => x.IsActive).Required("Odaberi da li je artikal aktivan.");
+        this.VersionOnUpdate(http, x => x.Version);
         RuleFor(x => x.MinimumStock).GreaterThanOrEqualTo(0).When(x => x.MinimumStock is not null).WithMessage("Minimalna zaliha ne može biti negativna.")
             .Must(m => m is null || decimal.Round(m.Value, 3) == m).WithMessage("Minimalna zaliha može imati najviše 3 decimale.");
     }
@@ -110,7 +112,7 @@ public static class MaterialItemEndpoints
         // DATA_MODEL §5: all lot and movement quantities are in this unit.
         if (m.Unit != req.Unit && await db.MaterialLots.AnyAsync(l => l.MaterialItemId == id, ct))
             return ApiResults.Validation("unit", "Jedinica se ne može promijeniti jer artikal već ima lotove; njihove količine su u ovoj jedinici.");
-        db.Entry(m).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(m).Property(x => x.Version).OriginalValue = req.Version!.Value;
         m.Name = req.Name.Trim();
         Apply(m, req);
         await db.SaveChangesAsync(ct);
@@ -129,10 +131,10 @@ public static class MaterialItemEndpoints
     {
         m.Grade = Clean(req.Grade);
         m.ThicknessMm = req.ThicknessMm;
-        m.Unit = req.Unit;
+        m.Unit = req.Unit!.Value;
         m.MinimumStock = req.MinimumStock;
         m.NextStocktakeDate = req.NextStocktakeDate;
-        m.IsActive = req.IsActive;
+        m.IsActive = req.IsActive!.Value;
     }
 
     private static string? Clean(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();

@@ -32,25 +32,41 @@ public sealed record DocumentDto
 public sealed record DocumentDetailDto(DocumentDto Document, IReadOnlyList<DocumentTransitionCheck> Transitions, IReadOnlyList<DocumentDto> Versions);
 
 public sealed record SaveDocumentRequest(
-    string Title, string Code, DocumentKind Kind, string DocVersion, Guid? OwnerEmployeeId, DateOnly? ApprovalDate,
-    DateOnly? EffectiveDate, DateOnly? NextReviewDate, string? ChangeDescription, Guid? FileId, uint Version);
+    string Title, string Code, DocumentKind? Kind, string DocVersion, Guid? OwnerEmployeeId, DateOnly? ApprovalDate,
+    DateOnly? EffectiveDate, DateOnly? NextReviewDate, string? ChangeDescription, Guid? FileId, uint? Version);
 
-public sealed record DocumentStatusRequest(DocumentStatus Status, DateOnly? ApprovalDate, uint Version);
-public sealed record NextReviewRequest(DateOnly? NextReviewDate, uint Version);
+public sealed record DocumentStatusRequest(DocumentStatus? Status, DateOnly? ApprovalDate, uint? Version);
+public sealed record NextReviewRequest(DateOnly? NextReviewDate, uint? Version);
+
+public sealed class DocumentStatusValidator : AbstractValidator<DocumentStatusRequest>
+{
+    public DocumentStatusValidator()
+    {
+        RuleFor(x => x.Status).Required("Odaberi novi status.").IsInEnum().WithMessage("Odaberi novi status.");
+        RuleFor(x => x.Version).Required(ValidationExtensions.VersionMissing);
+    }
+}
+
+/// <summary>NextReviewDate null = no review date; the version is always required.</summary>
+public sealed class NextReviewValidator : AbstractValidator<NextReviewRequest>
+{
+    public NextReviewValidator() => RuleFor(x => x.Version).Required(ValidationExtensions.VersionMissing);
+}
 public sealed record NewVersionRequest(string DocVersion);
 
 public sealed class SaveDocumentValidator : AbstractValidator<SaveDocumentRequest>
 {
-    public SaveDocumentValidator()
+    public SaveDocumentValidator(IHttpContextAccessor http)
     {
         RuleFor(x => x.Title).NotEmpty().WithMessage("Unesi naziv dokumenta.")
             .MaximumLength(ControlledDocument.TitleMax).WithMessage($"Najviše {ControlledDocument.TitleMax} znakova.");
         RuleFor(x => x.Code).NotEmpty().WithMessage("Unesi oznaku dokumenta, npr. PR-01.")
             .MaximumLength(ControlledDocument.CodeMax).WithMessage($"Najviše {ControlledDocument.CodeMax} znakova.");
-        RuleFor(x => x.Kind).IsInEnum().WithMessage("Odaberi vrstu dokumenta.");
+        RuleFor(x => x.Kind).Required("Odaberi vrstu dokumenta.").IsInEnum().WithMessage("Odaberi vrstu dokumenta.");
         RuleFor(x => x.DocVersion).NotEmpty().WithMessage("Unesi verziju, npr. 01.")
             .MaximumLength(ControlledDocument.DocVersionMax).WithMessage($"Najviše {ControlledDocument.DocVersionMax} znakova.");
         RuleFor(x => x.ChangeDescription).MaximumLength(ControlledDocument.ChangeDescriptionMax).WithMessage($"Najviše {ControlledDocument.ChangeDescriptionMax} znakova.");
+        this.VersionOnUpdate(http, x => x.Version);
     }
 }
 
@@ -72,8 +88,8 @@ public static class DocumentEndpoints
         var write = app.MapGroup("/api/documents").RequireAuthorization(Policies.KontrolorOrAdmin);
         write.MapPost("/", Create).Validate<SaveDocumentRequest>();
         write.MapPut("/{id:guid}", Update).Validate<SaveDocumentRequest>();
-        write.MapPost("/{id:guid}/status", ChangeStatus);
-        write.MapPost("/{id:guid}/next-review", SetNextReview);
+        write.MapPost("/{id:guid}/status", ChangeStatus).Validate<DocumentStatusRequest>();
+        write.MapPost("/{id:guid}/next-review", SetNextReview).Validate<NextReviewRequest>();
         write.MapPost("/{id:guid}/new-version", NewVersion).Validate<NewVersionRequest>();
 
         app.MapPost("/api/documents/{id:guid}/void", Void).Validate<VoidRequest>().RequireAuthorization(Policies.Admin);
@@ -161,7 +177,7 @@ public static class DocumentEndpoints
                 : "Povučen dokument je konačan. Za izmjenu napravi novu verziju.");
         if (await CheckReferences(req, id, db, ct) is { } error)
             return error;
-        db.Entry(doc).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(doc).Property(x => x.Version).OriginalValue = req.Version!.Value;
         doc.Title = req.Title.Trim();
         doc.Code = req.Code.Trim();
         doc.DocVersion = req.DocVersion.Trim();
@@ -177,10 +193,10 @@ public static class DocumentEndpoints
         var doc = await db.ControlledDocuments.SingleOrDefaultAsync(x => x.Id == id, ct);
         if (doc is null)
             return ApiResults.NotFound("Dokument ne postoji.");
-        db.Entry(doc).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(doc).Property(x => x.Version).OriginalValue = req.Version!.Value;
         if (req.Status == DocumentStatus.Odobren && req.ApprovalDate is { } approvalDate && doc.IsEditable)
             doc.ApprovalDate = approvalDate;
-        doc.MoveTo(req.Status, clock.Today);
+        doc.MoveTo(req.Status!.Value, clock.Today);
 
         if (req.Status == DocumentStatus.Odobren)
         {
@@ -211,7 +227,7 @@ public static class DocumentEndpoints
             return ApiResults.NotFound("Dokument ne postoji.");
         if (doc.IsVoided || doc.Status == DocumentStatus.Povucen)
             return ApiResults.Conflict("Povučen ili poništen dokument se ne mijenja.");
-        db.Entry(doc).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(doc).Property(x => x.Version).OriginalValue = req.Version!.Value;
         doc.NextReviewDate = req.NextReviewDate;
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(await Project(db).SingleAsync(x => x.Id == id, ct));
@@ -236,7 +252,7 @@ public static class DocumentEndpoints
         var doc = await db.ControlledDocuments.SingleOrDefaultAsync(x => x.Id == id, ct);
         if (doc is null)
             return ApiResults.NotFound("Dokument ne postoji.");
-        db.Entry(doc).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(doc).Property(x => x.Version).OriginalValue = req.Version!.Value;
         doc.Void(req.Reason);
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(await Project(db).SingleAsync(x => x.Id == id, ct));
@@ -244,7 +260,7 @@ public static class DocumentEndpoints
 
     private static void Apply(ControlledDocument d, SaveDocumentRequest req)
     {
-        d.Kind = req.Kind;
+        d.Kind = req.Kind!.Value;
         d.OwnerEmployeeId = req.OwnerEmployeeId;
         d.ApprovalDate = req.ApprovalDate;
         d.EffectiveDate = req.EffectiveDate;

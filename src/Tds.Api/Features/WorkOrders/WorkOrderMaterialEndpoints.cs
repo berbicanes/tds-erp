@@ -26,24 +26,27 @@ public sealed record WorkOrderMaterialDto
     public required uint Version { get; init; }
 }
 
-public sealed record LinkLotRequest(Guid MaterialLotId, decimal ReservedQty);
-public sealed record SetReservationRequest(decimal ReservedQty, uint Version);
+public sealed record LinkLotRequest(Guid? MaterialLotId, decimal? ReservedQty);
+public sealed record SetReservationRequest(decimal? ReservedQty, uint? Version);
 
 public sealed class LinkLotValidator : AbstractValidator<LinkLotRequest>
 {
     public LinkLotValidator()
     {
         RuleFor(x => x.MaterialLotId).NotEmpty().WithMessage("Odaberi lot.");
-        RuleFor(x => x.ReservedQty).GreaterThanOrEqualTo(0).WithMessage("Rezervacija ne može biti negativna.")
-            .Must(q => decimal.Round(q, 3) == q).WithMessage("Količina može imati najviše 3 decimale.");
+        RuleFor(x => x.ReservedQty).Required("Unesi rezervaciju (0 = samo veza bez rezervacije).").GreaterThanOrEqualTo(0).WithMessage("Rezervacija ne može biti negativna.")
+            .Must(q => q is null || decimal.Round(q.Value, 3) == q).WithMessage("Količina može imati najviše 3 decimale.");
     }
 }
 
 public sealed class SetReservationValidator : AbstractValidator<SetReservationRequest>
 {
-    public SetReservationValidator() =>
-        RuleFor(x => x.ReservedQty).GreaterThanOrEqualTo(0).WithMessage("Rezervacija ne može biti negativna.")
-            .Must(q => decimal.Round(q, 3) == q).WithMessage("Količina može imati najviše 3 decimale.");
+    public SetReservationValidator()
+    {
+        RuleFor(x => x.ReservedQty).Required("Unesi rezervaciju (0 = samo veza bez rezervacije).").GreaterThanOrEqualTo(0).WithMessage("Rezervacija ne može biti negativna.")
+            .Must(q => q is null || decimal.Round(q.Value, 3) == q).WithMessage("Količina može imati najviše 3 decimale.");
+        RuleFor(x => x.Version).Required(ValidationExtensions.VersionMissing);
+    }
 }
 
 public static class WorkOrderMaterialEndpoints
@@ -97,13 +100,13 @@ public static class WorkOrderMaterialEndpoints
             return ApiResults.Validation("materialLotId", $"Lot {lot.LotNumber} je već vezan za ovaj nalog. Promijeni rezervaciju u listi.");
 
         var availableBefore = await AvailableAsync(db, lot.Id, ct);
-        var link = WorkOrderMaterial.Link(id, lot, req.ReservedQty);
+        var link = WorkOrderMaterial.Link(id, lot, req.ReservedQty!.Value);
         db.WorkOrderMaterials.Add(link);
         await db.SaveChangesAsync(ct);
 
         var dto = (await ListAsync(db, id, ct)).Single(x => x.Id == link.Id);
         return TypedResults.Created($"/api/work-orders/{id}/materials/{link.Id}",
-            new WithWarnings<WorkOrderMaterialDto>(dto, Warnings(lot, req.ReservedQty, availableBefore, dto.Unit)));
+            new WithWarnings<WorkOrderMaterialDto>(dto, Warnings(lot, req.ReservedQty!.Value, availableBefore, dto.Unit)));
     }
 
     private static async Task<IResult> SetReservation(Guid id, Guid linkId, SetReservationRequest req, AppDbContext db, CancellationToken ct)
@@ -118,12 +121,12 @@ public static class WorkOrderMaterialEndpoints
 
         var current = (await ListAsync(db, id, ct)).Single(x => x.Id == linkId);
         var availableWithoutThis = current.LotAvailable + current.EffectiveReservation;
-        db.Entry(link).Property(x => x.Version).OriginalValue = req.Version;
-        link.SetReservation(lot, req.ReservedQty);
+        db.Entry(link).Property(x => x.Version).OriginalValue = req.Version!.Value;
+        link.SetReservation(lot, req.ReservedQty!.Value);
         await db.SaveChangesAsync(ct);
 
         var dto = (await ListAsync(db, id, ct)).Single(x => x.Id == linkId);
-        var newEffective = StockLevels.EffectiveReservation(req.ReservedQty, dto.ConsumedQty);
+        var newEffective = StockLevels.EffectiveReservation(req.ReservedQty!.Value, dto.ConsumedQty);
         return TypedResults.Ok(new WithWarnings<WorkOrderMaterialDto>(dto, Warnings(lot, newEffective, availableWithoutThis, dto.Unit)));
     }
 

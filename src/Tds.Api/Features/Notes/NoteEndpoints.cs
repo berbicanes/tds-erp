@@ -8,7 +8,16 @@ namespace Tds.Api.Features.Notes;
 
 public sealed record NoteDto(Guid Id, string Text, bool IsDone, DateTimeOffset? DoneAt, DateTimeOffset CreatedAt, uint Version);
 public sealed record CreateNoteRequest(string Text);
-public sealed record SetNoteDoneRequest(bool IsDone, uint Version);
+public sealed record SetNoteDoneRequest(bool? IsDone, uint? Version);
+
+public sealed class SetNoteDoneValidator : AbstractValidator<SetNoteDoneRequest>
+{
+    public SetNoteDoneValidator()
+    {
+        RuleFor(x => x.IsDone).Required("Nedostaje oznaka da li je bilješka urađena.");
+        RuleFor(x => x.Version).Required(ValidationExtensions.VersionMissing);
+    }
+}
 
 public sealed class CreateNoteValidator : AbstractValidator<CreateNoteRequest>
 {
@@ -25,7 +34,7 @@ public static class NoteEndpoints
         var g = app.MapGroup("/api/notes").RequireAuthorization();
         g.MapGet("/", List);
         g.MapPost("/", Create).Validate<CreateNoteRequest>();
-        g.MapPost("/{id:guid}/done", SetDone);
+        g.MapPost("/{id:guid}/done", SetDone).Validate<SetNoteDoneRequest>();
     }
 
     /// <summary>Open notes first (newest first), then done notes of the last 7 days.</summary>
@@ -53,8 +62,8 @@ public static class NoteEndpoints
         var note = await db.Notes.SingleOrDefaultAsync(n => n.Id == id, ct);
         if (note is null)
             return ApiResults.NotFound("Bilješka ne postoji.");
-        db.Entry(note).Property(x => x.Version).OriginalValue = req.Version;
-        note.SetDone(req.IsDone, clock.UtcNow);
+        db.Entry(note).Property(x => x.Version).OriginalValue = req.Version!.Value;
+        note.SetDone(req.IsDone!.Value, clock.UtcNow);
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(new NoteDto(note.Id, note.Text, note.IsDone, note.DoneAt, note.CreatedAt, note.Version));
     }

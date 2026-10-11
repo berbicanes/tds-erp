@@ -47,23 +47,33 @@ public sealed record NcPrefillDto(
     Guid? WorkOrderId, string? WorkOrderNumber, Guid? MaterialLotId, string? LotNumber, Guid? SupplierId, string? SupplierName, string Description);
 
 public sealed record SaveNcRequest(
-    Guid? WorkOrderId, Guid? MaterialLotId, Guid? SupplierId, Guid? QualityCheckId, NcSource Source, string Description,
-    string? Containment, ProductDecision ProductDecision, string? RootCause, string? CorrectiveAction,
-    Guid? ActionOwnerEmployeeId, DateOnly? DueDate, DateOnly? EffectivenessCheckDate, List<Guid>? EvidenceFileIds, uint Version);
+    Guid? WorkOrderId, Guid? MaterialLotId, Guid? SupplierId, Guid? QualityCheckId, NcSource? Source, string Description,
+    string? Containment, ProductDecision? ProductDecision, string? RootCause, string? CorrectiveAction,
+    Guid? ActionOwnerEmployeeId, DateOnly? DueDate, DateOnly? EffectivenessCheckDate, List<Guid>? EvidenceFileIds, uint? Version);
 
-public sealed record NcStatusRequest(NcStatus Status, uint Version);
+public sealed record NcStatusRequest(NcStatus? Status, uint? Version);
+
+public sealed class NcStatusValidator : AbstractValidator<NcStatusRequest>
+{
+    public NcStatusValidator()
+    {
+        RuleFor(x => x.Status).Required("Odaberi novi status.").IsInEnum().WithMessage("Odaberi novi status.");
+        RuleFor(x => x.Version).Required(ValidationExtensions.VersionMissing);
+    }
+}
 
 public sealed class SaveNcValidator : AbstractValidator<SaveNcRequest>
 {
-    public SaveNcValidator()
+    public SaveNcValidator(IHttpContextAccessor http)
     {
-        RuleFor(x => x.Source).IsInEnum().WithMessage("Odaberi izvor.");
+        RuleFor(x => x.Source).Required("Odaberi izvor.").IsInEnum().WithMessage("Odaberi izvor.");
         RuleFor(x => x.Description).NotEmpty().WithMessage("Opiši neusaglašenost.")
             .MaximumLength(NonConformity.TextMax).WithMessage($"Najviše {NonConformity.TextMax} znakova.");
         RuleFor(x => x.Containment).MaximumLength(NonConformity.TextMax).WithMessage($"Najviše {NonConformity.TextMax} znakova.");
         RuleFor(x => x.RootCause).MaximumLength(NonConformity.TextMax).WithMessage($"Najviše {NonConformity.TextMax} znakova.");
         RuleFor(x => x.CorrectiveAction).MaximumLength(NonConformity.TextMax).WithMessage($"Najviše {NonConformity.TextMax} znakova.");
-        RuleFor(x => x.ProductDecision).IsInEnum().WithMessage("Odaberi odluku o proizvodu.");
+        RuleFor(x => x.ProductDecision).Required("Odaberi odluku o proizvodu.").IsInEnum().WithMessage("Odaberi odluku o proizvodu.");
+        this.VersionOnUpdate(http, x => x.Version);
     }
 }
 
@@ -81,8 +91,8 @@ public static class NonConformityEndpoints
         var write = app.MapGroup("/api/non-conformities").RequireAuthorization(Policies.KontrolorOrAdmin);
         write.MapPost("/", Create).Validate<SaveNcRequest>();
         write.MapPut("/{id:guid}", Update).Validate<SaveNcRequest>();
-        write.MapPost("/{id:guid}/status", ChangeStatus);
-        write.MapPost("/{id:guid}/evidence", AddEvidence);
+        write.MapPost("/{id:guid}/status", ChangeStatus).Validate<NcStatusRequest>();
+        write.MapPost("/{id:guid}/evidence", AddEvidence).Validate<FileIdRequest>();
 
         var admin = app.MapGroup("/api/non-conformities").RequireAuthorization(Policies.Admin);
         admin.MapPost("/{id:guid}/evidence/{fileId:guid}/remove", RemoveEvidence);
@@ -255,7 +265,7 @@ public static class NonConformityEndpoints
             return ApiResults.Conflict($"{nc.Number} je zatvorena. Za izmjenu je vrati u \"Provjera efektivnosti\".");
         if (await CheckReferences(req, db, ct) is { } error)
             return error;
-        db.Entry(nc).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(nc).Property(x => x.Version).OriginalValue = req.Version!.Value;
         nc.Description = req.Description.Trim();
         Apply(nc, req);
         await db.SaveChangesAsync(ct);
@@ -267,8 +277,8 @@ public static class NonConformityEndpoints
         var nc = await db.NonConformities.SingleOrDefaultAsync(x => x.Id == id, ct);
         if (nc is null)
             return ApiResults.NotFound("Neusaglašenost ne postoji.");
-        db.Entry(nc).Property(x => x.Version).OriginalValue = req.Version;
-        nc.MoveTo(req.Status, clock.Today);
+        db.Entry(nc).Property(x => x.Version).OriginalValue = req.Version!.Value;
+        nc.MoveTo(req.Status!.Value, clock.Today);
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(await Project(db).SingleAsync(x => x.Id == id, ct));
     }
@@ -281,7 +291,7 @@ public static class NonConformityEndpoints
         if (!await db.FileAttachments.AnyAsync(f => f.Id == req.FileId, ct))
             return ApiResults.Validation("fileId", "Fajl ne postoji.");
         if (nc.Evidence.All(e => e.FileId != req.FileId))
-            nc.Evidence.Add(new NonConformityEvidence { NonConformityId = id, FileId = req.FileId });
+            nc.Evidence.Add(new NonConformityEvidence { NonConformityId = id, FileId = req.FileId!.Value });
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
@@ -301,7 +311,7 @@ public static class NonConformityEndpoints
         var nc = await db.NonConformities.SingleOrDefaultAsync(x => x.Id == id, ct);
         if (nc is null)
             return ApiResults.NotFound("Neusaglašenost ne postoji.");
-        db.Entry(nc).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(nc).Property(x => x.Version).OriginalValue = req.Version!.Value;
         nc.Void(req.Reason);
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(await Project(db).SingleAsync(x => x.Id == id, ct));
@@ -312,9 +322,9 @@ public static class NonConformityEndpoints
         nc.WorkOrderId = req.WorkOrderId;
         nc.MaterialLotId = req.MaterialLotId;
         nc.SupplierId = req.SupplierId;
-        nc.Source = req.Source;
+        nc.Source = req.Source!.Value;
         nc.Containment = Clean(req.Containment);
-        nc.ProductDecision = req.ProductDecision;
+        nc.ProductDecision = req.ProductDecision!.Value;
         nc.RootCause = Clean(req.RootCause);
         nc.CorrectiveAction = Clean(req.CorrectiveAction);
         nc.ActionOwnerEmployeeId = req.ActionOwnerEmployeeId;

@@ -164,7 +164,7 @@ public class ProductionEntryTests(PostgresFixture postgres)
         var wrongOrder = await TestData.WorkOrder(w.Kontrolor, "Novi");
         var zaprimljen = await w.Kontrolor.PostAsJsonAsync("/api/production-entries", new
         {
-            workOrderId = wrongOrder.Id, date = Day(), operatorEmployeeId = w.OperatorId, equipmentIds = new[] { w.M1 }, pressedQty = 5, laborHours = 1,
+            workOrderId = wrongOrder.Id, date = Day(), operatorEmployeeId = w.OperatorId, equipmentIds = new[] { w.M1 }, laserCutQty = 0, pressedQty = 5, goodQty = 0, scrapQty = 0, laborHours = 1,
         }, Ct);
         Assert.Equal($"Na nalogu {wrongOrder.Number} sa statusom Zaprimljen se ne može evidentirati proizvodnja.", (await zaprimljen.ProblemAsync(HttpStatusCode.Conflict)).Detail());
     }
@@ -215,7 +215,7 @@ public class ProductionEntryTests(PostgresFixture postgres)
         var current = await (await w.Kontrolor.GetAsync($"/api/production-entries/{e.Id}", Ct)).ReadAsync<ProductionEntryDto>();
         var move = await w.Kontrolor.PutAsJsonAsync($"/api/production-entries/{e.Id}", new
         {
-            workOrderId = other.Id, date = Day(), operatorEmployeeId = w.OperatorId, equipmentIds = new[] { w.M1 }, pressedQty = 5, laborHours = 1, version = current.Version,
+            workOrderId = other.Id, date = Day(), operatorEmployeeId = w.OperatorId, equipmentIds = new[] { w.M1 }, laserCutQty = 0, pressedQty = 5, goodQty = 0, scrapQty = 0, laborHours = 1, version = current.Version,
         }, Ct);
         Assert.Equal("Nalog se na postojećem zapisu ne mijenja. Poništi zapis i unesi novi.", (await move.ProblemAsync(HttpStatusCode.Conflict)).Detail());
     }

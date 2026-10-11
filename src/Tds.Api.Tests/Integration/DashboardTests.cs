@@ -72,7 +72,7 @@ public class DashboardTests(PostgresFixture postgres)
         foreach (var s in new[] { "Spreman", "Laser" })
             wo = await (await admin.PostAsJsonAsync($"/api/work-orders/{wo.Id}/status", new { to = s, version = wo.Version }, Ct)).ReadAsync<WorkOrderDto>();
         await TestData.Check(admin, wo.Id, inspector.Id, "ZavrsnaKontrola", date: Day());
-        object Entry(int good, int pressed) => new { workOrderId = wo.Id, date = Day(), operatorEmployeeId = op.Id, equipmentIds = new[] { m3.Id }, pressedQty = pressed, goodQty = good, laborHours = 2.5m };
+        object Entry(int good, int pressed) => new { workOrderId = wo.Id, date = Day(), operatorEmployeeId = op.Id, equipmentIds = new[] { m3.Id }, laserCutQty = 0, pressedQty = pressed, goodQty = good, scrapQty = 0, laborHours = 2.5m };
         await admin.PostAsJsonAsync("/api/production-entries", Entry(12, 20), Ct);
         await admin.PostAsJsonAsync("/api/production-entries", Entry(8, 0), Ct);
 

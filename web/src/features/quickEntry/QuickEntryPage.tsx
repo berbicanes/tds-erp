@@ -114,7 +114,7 @@ export function QuickEntryPage() {
     save.mutate({
       workOrderId: orderId!, date: todaySarajevo(), operatorEmployeeId: input.operatorId!, equipmentIds: input.equipmentIds,
       materialLotId: input.lotId, laserCutQty: Number(laser) || 0, pressedQty: Number(pressed) || 0, goodQty: Number(input.good) || 0,
-      scrapQty: Number(scrap) || 0, laborHours: parseDecimal(hours) ?? 0, materialConsumed: parseDecimal(consumed), note: note.trim() || null, version: 0,
+      scrapQty: Number(scrap) || 0, laborHours: parseDecimal(hours), materialConsumed: parseDecimal(consumed), note: note.trim() || null, version: 0,
     }, {
       onSuccess: (r) => {
         markSaved();

@@ -40,9 +40,9 @@ public sealed record ProductionEntryDto
 }
 
 public sealed record SaveProductionEntryRequest(
-    Guid WorkOrderId, DateOnly Date, Guid OperatorEmployeeId, Guid? MaterialLotId, List<Guid>? EquipmentIds,
-    int LaserCutQty, int PressedQty, int GoodQty, int ScrapQty, decimal LaborHours, decimal? MaterialConsumed,
-    string? Note, uint Version);
+    Guid? WorkOrderId, DateOnly? Date, Guid? OperatorEmployeeId, Guid? MaterialLotId, List<Guid>? EquipmentIds,
+    int? LaserCutQty, int? PressedQty, int? GoodQty, int? ScrapQty, decimal? LaborHours, decimal? MaterialConsumed,
+    string? Note, uint? Version);
 
 public sealed record ProductionTotals(int LaserCutQty, int PressedQty, int GoodQty, int ScrapQty, decimal LaborHours, int Entries);
 
@@ -50,20 +50,21 @@ public sealed record WorkOrderProduction(List<ProductionEntryDto> Items, Product
 
 public sealed class SaveProductionEntryValidator : AbstractValidator<SaveProductionEntryRequest>
 {
-    public SaveProductionEntryValidator()
+    public SaveProductionEntryValidator(IHttpContextAccessor http)
     {
         RuleFor(x => x.WorkOrderId).NotEmpty().WithMessage("Odaberi nalog.");
         RuleFor(x => x.OperatorEmployeeId).NotEmpty().WithMessage("Odaberi operatera.");
         RuleFor(x => x.Date).NotEmpty().WithMessage("Unesi datum.");
-        RuleFor(x => x.LaserCutQty).GreaterThanOrEqualTo(0).WithMessage("Ne može biti negativno.");
-        RuleFor(x => x.PressedQty).GreaterThanOrEqualTo(0).WithMessage("Ne može biti negativno.");
-        RuleFor(x => x.GoodQty).GreaterThanOrEqualTo(0).WithMessage("Ne može biti negativno.");
-        RuleFor(x => x.ScrapQty).GreaterThanOrEqualTo(0).WithMessage("Ne može biti negativno.");
-        RuleFor(x => x.LaborHours).InclusiveBetween(0, ProductionEntry.MaxLaborHours).WithMessage("Radni sati moraju biti između 0 i 24.")
-            .Must(h => decimal.Round(h, 2) == h).WithMessage("Radni sati mogu imati najviše 2 decimale.");
+        RuleFor(x => x.LaserCutQty).Required("Unesi broj komada (0 ako ih nema).").GreaterThanOrEqualTo(0).WithMessage("Ne može biti negativno.");
+        RuleFor(x => x.PressedQty).Required("Unesi broj komada (0 ako ih nema).").GreaterThanOrEqualTo(0).WithMessage("Ne može biti negativno.");
+        RuleFor(x => x.GoodQty).Required("Unesi broj komada (0 ako ih nema).").GreaterThanOrEqualTo(0).WithMessage("Ne može biti negativno.");
+        RuleFor(x => x.ScrapQty).Required("Unesi broj komada (0 ako ih nema).").GreaterThanOrEqualTo(0).WithMessage("Ne može biti negativno.");
+        RuleFor(x => x.LaborHours).Required("Unesi radne sate.").InclusiveBetween(0, ProductionEntry.MaxLaborHours).WithMessage("Radni sati moraju biti između 0 i 24.")
+            .Must(h => h is null || decimal.Round(h.Value, 2) == h).WithMessage("Radni sati mogu imati najviše 2 decimale.");
         RuleFor(x => x.MaterialConsumed).GreaterThan(0).When(x => x.MaterialConsumed is not null).WithMessage("Utrošak mora biti veći od 0 ili prazan.")
             .Must(c => c is null || decimal.Round(c.Value, 3) == c).WithMessage("Utrošak može imati najviše 3 decimale.");
         RuleFor(x => x.Note).MaximumLength(ProductionEntry.NoteMax).WithMessage($"Napomena može imati najviše {ProductionEntry.NoteMax} znakova.");
+        this.VersionOnUpdate(http, x => x.Version);
     }
 }
 
@@ -180,8 +181,8 @@ public static class ProductionEntryEndpoints
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var entry = new ProductionEntry
         {
-            Number = await numbers.NextAsync(DocumentNumberKind.ProductionEntry, req.Date, ct),
-            WorkOrderId = req.WorkOrderId,
+            Number = await numbers.NextAsync(DocumentNumberKind.ProductionEntry, req.Date!.Value, ct),
+            WorkOrderId = req.WorkOrderId!.Value,
         };
         var result = await Apply(entry, req, null, db, clock, user, ct);
         if (result.Problem is not null)
@@ -206,7 +207,7 @@ public static class ProductionEntryEndpoints
         if (req.WorkOrderId != entry.WorkOrderId)
             return ApiResults.Conflict("Nalog se na postojećem zapisu ne mijenja. Poništi zapis i unesi novi.");
 
-        db.Entry(entry).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(entry).Property(x => x.Version).OriginalValue = req.Version!.Value;
         var result = await Apply(entry, req, entry, db, clock, user, ct);
         if (result.Problem is not null)
             return result.Problem;
@@ -223,7 +224,7 @@ public static class ProductionEntryEndpoints
             return ApiResults.NotFound("Dnevni zapis ne postoji.");
         if (CheckRights(entry, current, user, clock) is { } denied)
             return denied;
-        db.Entry(entry).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(entry).Property(x => x.Version).OriginalValue = req.Version!.Value;
         entry.Void(req.Reason);
         // DOMAIN §5.6: voiding the entry voids its Izdavanje too (same transaction).
         foreach (var m in await db.StockMovements.Where(m => m.ProductionEntryId == id && !m.IsVoided).ToListAsync(ct))
@@ -250,7 +251,7 @@ public static class ProductionEntryEndpoints
     private static async Task<ApplyResult> Apply(
         ProductionEntry entry, SaveProductionEntryRequest req, ProductionEntry? existing, AppDbContext db, IClock clock, ClaimsPrincipal user, CancellationToken ct)
     {
-        var wo = await WorkOrderEndpoints.GetDtoAsync(db, req.WorkOrderId, clock.Today, ct);
+        var wo = await WorkOrderEndpoints.GetDtoAsync(db, req.WorkOrderId!.Value, clock.Today, ct);
         if (wo is null)
             return new(ApiResults.Validation("workOrderId", "Nalog ne postoji."), []);
         if (!await db.Employees.AnyAsync(e => e.Id == req.OperatorEmployeeId, ct))
@@ -277,7 +278,7 @@ public static class ProductionEntryEndpoints
 
         var otherGood = await db.ProductionEntries.Where(p => p.WorkOrderId == req.WorkOrderId && !p.IsVoided && p.Id != entry.Id).SumAsync(p => (int?)p.GoodQty, ct) ?? 0;
         var warnings = ProductionEntryRules.Check(
-            new ProductionEntryInput(req.Date, req.LaserCutQty, req.PressedQty, req.GoodQty, req.ScrapQty, req.LaborHours, req.MaterialConsumed,
+            new ProductionEntryInput(req.Date!.Value, req.LaserCutQty!.Value, req.PressedQty!.Value, req.GoodQty!.Value, req.ScrapQty!.Value, req.LaborHours!.Value, req.MaterialConsumed,
                 machines.Count, machines.All(m => m.IsActive && m.Kind == EquipmentKind.Masina)),
             new OrderFacts(wo.Number, wo.Status, wo.FinalInspectionPassed, wo.OrderedQty, otherGood),
             lotUse, onHandForEntry, clock.Today, user.IsInRole(Roles.Admin));
@@ -285,14 +286,14 @@ public static class ProductionEntryEndpoints
         var stockChanged = existing is null || existing.MaterialLotId != req.MaterialLotId
             || existing.MaterialConsumed != req.MaterialConsumed || existing.Date != req.Date;
 
-        entry.Date = req.Date;
-        entry.OperatorEmployeeId = req.OperatorEmployeeId;
+        entry.Date = req.Date!.Value;
+        entry.OperatorEmployeeId = req.OperatorEmployeeId!.Value;
         entry.MaterialLotId = req.MaterialLotId;
-        entry.LaserCutQty = req.LaserCutQty;
-        entry.PressedQty = req.PressedQty;
-        entry.GoodQty = req.GoodQty;
-        entry.ScrapQty = req.ScrapQty;
-        entry.LaborHours = req.LaborHours;
+        entry.LaserCutQty = req.LaserCutQty!.Value;
+        entry.PressedQty = req.PressedQty!.Value;
+        entry.GoodQty = req.GoodQty!.Value;
+        entry.ScrapQty = req.ScrapQty!.Value;
+        entry.LaborHours = req.LaborHours!.Value;
         entry.MaterialConsumed = req.MaterialConsumed;
         entry.Note = string.IsNullOrWhiteSpace(req.Note) ? null : req.Note.Trim();
 
@@ -303,7 +304,7 @@ public static class ProductionEntryEndpoints
         // DOMAIN §5.2: a used lot must be linked to the order; if not, link it with 0 reservation.
         if (req.MaterialLotId is { } usedLot && !await db.WorkOrderMaterials.AnyAsync(x => x.WorkOrderId == req.WorkOrderId && x.MaterialLotId == usedLot, ct)
             && !db.WorkOrderMaterials.Local.Any(x => x.WorkOrderId == req.WorkOrderId && x.MaterialLotId == usedLot))
-            db.WorkOrderMaterials.Add(WorkOrderMaterial.TraceOnly(req.WorkOrderId, usedLot));
+            db.WorkOrderMaterials.Add(WorkOrderMaterial.TraceOnly(req.WorkOrderId!.Value, usedLot));
 
         // DOMAIN §2.2: a changed consumption voids the old Izdavanje and creates a new one.
         if (stockChanged)

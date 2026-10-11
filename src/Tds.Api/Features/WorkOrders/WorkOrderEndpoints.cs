@@ -7,26 +7,36 @@ using Tds.Api.Infrastructure;
 namespace Tds.Api.Features.WorkOrders;
 
 public sealed record SaveWorkOrderRequest(
-    string Customer, string ProductDescription, int OrderedQty, DateOnly DueDate, DateOnly? ReleaseDate,
-    Priority Priority, string? DrawingNumber, string? DrawingRevision, Guid? DrawingFileId,
-    Guid? ResponsibleEmployeeId, string? Notes, uint Version);
+    string Customer, string ProductDescription, int? OrderedQty, DateOnly? DueDate, DateOnly? ReleaseDate,
+    Priority? Priority, string? DrawingNumber, string? DrawingRevision, Guid? DrawingFileId,
+    Guid? ResponsibleEmployeeId, string? Notes, uint? Version);
 
-public sealed record SetQualityApprovalRequest(QualityApproval QualityApproval, uint Version);
+public sealed record SetQualityApprovalRequest(QualityApproval? QualityApproval, uint? Version);
+
+public sealed class SetQualityApprovalValidator : AbstractValidator<SetQualityApprovalRequest>
+{
+    public SetQualityApprovalValidator()
+    {
+        RuleFor(x => x.QualityApproval).Required("Odaberi odobrenje kvaliteta.").IsInEnum().WithMessage("Odaberi odobrenje kvaliteta.");
+        RuleFor(x => x.Version).Required(ValidationExtensions.VersionMissing);
+    }
+}
 
 public sealed class SaveWorkOrderValidator : AbstractValidator<SaveWorkOrderRequest>
 {
-    public SaveWorkOrderValidator()
+    public SaveWorkOrderValidator(IHttpContextAccessor http)
     {
         RuleFor(x => x.Customer).NotEmpty().WithMessage("Unesi kupca.")
             .MaximumLength(WorkOrder.CustomerMax).WithMessage($"Kupac može imati najviše {WorkOrder.CustomerMax} znakova.");
         RuleFor(x => x.ProductDescription).NotEmpty().WithMessage("Unesi proizvod / opis.")
             .MaximumLength(WorkOrder.ProductDescriptionMax).WithMessage($"Opis može imati najviše {WorkOrder.ProductDescriptionMax} znakova.");
-        RuleFor(x => x.OrderedQty).GreaterThan(0).WithMessage("Naručena količina mora biti veća od 0.");
+        RuleFor(x => x.OrderedQty).Required("Unesi naručenu količinu.").GreaterThan(0).WithMessage("Naručena količina mora biti veća od 0.");
         RuleFor(x => x.DueDate).NotEmpty().WithMessage("Unesi rok isporuke.");
-        RuleFor(x => x.Priority).IsInEnum().WithMessage("Odaberi prioritet.");
+        RuleFor(x => x.Priority).Required("Odaberi prioritet.").IsInEnum().WithMessage("Odaberi prioritet.");
         RuleFor(x => x.DrawingNumber).MaximumLength(WorkOrder.DrawingNumberMax).WithMessage($"Broj crteža može imati najviše {WorkOrder.DrawingNumberMax} znakova.");
         RuleFor(x => x.DrawingRevision).MaximumLength(WorkOrder.DrawingRevisionMax).WithMessage($"Revizija može imati najviše {WorkOrder.DrawingRevisionMax} znakova.");
         RuleFor(x => x.Notes).MaximumLength(WorkOrder.NotesMax).WithMessage($"Napomena može imati najviše {WorkOrder.NotesMax} znakova.");
+        this.VersionOnUpdate(http, x => x.Version);
     }
 }
 
@@ -42,7 +52,7 @@ public static class WorkOrderEndpoints
         var write = app.MapGroup("/api/work-orders").RequireAuthorization(Policies.KontrolorOrAdmin);
         write.MapPost("/", Create).Validate<SaveWorkOrderRequest>();
         write.MapPut("/{id:guid}", Update).Validate<SaveWorkOrderRequest>();
-        write.MapPost("/{id:guid}/quality-approval", SetQualityApproval);
+        write.MapPost("/{id:guid}/quality-approval", SetQualityApproval).Validate<SetQualityApprovalRequest>();
     }
 
     private static readonly SortMap<WorkOrderRow> Sort = new SortMap<WorkOrderRow>()
@@ -126,7 +136,7 @@ public static class WorkOrderEndpoints
         if (await CheckRefs(req, db, ct) is { } problem)
             return problem;
 
-        db.Entry(wo).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(wo).Property(x => x.Version).OriginalValue = req.Version!.Value;
         if (wo.IsReadOnly)
         {
             // DOMAIN §4: Isporuceno / Otkazano are read-only except Notes.
@@ -155,12 +165,10 @@ public static class WorkOrderEndpoints
         var wo = await db.WorkOrders.SingleOrDefaultAsync(x => x.Id == id, ct);
         if (wo is null)
             return ApiResults.NotFound("Nalog ne postoji.");
-        if (!Enum.IsDefined(req.QualityApproval))
-            return ApiResults.Validation("qualityApproval", "Odaberi odobrenje kvaliteta.");
         if (wo.IsReadOnly)
             return ApiResults.Conflict($"Nalog {wo.Number} ima status {DisplayNames.Of(wo.Status)}; odobrenje kvaliteta se više ne mijenja.");
-        db.Entry(wo).Property(x => x.Version).OriginalValue = req.Version;
-        wo.QualityApproval = req.QualityApproval;
+        db.Entry(wo).Property(x => x.Version).OriginalValue = req.Version!.Value;
+        wo.QualityApproval = req.QualityApproval!.Value;
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(await GetDtoAsync(db, id, clock.Today, ct));
     }
@@ -176,10 +184,10 @@ public static class WorkOrderEndpoints
 
     private static void Apply(WorkOrder wo, SaveWorkOrderRequest req)
     {
-        wo.OrderedQty = req.OrderedQty;
-        wo.DueDate = req.DueDate;
+        wo.OrderedQty = req.OrderedQty!.Value;
+        wo.DueDate = req.DueDate!.Value;
         wo.ReleaseDate = req.ReleaseDate;
-        wo.Priority = req.Priority;
+        wo.Priority = req.Priority!.Value;
         wo.DrawingNumber = Clean(req.DrawingNumber);
         wo.DrawingRevision = Clean(req.DrawingRevision);
         wo.DrawingFileId = req.DrawingFileId;

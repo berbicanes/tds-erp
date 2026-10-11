@@ -45,23 +45,28 @@ public sealed record QualityCheckDto
 public sealed record QualityCheckDetailDto(QualityCheckDto Check, IReadOnlyList<EvidenceFileDto> Evidence);
 
 public sealed record CreateQualityCheckRequest(
-    Guid? WorkOrderId, Guid? MaterialLotId, InspectionPhase Phase, string Characteristic, string? AcceptanceCriterion,
-    string? MeasuredResult, int? SampleSize, InspectionResult Result, Guid InspectedByEmployeeId, DateOnly InspectionDate,
+    Guid? WorkOrderId, Guid? MaterialLotId, InspectionPhase? Phase, string Characteristic, string? AcceptanceCriterion,
+    string? MeasuredResult, int? SampleSize, InspectionResult? Result, Guid? InspectedByEmployeeId, DateOnly? InspectionDate,
     Guid? MeasuringEquipmentId, List<Guid>? EvidenceFileIds);
 
-public sealed record FileIdRequest(Guid FileId);
+public sealed record FileIdRequest(Guid? FileId);
+
+public sealed class FileIdValidator : AbstractValidator<FileIdRequest>
+{
+    public FileIdValidator() => RuleFor(x => x.FileId).NotEmpty().WithMessage("Odaberi fajl.");
+}
 
 public sealed class CreateQualityCheckValidator : AbstractValidator<CreateQualityCheckRequest>
 {
     public CreateQualityCheckValidator()
     {
-        RuleFor(x => x.Phase).IsInEnum().WithMessage("Odaberi fazu.");
+        RuleFor(x => x.Phase).Required("Odaberi fazu.").IsInEnum().WithMessage("Odaberi fazu.");
         RuleFor(x => x.Characteristic).NotEmpty().WithMessage("Unesi karakteristiku / zahtjev crteža.")
             .MaximumLength(QualityCheck.TextMax).WithMessage($"Najviše {QualityCheck.TextMax} znakova.");
         RuleFor(x => x.AcceptanceCriterion).MaximumLength(QualityCheck.TextMax).WithMessage($"Najviše {QualityCheck.TextMax} znakova.");
         RuleFor(x => x.MeasuredResult).MaximumLength(QualityCheck.TextMax).WithMessage($"Najviše {QualityCheck.TextMax} znakova.");
         RuleFor(x => x.SampleSize).GreaterThanOrEqualTo(1).When(x => x.SampleSize is not null).WithMessage("Veličina uzorka mora biti najmanje 1.");
-        RuleFor(x => x.Result).IsInEnum().WithMessage("Odaberi rezultat.");
+        RuleFor(x => x.Result).Required("Odaberi rezultat.").IsInEnum().WithMessage("Odaberi rezultat.");
         RuleFor(x => x.InspectedByEmployeeId).NotEmpty().WithMessage("Odaberi ko je kontrolisao.");
         RuleFor(x => x.InspectionDate).NotEmpty().WithMessage("Unesi datum kontrole.");
     }
@@ -78,7 +83,7 @@ public static class QualityCheckEndpoints
         read.MapGet("/lots/{id:guid}/quality-checks", ListForLot);
 
         app.MapPost("/api/quality-checks", Create).Validate<CreateQualityCheckRequest>().RequireAuthorization(Policies.KontrolorOrAdmin);
-        app.MapPost("/api/quality-checks/{id:guid}/evidence", AddEvidence).RequireAuthorization(Policies.KontrolorOrAdmin);
+        app.MapPost("/api/quality-checks/{id:guid}/evidence", AddEvidence).Validate<FileIdRequest>().RequireAuthorization(Policies.KontrolorOrAdmin);
         // DOMAIN §7.7: only Admin removes a file link; the file itself stays.
         app.MapPost("/api/quality-checks/{id:guid}/evidence/{fileId:guid}/remove", RemoveEvidence).RequireAuthorization(Policies.Admin);
         app.MapPost("/api/quality-checks/{id:guid}/void", Void).Validate<VoidRequest>().RequireAuthorization(Policies.Admin);
@@ -171,10 +176,10 @@ public static class QualityCheckEndpoints
         if (req.InspectionDate > clock.Today)
             return ApiResults.Validation("inspectionDate", "Datum kontrole ne može biti u budućnosti.");
         if (req.Phase != InspectionPhase.UlazniMaterijal && req.WorkOrderId is null)
-            return ApiResults.Validation("workOrderId", $"Kontrola faze {DisplayNames.Of(req.Phase)} se veže za nalog — odaberi nalog.");
+            return ApiResults.Validation("workOrderId", $"Kontrola faze {DisplayNames.Of(req.Phase!.Value)} se veže za nalog — odaberi nalog.");
         if (req.Phase == InspectionPhase.UlazniMaterijal && req.MaterialLotId is null)
             return ApiResults.Validation("materialLotId", "Ulazna kontrola se veže za lot — odaberi lot.");
-        QualityCheck.CheckOwner(req.Phase, req.WorkOrderId, req.MaterialLotId);
+        QualityCheck.CheckOwner(req.Phase!.Value, req.WorkOrderId, req.MaterialLotId);
         if (req.WorkOrderId is { } wo && !await db.WorkOrders.AnyAsync(w => w.Id == wo, ct))
             return ApiResults.Validation("workOrderId", "Nalog ne postoji.");
         if (req.MaterialLotId is { } lot && !await db.MaterialLots.AnyAsync(l => l.Id == lot, ct))
@@ -196,17 +201,17 @@ public static class QualityCheckEndpoints
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var check = new QualityCheck
         {
-            Number = await numbers.NextAsync(DocumentNumberKind.QualityCheck, req.InspectionDate, ct),
+            Number = await numbers.NextAsync(DocumentNumberKind.QualityCheck, req.InspectionDate!.Value, ct),
             WorkOrderId = req.WorkOrderId,
             MaterialLotId = req.MaterialLotId,
-            Phase = req.Phase,
+            Phase = req.Phase!.Value,
             Characteristic = req.Characteristic.Trim(),
             AcceptanceCriterion = Clean(req.AcceptanceCriterion),
             MeasuredResult = Clean(req.MeasuredResult),
             SampleSize = req.SampleSize,
-            Result = req.Result,
-            InspectedByEmployeeId = req.InspectedByEmployeeId,
-            InspectionDate = req.InspectionDate,
+            Result = req.Result!.Value,
+            InspectedByEmployeeId = req.InspectedByEmployeeId!.Value,
+            InspectionDate = req.InspectionDate!.Value,
             MeasuringEquipmentId = req.MeasuringEquipmentId,
             CalibrationStatusAtCheck = calibration,
         };
@@ -233,7 +238,7 @@ public static class QualityCheckEndpoints
         if (!await db.FileAttachments.AnyAsync(f => f.Id == req.FileId, ct))
             return ApiResults.Validation("fileId", "Fajl ne postoji.");
         if (check.Evidence.All(e => e.FileId != req.FileId))
-            check.Evidence.Add(new QualityCheckEvidence { QualityCheckId = id, FileId = req.FileId });
+            check.Evidence.Add(new QualityCheckEvidence { QualityCheckId = id, FileId = req.FileId!.Value });
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
@@ -253,7 +258,7 @@ public static class QualityCheckEndpoints
         var check = await db.QualityChecks.SingleOrDefaultAsync(q => q.Id == id, ct);
         if (check is null)
             return ApiResults.NotFound("Kontrola ne postoji.");
-        db.Entry(check).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(check).Property(x => x.Version).OriginalValue = req.Version!.Value;
         check.Void(req.Reason);
         await db.SaveChangesAsync(ct);
         return TypedResults.Ok(await Project(db).SingleAsync(q => q.Id == id, ct));

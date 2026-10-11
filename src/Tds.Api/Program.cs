@@ -46,6 +46,8 @@ builder.Services.AddExceptionHandler<ProblemExceptionHandler>();
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 // Field keys in validation errors match JSON camelCase ("userName", not "UserName").
+// One message per field: a missing value is reported once, not also as "must be > 0".
+ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
 ValidatorOptions.Global.PropertyNameResolver = (_, member, _) =>
     member is null ? null : System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(member.Name);
 builder.Services.AddHttpContextAccessor();

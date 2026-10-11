@@ -35,16 +35,22 @@ public sealed record LotDto
 }
 
 public sealed record ReceiveLotRequest(
-    string LotNumber, Guid MaterialItemId, Guid SupplierId, DateOnly ReceivedDate, decimal ReceivedQty,
+    string LotNumber, Guid? MaterialItemId, Guid? SupplierId, DateOnly? ReceivedDate, decimal? ReceivedQty,
     string? DimensionsDescription, string? StorageLocation);
 
-public sealed record UpdateLotRequest(string LotNumber, Guid SupplierId, string? DimensionsDescription, string? StorageLocation, uint Version);
+public sealed record UpdateLotRequest(string LotNumber, Guid? SupplierId, string? DimensionsDescription, string? StorageLocation, uint? Version);
 
-public sealed record DecideLotRequest(ReceiptDecision Decision, Guid? InspectedByEmployeeId, string? Reason, uint Version);
+public sealed record DecideLotRequest(ReceiptDecision? Decision, Guid? InspectedByEmployeeId, string? Reason, uint? Version);
 
-public sealed record VoidRequest(string Reason, uint Version);
+public sealed record VoidRequest(string Reason, uint? Version);
 
-public sealed record SetFileRequest(Guid? FileId, uint Version);
+public sealed record SetFileRequest(Guid? FileId, uint? Version);
+
+/// <summary>FileId null = remove the certificate; the version is always required.</summary>
+public sealed class SetFileValidator : AbstractValidator<SetFileRequest>
+{
+    public SetFileValidator() => RuleFor(x => x.Version).Required(ValidationExtensions.VersionMissing);
+}
 
 public sealed class ReceiveLotValidator : AbstractValidator<ReceiveLotRequest>
 {
@@ -54,8 +60,9 @@ public sealed class ReceiveLotValidator : AbstractValidator<ReceiveLotRequest>
             .MaximumLength(MaterialLot.LotNumberMax).WithMessage($"Oznaka lota može imati najviše {MaterialLot.LotNumberMax} znakova.");
         RuleFor(x => x.MaterialItemId).NotEmpty().WithMessage("Odaberi artikal.");
         RuleFor(x => x.SupplierId).NotEmpty().WithMessage("Odaberi dobavljača.");
-        RuleFor(x => x.ReceivedQty).GreaterThan(0).WithMessage("Primljena količina mora biti veća od 0.")
-            .Must(q => decimal.Round(q, 3) == q).WithMessage("Količina može imati najviše 3 decimale.")
+        RuleFor(x => x.ReceivedDate).Required("Unesi datum prijema.");
+        RuleFor(x => x.ReceivedQty).Required("Unesi primljenu količinu.").GreaterThan(0).WithMessage("Primljena količina mora biti veća od 0.")
+            .Must(q => q is null || decimal.Round(q.Value, 3) == q).WithMessage("Količina može imati najviše 3 decimale.")
             .LessThan(1_000_000_000m).WithMessage("Količina je prevelika.");
         RuleFor(x => x.DimensionsDescription).MaximumLength(MaterialLot.DimensionsMax).WithMessage($"Najviše {MaterialLot.DimensionsMax} znakova.");
         RuleFor(x => x.StorageLocation).MaximumLength(MaterialLot.StorageLocationMax).WithMessage($"Najviše {MaterialLot.StorageLocationMax} znakova.");
@@ -69,6 +76,7 @@ public sealed class UpdateLotValidator : AbstractValidator<UpdateLotRequest>
         RuleFor(x => x.LotNumber).NotEmpty().WithMessage("Unesi oznaku lota / heat broj sa certifikata.")
             .MaximumLength(MaterialLot.LotNumberMax).WithMessage($"Oznaka lota može imati najviše {MaterialLot.LotNumberMax} znakova.");
         RuleFor(x => x.SupplierId).NotEmpty().WithMessage("Odaberi dobavljača.");
+        RuleFor(x => x.Version).Required(ValidationExtensions.VersionMissing);
         RuleFor(x => x.DimensionsDescription).MaximumLength(MaterialLot.DimensionsMax).WithMessage($"Najviše {MaterialLot.DimensionsMax} znakova.");
         RuleFor(x => x.StorageLocation).MaximumLength(MaterialLot.StorageLocationMax).WithMessage($"Najviše {MaterialLot.StorageLocationMax} znakova.");
     }
@@ -78,16 +86,20 @@ public sealed class DecideLotValidator : AbstractValidator<DecideLotRequest>
 {
     public DecideLotValidator()
     {
-        RuleFor(x => x.Decision).IsInEnum().WithMessage("Odaberi odluku prijema.");
+        RuleFor(x => x.Decision).Required("Odaberi odluku prijema.").IsInEnum().WithMessage("Odaberi odluku prijema.");
+        RuleFor(x => x.Version).Required(ValidationExtensions.VersionMissing);
         RuleFor(x => x.Reason).MaximumLength(StockMovement.ReasonMax).WithMessage($"Razlog može imati najviše {StockMovement.ReasonMax} znakova.");
     }
 }
 
 public sealed class VoidRequestValidator : AbstractValidator<VoidRequest>
 {
-    public VoidRequestValidator() =>
+    public VoidRequestValidator()
+    {
         RuleFor(x => x.Reason).NotEmpty().WithMessage("Razlog poništavanja je obavezan.")
             .MaximumLength(VoidableEntity.VoidedReasonMax).WithMessage($"Razlog može imati najviše {VoidableEntity.VoidedReasonMax} znakova.");
+        RuleFor(x => x.Version).Required(ValidationExtensions.VersionMissing);
+    }
 }
 
 public static class LotEndpoints
@@ -102,7 +114,7 @@ public static class LotEndpoints
         write.MapPost("/", Receive).Validate<ReceiveLotRequest>();
         write.MapPut("/{id:guid}", Update).Validate<UpdateLotRequest>();
         write.MapPost("/{id:guid}/decision", Decide).Validate<DecideLotRequest>();
-        write.MapPost("/{id:guid}/certificate", SetCertificate);
+        write.MapPost("/{id:guid}/certificate", SetCertificate).Validate<SetFileRequest>();
 
         app.MapPost("/api/lots/{id:guid}/void", Void).Validate<VoidRequest>().RequireAuthorization(Policies.Admin);
     }
@@ -173,7 +185,7 @@ public static class LotEndpoints
             return ApiResults.Validation("supplierId", "Dobavljač ne postoji.");
 
         var (lot, receipt) = MaterialLot.Receive(lotNumber, item.Id, supplier.Id, supplier.ApprovalStatus,
-            req.ReceivedDate, req.ReceivedQty, clock.Today);
+            req.ReceivedDate!.Value, req.ReceivedQty!.Value, clock.Today);
         lot.DimensionsDescription = Clean(req.DimensionsDescription);
         lot.StorageLocation = Clean(req.StorageLocation);
 
@@ -205,9 +217,9 @@ public static class LotEndpoints
                 return ApiResults.Validation("supplierId", "Dobavljač je blokiran.");
         }
 
-        db.Entry(lot).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(lot).Property(x => x.Version).OriginalValue = req.Version!.Value;
         lot.LotNumber = lotNumber;
-        lot.SupplierId = req.SupplierId;
+        lot.SupplierId = req.SupplierId!.Value;
         lot.DimensionsDescription = Clean(req.DimensionsDescription);
         lot.StorageLocation = Clean(req.StorageLocation);
         await db.SaveChangesAsync(ct);
@@ -224,8 +236,8 @@ public static class LotEndpoints
         if (req.InspectedByEmployeeId is { } emp && !await db.Employees.AnyAsync(e => e.Id == emp, ct))
             return ApiResults.Validation("inspectedByEmployeeId", "Zaposlenik ne postoji.");
 
-        db.Entry(lot).Property(x => x.Version).OriginalValue = req.Version;
-        var writeOff = lot.Decide(req.Decision, req.InspectedByEmployeeId, req.Reason, await db.OnHandAsync(id, ct), clock.Today);
+        db.Entry(lot).Property(x => x.Version).OriginalValue = req.Version!.Value;
+        var writeOff = lot.Decide(req.Decision!.Value, req.InspectedByEmployeeId, req.Reason, await db.OnHandAsync(id, ct), clock.Today);
         if (writeOff is not null)
             db.StockMovements.Add(writeOff);
         await db.SaveChangesAsync(ct);
@@ -246,7 +258,7 @@ public static class LotEndpoints
             return ApiResults.Conflict($"Lot {lot.LotNumber} je poništen i ne može se mijenjati.");
         if (req.FileId is { } f && !await db.FileAttachments.AnyAsync(x => x.Id == f, ct))
             return ApiResults.Validation("fileId", "Fajl ne postoji.");
-        db.Entry(lot).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(lot).Property(x => x.Version).OriginalValue = req.Version!.Value;
         lot.CertificateFileId = req.FileId;
         await db.SaveChangesAsync(ct);
 
@@ -272,7 +284,7 @@ public static class LotEndpoints
         if (await LotLinks.IsLinkedToWorkOrderAsync(db, id, ct))
             return ApiResults.Conflict($"Lot {lot.LotNumber} je vezan za nalog i ne može se poništiti.");
 
-        db.Entry(lot).Property(x => x.Version).OriginalValue = req.Version;
+        db.Entry(lot).Property(x => x.Version).OriginalValue = req.Version!.Value;
         lot.Void(req.Reason);
         foreach (var m in movements)
             m.Void(req.Reason);
