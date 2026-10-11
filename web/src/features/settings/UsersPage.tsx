@@ -179,7 +179,7 @@ export function UsersPage() {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-slate-500">Korisnici se ne brišu. Deaktiviran korisnik se ne može prijaviti. Zaposlenik se veže za nalog u tabu Zaposlenici.</p>
+      <p className="text-xs text-slate-500">Korisnici se ne brišu. Deaktiviran korisnik se ne može prijaviti. Korisnički nalog se veže za zaposlenika u tabu Zaposlenici.</p>
       <PasswordDialog user={passwordFor} onClose={() => setPasswordFor(null)} />
     </div>
   );

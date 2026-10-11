@@ -55,7 +55,7 @@ export const dateInput = (required?: string) =>
       return null;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-      ctx.addIssue({ code: "custom", message: "Neispravan datum." });
+      ctx.addIssue({ code: "custom", message: "Datum nije ispravan. Odaberi datum u kalendaru." });
       return null;
     }
     return raw;

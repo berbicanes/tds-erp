@@ -38,6 +38,20 @@
   "Created" (bind mount putanje sa razmakom). Uklonila sam samo ta dva kontejnera koje sam sama napravila
   (03:00 i 03:03), ništa drugo. Promjena Caddyfile-a je jedna `header` direktiva istog oblika kao postojeće —
   provjeriti pri prvom deployu.
+- **Prolaz kroz tekstove (web/src, 716 tekstova pročitano):** engleskih tekstova vidljivih korisniku nema osim jednog.
+  Ispravljeno:
+  - `EmployeeFormPage` "Prazno = radnik nema login." → "Prazno = radnik nema korisnički nalog i ne prijavljuje se."
+  - `UsersPage` "Zaposlenik se veže za nalog u tabu Zaposlenici." (dvosmisleno: nalog = radni nalog) →
+    "Korisnički nalog se veže za zaposlenika u tabu Zaposlenici."
+  - `UnsavedChanges` "biće izgubljene" → "bit će izgubljene"; `DocumentFormPage` "biće automatski povučena" → "bit će …".
+  - `LotDetailPage` "Razlog odbijanja je obavezan." → "Upiši razlog odbijanja." (UI §9: reci šta uraditi).
+  - `LotMovements` "Razlog je obavezan." → "Upiši razlog korekcije ili otpisa."
+  - `lib/schema` "Neispravan datum." → "Datum nije ispravan. Odaberi datum u kalendaru."
+  - `CalibrationSection` ravni navodnici → „Neusklađeno”.
+  Namjerno ostavljeno: "Uslovno odobren" (naziv enuma 1:1 iz Notiona, UI §8), "heat broj", "lot", "NC",
+  "dashboard" u "NC bez roka se ne prati na dashboardu" (tekst koji je vlasnik doslovno zadao).
+  Server: svi FluentValidation validatori imaju bosanske poruke (provjereno skriptom); engleske poruke postoje samo u
+  internim iznimkama koje korisnik ne vidi (vraća se opća bosanska poruka).
 - Usput u Fazi 3: `Combobox` s praznom opcijom je na Enter tokom pretrage birao praznu opciju — ispravljeno (commit 149e66e).
 
 Pravila rada: vlasnikove upute od 11.10.2026. (plan faze na vrh, odluke ovdje, promjene pravila u docs sa

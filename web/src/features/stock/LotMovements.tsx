@@ -48,7 +48,7 @@ function ManualMovementForm({ lot }: { lot: Lot }) {
     const n = parseDecimal(qty);
     if (n === null || n === 0) return setError(type === "Otpis" ? "Unesi količinu otpisa veću od 0." : "Unesi količinu korekcije, npr. -1,5 ili 2.");
     if (type === "Otpis" && n < 0) return setError("Količina otpisa se unosi kao pozitivan broj.");
-    if (!reason.trim()) return setError("Razlog je obavezan.");
+    if (!reason.trim()) return setError("Upiši razlog korekcije ili otpisa.");
     setError(null);
     save.mutate({ type, quantity: n, date, reason: reason.trim() });
   };

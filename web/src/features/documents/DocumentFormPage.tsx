@@ -89,7 +89,7 @@ function StatusActions({ detail, dirty }: { detail: DocumentDetail; dirty: boole
         <label htmlFor="doc-approve-date" className="block text-sm font-medium">Datum odobrenja *</label>
         <input id="doc-approve-date" type="date" max={todaySarajevo()} className={inputClass} value={date} onChange={(e) => setDate(e.target.value)} />
         {!d.fileId && <p className="mt-2 text-sm text-red-700">Dokument nema priložen fajl; odobravanje će biti odbijeno.</p>}
-        {previous && <p className="mt-2 text-sm">Važeća verzija v{previous.docVersion} biće automatski povučena.</p>}
+        {previous && <p className="mt-2 text-sm">Važeća verzija v{previous.docVersion} bit će automatski povučena.</p>}
       </ConfirmDialog>
     </section>
   );

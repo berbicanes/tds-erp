@@ -55,7 +55,7 @@ function DecisionPanel({ lot, onWarnings }: { lot: Lot; onWarnings: (w: string[]
   const validateAndSubmit = () => {
     if (!decision) return setLocalError("Odaberi novu odluku.");
     if (!inspector) return setLocalError("Odaberi ko je kontrolisao lot.");
-    if (decision === "Odbijen" && !reason.trim()) return setLocalError("Razlog odbijanja je obavezan.");
+    if (decision === "Odbijen" && !reason.trim()) return setLocalError("Upiši razlog odbijanja.");
     setLocalError(null);
     if (decision === "Odbijen") setConfirm(true);
     else submit();

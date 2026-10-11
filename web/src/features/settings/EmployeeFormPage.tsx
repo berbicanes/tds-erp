@@ -73,7 +73,7 @@ export function EmployeeFormPage() {
         <input id="position" className={inputClass} aria-invalid={!!errors.position} {...register("position")} />
       </Field>
 
-      <Field label="Korisnički nalog" htmlFor="userId" error={errors.userId?.message} hint="Prazno = radnik nema login.">
+      <Field label="Korisnički nalog" htmlFor="userId" error={errors.userId?.message} hint="Prazno = radnik nema korisnički nalog i ne prijavljuje se.">
         <Controller
           control={control}
           name="userId"

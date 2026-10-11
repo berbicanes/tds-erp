@@ -80,7 +80,7 @@ function RecordForm({ equipment, onDone }: { equipment: Equipment; onDone: () =>
       <Field label="Napomena" htmlFor="cal-note">
         <textarea id="cal-note" className={textareaClass} value={note} maxLength={1000} onChange={(e) => setNote(e.target.value)} />
       </Field>
-      {result === "Neuskladjeno" && <p className="rounded bg-red-50 p-2 text-sm text-red-800">Rezultat "Neusklađeno" čini mjerno sredstvo van kalibracije bez obzira na datum.</p>}
+      {result === "Neuskladjeno" && <p className="rounded bg-red-50 p-2 text-sm text-red-800">Rezultat „Neusklađeno” čini mjerno sredstvo van kalibracije bez obzira na datum.</p>}
       {error && <ErrorBanner error={new Error(error)} />}
       <div className="flex gap-2">
         <button type="button" onClick={() => void submit()} disabled={busy} className="min-h-11 rounded bg-blue-700 px-4 text-sm font-medium text-white disabled:opacity-60">

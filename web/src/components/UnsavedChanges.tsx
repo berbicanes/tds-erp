@@ -46,7 +46,7 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
         }}
         onCancel={() => blocker.reset?.()}
       >
-        Izmjene nisu spremljene i biće izgubljene.
+        Izmjene nisu spremljene i bit će izgubljene.
       </ConfirmDialog>
     </DirtyContext.Provider>
   );
