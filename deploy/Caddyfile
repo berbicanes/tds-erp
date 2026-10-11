@@ -25,6 +25,10 @@
 	@notAssets not path /assets/* /api/*
 	header @notAssets Cache-Control "no-cache"
 
+	# PWA manifest (ROADMAP Faza 4): explicit type, some browsers ignore it otherwise.
+	@manifest path /manifest.webmanifest
+	header @manifest Content-Type "application/manifest+json"
+
 	# SPA: unknown paths fall back to index.html.
 	handle {
 		root * /srv

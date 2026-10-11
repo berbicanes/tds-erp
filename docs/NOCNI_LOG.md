@@ -24,6 +24,20 @@
 - **Lista naloga u Brzom unosu** = nalozi u statusima iz DOMAIN §5.1 (Spreman, Laser, Presanje, Kontrola, Doraditi).
 - **Datum** je uvijek danas (prikazan, ne mijenja se na ovom ekranu); stariji datum ide kroz "Dnevna proizvodnja → Novi".
 - Uklonjen `EmptyModulePage` (više nije korišten).
+- **Liste na telefonu:** `DataTable` ispod 640 px prikazuje kartice (prva kolona = naslov/link + polja označena
+  `mobile: true`, inače sljedeće 3). Tabele unutar stranica (tabovi naloga, lot, kalibracije, korisnici, dashboard)
+  dobile su klasu `cards-sm` (CSS) — red postaje kartica, naziv kolone iz `data-label`.
+- **CSV export:** dugme "Izvezi CSV" na svih 10 lista; dohvata sve stranice (po 200) sa istim filterima i sortom.
+  Format (BOM, `;`, decimalni zarez, CRLF, prazno za nepoznato, zaštita od formula) pokriven testom `lib/csv.test.ts`.
+  Brojevi i datumi idu kao brojevi/datumi koje Excel prepoznaje (bez separatora hiljada; datum `12.10.2026`).
+  U browseru dugme nisam kliknula (to bi bilo preuzimanje fajla) — provjereno samo testovima.
+- **PWA:** `web/public/manifest.webmanifest` (ručno), ikone generisane skriptom `scripts/make-icons.py`
+  (samo standardna Python biblioteka), `start_url` = `/brzi-unos`. Bez service workera. U Caddyfile dodan
+  `Content-Type: application/manifest+json`.
+  Provjera Caddyfile-a kroz lokalni `tds-erp-caddy` image nije uspjela: `docker run` je ostajao u stanju
+  "Created" (bind mount putanje sa razmakom). Uklonila sam samo ta dva kontejnera koje sam sama napravila
+  (03:00 i 03:03), ništa drugo. Promjena Caddyfile-a je jedna `header` direktiva istog oblika kao postojeće —
+  provjeriti pri prvom deployu.
 - Usput u Fazi 3: `Combobox` s praznom opcijom je na Enter tokom pretrage birao praznu opciju — ispravljeno (commit 149e66e).
 
 Pravila rada: vlasnikove upute od 11.10.2026. (plan faze na vrh, odluke ovdje, promjene pravila u docs sa
