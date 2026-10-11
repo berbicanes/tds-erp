@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Tds.Api.Data;
 using Tds.Api.Domain;
+using Tds.Api.Features.QualityChecks;
 using Tds.Api.Infrastructure;
 
 namespace Tds.Api.Features.Suppliers;
@@ -57,6 +58,10 @@ public static class SupplierEndpoints
         var write = app.MapGroup("/api/suppliers").RequireAuthorization(Policies.KontrolorOrAdmin);
         write.MapPost("/", Create).Validate<SaveSupplierRequest>();
         write.MapPut("/{id:guid}", Update).Validate<SaveSupplierRequest>();
+        read.MapGet("/{id:guid}/certificates", Certificates);
+        write.MapPost("/{id:guid}/certificates", AddCertificate);
+        // DOMAIN §7.7: only Admin removes the link; the file itself stays.
+        app.MapPost("/api/suppliers/{id:guid}/certificates/{fileId:guid}/remove", RemoveCertificate).RequireAuthorization(Policies.Admin);
     }
 
     private static readonly SortMap<SupplierDto> Sort = new SortMap<SupplierDto>()
@@ -144,4 +149,42 @@ public static class SupplierEndpoints
     }
 
     private static string? Clean(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
+    private static async Task<IResult> Certificates(Guid id, AppDbContext db, CancellationToken ct)
+    {
+        if (!await db.Suppliers.AnyAsync(s => s.Id == id, ct))
+            return ApiResults.NotFound("Dobavljač ne postoji.");
+        return TypedResults.Ok(await (from c in db.Set<SupplierCertificate>()
+                                      where c.SupplierId == id
+                                      join f in db.FileAttachments on c.FileId equals f.Id
+                                      orderby f.CreatedAt descending
+                                      select new EvidenceFileDto(f.Id, f.OriginalName, f.ContentType, f.SizeBytes)).ToListAsync(ct));
+    }
+
+    private static async Task<IResult> AddCertificate(Guid id, FileIdRequest req, AppDbContext db, CancellationToken ct)
+    {
+        if (!await db.Suppliers.AnyAsync(s => s.Id == id, ct))
+            return ApiResults.NotFound("Dobavljač ne postoji.");
+        if (!await db.FileAttachments.AnyAsync(f => f.Id == req.FileId, ct))
+            return ApiResults.Validation("fileId", "Fajl ne postoji.");
+        // Load the whole set so the AuditLog shows the full before/after list (IAuditedLink).
+        var existing = await db.Set<SupplierCertificate>().Where(c => c.SupplierId == id).ToListAsync(ct);
+        if (existing.All(c => c.FileId != req.FileId))
+        {
+            db.Add(new SupplierCertificate { SupplierId = id, FileId = req.FileId });
+            await db.SaveChangesAsync(ct);
+        }
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<IResult> RemoveCertificate(Guid id, Guid fileId, AppDbContext db, CancellationToken ct)
+    {
+        var existing = await db.Set<SupplierCertificate>().Where(c => c.SupplierId == id).ToListAsync(ct);
+        var link = existing.SingleOrDefault(c => c.FileId == fileId);
+        if (link is null)
+            return ApiResults.NotFound("Certifikat nije vezan za ovog dobavljača.");
+        db.Remove(link);
+        await db.SaveChangesAsync(ct);
+        return TypedResults.NoContent();
+    }
 }
