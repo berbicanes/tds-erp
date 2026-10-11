@@ -90,7 +90,8 @@ public static class FileEndpoints
             http.Response.ContentType = contentType;
             http.Response.Headers.ContentDisposition = disposition;
             http.Response.Headers.XContentTypeOptions = "nosniff";
-            http.Response.Headers.CacheControl = "private, max-age=3600";
+            // Never kept by the browser: on a shared phone the next user must not find it after logout (PREGLED N6).
+            http.Response.Headers.CacheControl = "private, no-store";
             await using (stream)
                 await stream.CopyToAsync(http.Response.Body, http.RequestAborted);
         }

@@ -14,6 +14,9 @@ public interface IFileStorage
 
     /// <summary>Only for cleaning up content whose database row was never committed.</summary>
     void DeleteUncommitted(string storagePath);
+
+    /// <summary>Only for a file that was never linked to any record (DOMAIN §7.8); missing content is not an error.</summary>
+    void DeleteNeverLinked(string storagePath);
 }
 
 public sealed class FileTooLargeException(long maxBytes)
@@ -75,6 +78,8 @@ public sealed class LocalFileStorage : IFileStorage
         new FileStream(Resolve(storagePath), FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
 
     public void DeleteUncommitted(string storagePath) => File.Delete(Resolve(storagePath));
+
+    public void DeleteNeverLinked(string storagePath) => File.Delete(Resolve(storagePath));
 
     private string Resolve(string relative)
     {

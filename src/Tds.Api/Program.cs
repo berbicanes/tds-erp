@@ -123,6 +123,8 @@ builder.Services.AddScoped<IdentitySeeder>();
 builder.Services.AddScoped<EquipmentSeeder>();
 builder.Services.AddScoped<DevDataSeeder>();
 builder.Services.AddScoped<NotionImporter>();
+builder.Services.AddScoped<NeverLinkedFileCleanup>();
+builder.Services.AddHostedService<NeverLinkedFileCleanupJob>();
 
 var app = builder.Build();
 

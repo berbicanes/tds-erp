@@ -2,6 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Tds.Api.Data;
 using Tds.Api.Domain;
 using Tds.Api.Features.Files;
 using Tds.Api.Features.Materials;
@@ -45,6 +48,45 @@ public class FileTests(PostgresFixture postgres)
         Assert.Equal("inline", download.Content.Headers.ContentDisposition?.DispositionType);
         Assert.Equal("Certifikat H-4471 (Salzgitter).pdf", download.Content.Headers.ContentDisposition?.FileNameStar);
         Assert.Equal(Pdf, await download.Content.ReadAsByteArrayAsync(Ct));
+        // PREGLED N6: never kept in the browser cache (shared phones in the hall).
+        Assert.True(download.Headers.CacheControl is { Private: true, NoStore: true }, download.Headers.CacheControl?.ToString());
+    }
+
+    [Fact]
+    public async Task Only_files_never_linked_and_older_than_a_day_are_deleted_with_their_content()
+    {
+        await using var factory = await TdsApiFactory.CreateAsync(postgres);
+        var admin = await factory.AdminAsync();
+        async Task<FileDto> Upload(string name) => await (await admin.PostAsync("/api/files", Form(name, Pdf), Ct)).ReadAsync<FileDto>(HttpStatusCode.Created);
+        var abandoned = await Upload("napusten.pdf");
+        var linked = await Upload("certifikat.pdf");
+        var unlinked = await Upload("uklonjena-veza.pdf");
+        var fresh = await Upload("svjez.pdf");
+        var supplier = await TestData.Supplier(admin);
+        await admin.PostAsJsonAsync($"/api/suppliers/{supplier.Id}/certificates", new { fileId = linked.Id }, Ct);
+        await admin.PostAsJsonAsync($"/api/suppliers/{supplier.Id}/certificates", new { fileId = unlinked.Id }, Ct);
+        Assert.Equal(HttpStatusCode.NoContent, (await admin.PostAsync($"/api/suppliers/{supplier.Id}/certificates/{unlinked.Id}/remove", null, Ct)).StatusCode);
+
+        var old = new[] { abandoned.Id, linked.Id, unlinked.Id };
+        await using (var scope = factory.Services.CreateAsyncScope())
+            await scope.ServiceProvider.GetRequiredService<AppDbContext>().FileAttachments.Where(f => old.Contains(f.Id))
+                .ExecuteUpdateAsync(u => u.SetProperty(f => f.CreatedAt, DateTimeOffset.UtcNow.AddDays(-2)), Ct);
+        var path = factory.Service(sp => sp.GetRequiredService<AppDbContext>().FileAttachments.Single(f => f.Id == abandoned.Id).StoragePath);
+
+        int deleted;
+        await using (var scope = factory.Services.CreateAsyncScope())
+            deleted = await scope.ServiceProvider.GetRequiredService<NeverLinkedFileCleanup>().RunAsync(Ct);
+
+        Assert.Equal(1, deleted);
+        var left = factory.Service(sp => sp.GetRequiredService<AppDbContext>().FileAttachments.Select(f => f.Id).ToList());
+        Assert.Equal(new[] { linked.Id, unlinked.Id, fresh.Id }.Order(), left.Order());
+        Assert.False(File.Exists(Path.Combine(factory.StorageRoot, path)));
+        Assert.Equal(3, Directory.GetFiles(factory.StorageRoot, "*", SearchOption.AllDirectories).Length);
+        Assert.Equal(HttpStatusCode.NotFound, (await admin.GetAsync($"/api/files/{abandoned.Id}", Ct)).StatusCode);
+
+        // A second run finds nothing more.
+        await using (var scope = factory.Services.CreateAsyncScope())
+            Assert.Equal(0, await scope.ServiceProvider.GetRequiredService<NeverLinkedFileCleanup>().RunAsync(Ct));
     }
 
     [Fact]
