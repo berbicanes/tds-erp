@@ -158,7 +158,7 @@ export function UsersPage() {
                     </select>
                   </td>
                   <td data-label="Zaposlenik" className="px-2 py-1.5">{u.employeeName ?? "Nije vezan"}</td>
-                  <td data-label="Status" className="px-2 py-1.5">{!u.isActive ? "Deaktiviran" : u.lockedUntil ? `Zaključan do ${formatTime(u.lockedUntil)}` : "Aktivan"}</td>
+                  <td data-label="Status" className="px-2 py-1.5">{!u.isActive ? "Deaktiviran" : u.lockedUntil ? <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-900">Zaključan do {formatTime(u.lockedUntil)}</span> : "Aktivan"}</td>
                   <td className="space-x-2 whitespace-nowrap px-2 py-1.5 text-right">
                     <button type="button" onClick={() => setPasswordFor(u)} className="min-h-9 rounded border border-slate-300 px-2">
                       Nova lozinka

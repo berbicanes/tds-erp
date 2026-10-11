@@ -16,7 +16,10 @@ public sealed class DevDataSeeder(AppDbContext db, IHostEnvironment env, IClock 
         if (!env.IsDevelopment())
             throw new InvalidOperationException($"Dev seed may only run in Development (current: {env.EnvironmentName}).");
         if (await db.WorkOrders.AnyAsync(ct) || await db.MaterialLots.AnyAsync(ct))
+        {
+            await NotionLotExampleAsync(ct);
             return;
+        }
 
         var today = clock.Today;
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -146,5 +149,31 @@ public sealed class DevDataSeeder(AppDbContext db, IHostEnvironment env, IClock 
         await tx.CommitAsync(ct);
         _ = w4;
         logger.LogInformation("Development example data seeded");
+        await NotionLotExampleAsync(ct);
+    }
+
+    public const string NotionLotNumber = "N-AL-0312";
+
+    /// <summary>
+    /// DOMAIN §2.6 example: a lot as the Notion import leaves it (no received quantity, no movement), on an item with
+    /// a minimum, so "—", "Nepotpuno" and the dashboard warning can be seen. Added once, also to an existing dev database.
+    /// </summary>
+    private async Task NotionLotExampleAsync(CancellationToken ct)
+    {
+        if (await db.MaterialLots.AnyAsync(l => l.LotNumber == NotionLotNumber, ct))
+            return;
+        var item = await db.MaterialItems.FirstOrDefaultAsync(i => i.Name == "Lim aluminij" && i.Grade == "AlMg3", ct);
+        var supplier = await db.Suppliers.FirstOrDefaultAsync(s => s.Name == "Metalia d.o.o.", ct);
+        var inspector = await db.Employees.FirstOrDefaultAsync(e => e.FullName == "Amra Hodžić", ct);
+        if (item is null || supplier is null || inspector is null)
+            return;
+        var today = clock.Today;
+        var lot = MaterialLot.ImportedFromNotion(NotionLotNumber, item.Id, supplier.Id, today.AddDays(-75), today);
+        lot.DimensionsDescription = "3000×1500 (Notion: količina nije upisana)";
+        lot.StorageLocation = "Regal C2";
+        lot.Decide(ReceiptDecision.Prihvacen, inspector.Id, null, 0, today);
+        db.MaterialLots.Add(lot);
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Development example: lot {Lot} without known stock (as imported from Notion)", NotionLotNumber);
     }
 }

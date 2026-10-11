@@ -57,5 +57,10 @@ public class DevDataSeederTests(PostgresFixture postgres)
         var lot = await db.MaterialLots.SingleAsync(l => l.LotNumber == "H-4471", Ct);
         Assert.Equal(17m, await db.OnHandAsync(lot.Id, Ct));
         Assert.Equal(24m, lot.ReceivedQty);
+
+        // DOMAIN §2.6 example: one lot with unknown stock, exactly once.
+        var imported = await db.MaterialLots.SingleAsync(l => l.LotNumber == DevDataSeeder.NotionLotNumber, Ct);
+        Assert.Null(imported.ReceivedQty);
+        Assert.False(await db.StockMovements.AnyAsync(m => m.MaterialLotId == imported.Id, Ct));
     }
 }

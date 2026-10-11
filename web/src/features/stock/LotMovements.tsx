@@ -72,7 +72,7 @@ function ManualMovementForm({ lot }: { lot: Lot }) {
         ))}
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
-        <Field label={`Količina (${lot.unit})`} htmlFor="mv-qty" required hint={unknown ? "Stanje nije poznato: upiši stvarnu količinu na stanju (može i 0)." : type === "Korekcija" ? "+ dodaje, − oduzima" : `Najviše ${formatQuantity(lot.onHand)}`}>
+        <Field label={`Količina (${lot.unit})`} htmlFor="mv-qty" required hint={unknown ? (type === "Korekcija" ? "Stanje nije poznato: upiši stvarnu količinu na stanju (može i 0)." : "Otpis nije moguć dok stanje nije poznato. Prvo upiši stvarno stanje korekcijom.") : type === "Korekcija" ? "+ dodaje, − oduzima" : `Najviše ${formatQuantity(lot.onHand)}`}>
           <input id="mv-qty" inputMode="decimal" className={inputClass} value={qty} onChange={(e) => setQty(e.target.value)} />
         </Field>
         <Field label="Datum" htmlFor="mv-date" required>
