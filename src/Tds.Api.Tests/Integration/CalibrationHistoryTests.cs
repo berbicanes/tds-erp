@@ -70,7 +70,7 @@ public class CalibrationHistoryTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Migration_moves_calibration_data_from_the_equipment_card_without_dropping_columns()
+    public async Task Migrations_move_calibration_data_then_drop_the_legacy_columns()
     {
         var cs = await postgres.CreateDatabaseAsync();
         var options = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(cs).UseSnakeCaseNamingConvention().Options;
@@ -93,11 +93,16 @@ public class CalibrationHistoryTests(PostgresFixture postgres)
         var moved = await db.EquipmentCalibrations.ToListAsync(Ct);
         var c = Assert.Single(moved);
         Assert.Equal((new DateOnly(2025, 11, 1), new DateOnly(2026, 11, 1), CalibrationResult.Uskladjeno), (c.CalibrationDate, c.NextCalibrationDate!.Value, c.Result));
+        // A manual next date without a calibration date is not moved (owner's decision, Phase 3).
+        Assert.DoesNotContain(moved, m => m.EquipmentId == Guid.Parse("01900000-0000-7000-8000-000000000002"));
 
-        // Old columns still exist with their data (no DROP until confirmed).
+        // The legacy columns are dropped by the follow-up migration (DROP approved by the owner for these three only).
         await using var conn = new NpgsqlConnection(cs);
         await conn.OpenAsync(Ct);
-        await using var cmd = new NpgsqlCommand("SELECT next_calibration_date FROM equipment WHERE code = 'MS-002'", conn);
-        Assert.Equal(new DateOnly(2026, 12, 1), (DateOnly)(await cmd.ExecuteScalarAsync(Ct))!);
+        await using var cmd = new NpgsqlCommand("""
+            SELECT count(*) FROM information_schema.columns
+            WHERE table_name = 'equipment' AND column_name IN ('last_calibration_date', 'next_calibration_date', 'calibration_certificate_file_id')
+            """, conn);
+        Assert.Equal(0L, (long)(await cmd.ExecuteScalarAsync(Ct))!);
     }
 }

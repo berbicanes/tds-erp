@@ -17,8 +17,6 @@ public class Equipment : Entity
     public int? CalibrationIntervalMonths { get; set; }
 
     // Last/next calibration and the calibration state are derived from EquipmentCalibration (DATA_MODEL §9).
-    // The old columns last_calibration_date, next_calibration_date, calibration_certificate_file_id stay in the
-    // database as unused shadow properties until the owner confirms the DROP (CLAUDE.md).
 
     public bool IsActive { get; set; } = true;
 

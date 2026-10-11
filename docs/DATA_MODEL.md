@@ -202,9 +202,8 @@ kad stigne finalni Notion.
 | CalibrationStatus | enum `CalibrationStatusAtCheck` | **IZV** (samo mjerna sredstva): bez neponištenih kalibracija ili bez `NextCalibrationDate` → `BezDatumaKalibracije`; zadnja kalibracija `Neuskladjeno` ili `NextCalibrationDate < danas` → `VanKalibracije`; inače `UKalibraciji` |
 | IsActive | bool | |
 
-Ranija polja `LastCalibrationDate`, `NextCalibrationDate` i `CalibrationCertificateFileId` na opremi su
-prenesena u `EquipmentCalibration` (migracija Faze 3). Stare kolone ostaju u bazi neiskorištene dok vlasnik
-projekta izričito ne potvrdi `DROP`.
+Oprema nema kolona za datume kalibracije ni certifikat: sve je u `EquipmentCalibration` (§9a), a gornja
+**IZV** polja se računaju pri čitanju. Certifikat kalibracije je na samoj kalibraciji (`CertificateFileId`).
 
 Seed (sa tdsproducts.com, potvrditi sa klijentom):
 `M-01` CNC fiber laser 6 kW · `M-02` CNC plazma 85 A · `M-03` Hidraulična 4-stubna presa 350 t ·

@@ -501,10 +501,6 @@ namespace Tds.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<Guid?>("CalibrationCertificateFileId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("calibration_certificate_file_id");
-
                     b.Property<int?>("CalibrationIntervalMonths")
                         .HasColumnType("integer")
                         .HasColumnName("calibration_interval_months");
@@ -533,10 +529,6 @@ namespace Tds.Api.Data.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("kind");
 
-                    b.Property<DateOnly?>("LastCalibrationDate")
-                        .HasColumnType("date")
-                        .HasColumnName("last_calibration_date");
-
                     b.Property<string>("Manufacturer")
                         .HasMaxLength(80)
                         .HasColumnType("character varying(80)")
@@ -547,10 +539,6 @@ namespace Tds.Api.Data.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)")
                         .HasColumnName("name");
-
-                    b.Property<DateOnly?>("NextCalibrationDate")
-                        .HasColumnType("date")
-                        .HasColumnName("next_calibration_date");
 
                     b.Property<string>("SerialNumber")
                         .HasMaxLength(60)
@@ -573,9 +561,6 @@ namespace Tds.Api.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_equipment");
-
-                    b.HasIndex("CalibrationCertificateFileId")
-                        .HasDatabaseName("ix_equipment_calibration_certificate_file_id");
 
                     b.HasIndex("Code")
                         .IsUnique()
@@ -666,7 +651,7 @@ namespace Tds.Api.Data.Migrations
                         .HasName("pk_equipment_calibration");
 
                     b.HasIndex("CertificateFileId")
-                        .HasDatabaseName("ix_equipment_calibration_certificate_file_id1");
+                        .HasDatabaseName("ix_equipment_calibration_certificate_file_id");
 
                     b.HasIndex("EquipmentId", "CalibrationDate")
                         .HasDatabaseName("ix_equipment_calibration_equipment_id_calibration_date");
@@ -1904,15 +1889,6 @@ namespace Tds.Api.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_employee_asp_net_users_user_id");
-                });
-
-            modelBuilder.Entity("Tds.Api.Domain.Equipment", b =>
-                {
-                    b.HasOne("Tds.Api.Domain.FileAttachment", null)
-                        .WithMany()
-                        .HasForeignKey("CalibrationCertificateFileId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_equipment_file_attachments_calibration_certificate_file_id");
                 });
 
             modelBuilder.Entity("Tds.Api.Domain.EquipmentCalibration", b =>
