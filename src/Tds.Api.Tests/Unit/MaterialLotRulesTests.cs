@@ -26,6 +26,21 @@ public class MaterialLotRulesTests
     }
 
     [Fact]
+    public void Lot_imported_from_Notion_has_unknown_received_quantity_and_starts_on_NaKontroli()
+    {
+        var lot = MaterialLot.ImportedFromNotion(" H-9 ", Guid.CreateVersion7(), Guid.CreateVersion7(), Today.AddDays(-30), Today);
+
+        Assert.Equal("H-9", lot.LotNumber);
+        Assert.Null(lot.ReceivedQty);
+        Assert.Equal(ReceiptDecision.NaKontroli, lot.ReceiptDecision);
+    }
+
+    [Fact]
+    public void Lot_imported_from_Notion_with_a_future_receipt_date_is_rejected() =>
+        Assert.Equal("Datum prijema ne može biti u budućnosti.", Assert.Throws<DomainException>(() =>
+            MaterialLot.ImportedFromNotion("H-9", Guid.CreateVersion7(), Guid.CreateVersion7(), Today.AddDays(1), Today)).Message);
+
+    [Fact]
     public void Blocked_supplier_is_rejected() =>
         Assert.Equal("Dobavljač je blokiran.", Assert.Throws<DomainException>(() =>
             MaterialLot.Receive("H-1", Guid.CreateVersion7(), Guid.CreateVersion7(), SupplierApprovalStatus.Blokiran, Today, 1, Today)).Message);

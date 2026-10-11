@@ -29,6 +29,17 @@
   diska 1 GiB (`Health:MinFreeDiskBytes`), mjeri se na storage rootu fajlova (isti disk kao baza na jednom VPS-u).
 - **Logovi sa rotacijom** kroz Docker `json-file` (5 × 10 MB po servisu) — bez Seriloga (novi paket). Docker
   healthcheck za `api` nije dodan: .NET slika nema `curl`/`wget`; vanjski uptime ping je pravi monitor (čeka domen).
+- **Količina prijema za lotove iz Notiona.** Notion lot nema brojčanu količinu prijema (samo tekst `Dimenzije /
+  količina`), a uputa kaže da početno stanje ulazi kao `Korekcija`. `ReceivedQty` je bio obavezan > 0 i pravi `Prijem`.
+  Opcije: (a) `ReceivedQty` = trenutno stanje — izmišljena količina prijema (zlatno pravilo 6); (b) 0 — "nepoznato =
+  nula"; (c) `ReceivedQty` nullable samo za uvezene lotove, UI "—". Izabrano (c): jedina iskrena opcija, nova migracija
+  (`AlterColumn` → nullable, bez gubitka podataka), `Down` odbija vraćanje dok postoje lotovi sa nepoznatom količinom
+  (da nepoznato ne postane 0). Prijem u aplikaciji i dalje traži > 0. DATA_MODEL §6 "(nocna odluka — za potvrdu)".
+- **Mapiranje importa** je zapisano u `NOTION_SOURCE.md` „Import” prije koda (ključevi, formati, šta je greška,
+  duplikat, upozorenje). Odluke unutar mapiranja: `--apply` ne upisuje ništa ako postoji ijedna greška (sve ili ništa);
+  dry-run izvrši upis u transakciji i vrati je nazad; broj naloga iz Notiona se zadržava (DOMAIN §9.4 još otvoreno);
+  status naloga se uvozi bez provjere prelaza; nepoznata osoba u neobaveznom polju = upozorenje, u obaveznom = greška;
+  brojevi samo sa decimalnom tačkom (zarez je dvosmislen: `1,234`).
 - **Restore test** (`deploy/restore-test.sh`): lokalno na dev bazi prošao — svjež dump i postojeći dump fajl,
   29 tabela, 197 redova, isti broj redova kao u živoj bazi, zadnja migracija `…DropLegacyEquipmentCalibrationColumns`.
   Privremena baza `tds_restore_test` se briše na kraju (provjereno: ostale su samo `tds` i sistemske).

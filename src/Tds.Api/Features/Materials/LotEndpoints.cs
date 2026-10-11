@@ -19,7 +19,8 @@ public sealed record LotDto
     public required string SupplierName { get; init; }
     public required DateOnly ReceivedDate { get; init; }
     public string? DimensionsDescription { get; init; }
-    public required decimal ReceivedQty { get; init; }
+    /// <summary>Null = unknown (lot imported from Notion).</summary>
+    public decimal? ReceivedQty { get; init; }
     /// <summary>IZV: Σ non-voided movements.</summary>
     public required decimal OnHand { get; init; }
     public required ReceiptDecision ReceiptDecision { get; init; }

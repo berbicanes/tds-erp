@@ -16,7 +16,8 @@ export interface Lot {
   supplierName: string;
   receivedDate: string;
   dimensionsDescription: string | null;
-  receivedQty: number;
+  /** null = unknown (lot imported from Notion). */
+  receivedQty: number | null;
   onHand: number;
   receiptDecision: ReceiptDecision;
   inspectedByEmployeeId: string | null;

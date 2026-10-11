@@ -852,7 +852,7 @@ namespace Tds.Api.Data.Migrations
                         .HasColumnType("date")
                         .HasColumnName("received_date");
 
-                    b.Property<decimal>("ReceivedQty")
+                    b.Property<decimal?>("ReceivedQty")
                         .HasPrecision(12, 3)
                         .HasColumnType("numeric(12,3)")
                         .HasColumnName("received_qty");

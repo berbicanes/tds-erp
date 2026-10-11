@@ -104,3 +104,47 @@ primjene (date) · Sljedeća provjera (date) · Opis izmjene (text) · Važeći 
    `MaterialConsumed`.
 5. Lot nema brojčanu količinu prijema (samo tekst `Dimenzije / količina`). Dodano `ReceivedQty`.
 6. `Zalihe materijala` miješa artikal i stanje lota → razdvojeno na `MaterialItem` i pokrete.
+
+## Import (Faza 5) — mapiranje
+
+Jednokratna admin komanda (ne UI), radi nad CSV exportom Notion baza ("Export → Markdown & CSV"):
+
+```bash
+dotnet Tds.Api.dll import-notion <folder> --dry-run   # samo izvještaj, ništa se ne upisuje
+dotnet Tds.Api.dll import-notion <folder> --apply     # upis, jedna transakcija
+```
+
+- Bez `--dry-run` ili `--apply` komanda ništa ne radi (samo uputa). `--apply` prvo uradi istu provjeru i
+  **ne upisuje ništa ako postoji ijedna greška**. Dry-run izvrši cijeli upis u transakciji i vrati je nazad, pa
+  provjeri i ograničenja baze.
+- Fajlovi se traže po početku imena: `Dobavljači`, `Ulazni materijal u proizvodnji`, `Zalihe materijala`,
+  `Nalozi proizvodnje` (Notion dodaje id; ako postoji i `_all` varijanta, uzima se ona). Baza bez fajla se preskače.
+- Sve zapise kreira "Sistem" (`CreatedBy = null`); svaki ide u AuditLog.
+- Ponovno pokretanje istog exporta ne pravi ništa novo: postojeći zapisi su duplikati.
+
+**Vrste nalaza u izvještaju** (red = broj reda u CSV-u, zaglavlje je red 1):
+
+| Nalaz | Kada | Posljedica |
+|---|---|---|
+| Greška: prazno obavezno polje | npr. `Kupac`, `Rok isporuke`, `Status`, `Jedinica` | blokira `--apply` |
+| Greška: nepoznata vrijednost | opcija selecta/statusa koje nema u listi ispod, ili broj/datum u nepodržanom formatu | blokira `--apply` |
+| Greška: konflikt | isti ključ dva puta sa različitim podacima (u fajlu ili u odnosu na bazu); dva polja Notiona koja se spajaju u jedno, a razlikuju se | blokira `--apply` |
+| Greška: veza nije pronađena | dobavljač, lot, artikal ili (gdje je obavezan) zaposlenik ne postoji ni u bazi ni u exportu | blokira `--apply` |
+| Duplikat | isti ključ, isti podaci (u fajlu ili već u bazi) | preskače se |
+| Upozorenje | podatak koji se namjerno ne uvozi (fajlovi, ručni `Odradjeno`/`Rezervisano`, kvačice) ili nepoznata osoba u neobaveznom polju | uvozi se bez tog podatka |
+
+**Formati:** datum `2026-10-12`, `October 12, 2026` ili `12.10.2026` (sa ili bez tačke na kraju); datum sa
+vremenom ili raspon → nepoznata vrijednost. Broj samo sa decimalnom tačkom (`12.5`), bez separatora hiljada.
+Relacija: `Naziv (https://www.notion.so/…)`, više vrijednosti odvojeno zarezom. Osoba (person): puno ime,
+mora tačno odgovarati `Employee.FullName` (zaposlenike prvo unijeti u aplikaciji).
+
+| Notion | Ključ | Polja → aplikacija |
+|---|---|---|
+| Dobavljači | `Naziv dobavljača` | `Materijal / usluga`, `Status odobrenja` (U procjeni, Odobren, Uslovno odobren, Blokiran — obavezno), `Datum početne ocjene`, `Sljedeća ocjena`, `Odgovorna osoba`, `Kriteriji / rezultat ocjene`, `Napomene`. `Certifikati / dokazi` → upozorenje. |
+| Zalihe materijala → **MaterialItem** | (`Materijal / artikal`, `Kvalitet / oznaka`, `Debljina mm`) | `Jedinica` (kg, kom, m, tabla, drugo — obavezno), `Minimalna zaliha`, `Datum sljedećeg popisa`. Više redova istog artikla mora imati iste vrijednosti (inače konflikt). |
+| Zalihe materijala → **početno stanje** | `Ulazni lot` (tačno jedan lot) | `Količina na stanju` > 0 → pokret `Korekcija` na lotu, datum = dan importa, razlog **"Početno stanje iz Notiona"**. Prazno → upozorenje (stanje nepoznato, nema pokreta); 0 → nema pokreta; < 0, red bez lota ili sa više lotova, odbijen lot sa stanjem → greška. `Rezervisano` > 0 → upozorenje (rezervacije se unose na nalogu). `Raspoloživo`, `Nivo zalihe` se ne uvoze (izvedeno). Lot koji već postoji u bazi ne dobija novu korekciju. |
+| Ulazni materijal u proizvodnji → **MaterialLot** | `Oznaka lota / heat broj` | Artikal: iz reda Zaliha koji veže taj lot; ako ga nema, po (`Vrsta materijala`, `Kvalitet / oznaka`, `Debljina mm`). Dobavljač: `Dobavljač u registru`, a kad je prazan, tekst `Dobavljač` (oba popunjena i različita → konflikt). `Datum prijema` (obavezno), `Dimenzije / količina`, `Skladišna lokacija`, `Odluka prijema` (Na kontroli, Prihvaćen, Karantin, Odbijen — obavezno), `Kontrolisao` (obavezno kad odluka nije Na kontroli). `ReceivedQty` = nepoznato (`null`), nema `Prijem` pokreta. `Certifikat materijala` → upozorenje. |
+| Nalozi proizvodnje → **WorkOrder** | `Broj naloga` (zadržava se kakav jeste, max 20 znakova) | `Kupac`, `Proizvod / opis`, `Rok isporuke` (obavezno), `Datum puštanja`, `Kolicina Narudzbe` / `Naručena količina` (jedno popunjeno ili oba ista, cijeli broj > 0), `Status` (10 Notion opcija), `Prioritet` (Normalan, Hitno), `Odobrenje kvaliteta` (Čeka, Prihvaćeno, Blokirano), `Broj crteža`, `Revizija crteža`, `Odgovorna osoba`. `Materijalni lotovi` (a kad je prazno, tekst `Lot materijala`) → veza lot–nalog bez rezervacije (`ReservedQty = 0`). Broj u formatu `RN-YYYY-NNNN` pomjera brojač te godine, da novi nalozi ne dobiju isti broj. `Odradjeno` > 0, kvačice kvaliteta, `Važeći crtež`, `Neusaglašenosti / CAPA` → upozorenje (ne uvoze se; računaju se iz zapisa ili se unose posebno). |
+
+Status naloga se uvozi kakav jeste, bez provjere prelaza (DOMAIN §4) — to je istorija, ne prelaz.
+Ostale baze (dnevna proizvodnja, kontrole, neusaglašenosti, dokumenti) nisu u obimu importa (ROADMAP Faza 5).

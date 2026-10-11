@@ -13,8 +13,11 @@ public class MaterialLot : VoidableEntity
     public DateOnly ReceivedDate { get; init; }
     public string? DimensionsDescription { get; set; }
 
-    /// <summary>Immutable after creation; a receiving mistake is fixed with a Korekcija (DOMAIN §2.2).</summary>
-    public decimal ReceivedQty { get; init; }
+    /// <summary>
+    /// Immutable after creation; a receiving mistake is fixed with a Korekcija (DOMAIN §2.2).
+    /// Null only for lots imported from Notion, which has no numeric received quantity (DATA_MODEL §6).
+    /// </summary>
+    public decimal? ReceivedQty { get; init; }
 
     public ReceiptDecision ReceiptDecision { get; private set; } = ReceiptDecision.NaKontroli;
     public Guid? InspectedByEmployeeId { get; private set; }
@@ -62,6 +65,24 @@ public class MaterialLot : VoidableEntity
             Date = receivedDate,
         };
         return (lot, receipt);
+    }
+
+    /// <summary>
+    /// A lot taken over from Notion (ROADMAP Faza 5): no Prijem movement and no received quantity, because Notion only
+    /// has a text description. Its stock comes in as a Korekcija "Početno stanje iz Notiona". Decision starts as NaKontroli.
+    /// </summary>
+    public static MaterialLot ImportedFromNotion(string lotNumber, Guid materialItemId, Guid supplierId, DateOnly receivedDate, DateOnly today)
+    {
+        if (receivedDate > today)
+            throw new DomainException("Datum prijema ne može biti u budućnosti.");
+        return new MaterialLot
+        {
+            LotNumber = lotNumber.Trim(),
+            MaterialItemId = materialItemId,
+            SupplierId = supplierId,
+            ReceivedDate = receivedDate,
+            ReceivedQty = null,
+        };
     }
 
     /// <summary>
