@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { csvDate } from "../../lib/csv";
 import { DataTable, type Column } from "../../components/DataTable";
 import { FilterChips } from "../../components/FilterChips";
 import { PageHeader } from "../../components/PageHeader";
@@ -13,19 +14,20 @@ import { useWorkOrders, type WorkOrder } from "./api";
 
 const columns: Column<WorkOrder>[] = [
   { key: "number", header: "Broj", sortKey: "number", render: (w) => w.number },
-  { key: "customer", header: "Kupac", sortKey: "customer", render: (w) => w.customer },
+  { key: "customer", header: "Kupac", sortKey: "customer", render: (w) => w.customer, mobile: true },
   { key: "product", header: "Proizvod", sortKey: "productDescription", render: (w) => <span className="line-clamp-2">{w.productDescription}</span> },
-  { key: "status", header: "Status", sortKey: "status", render: (w) => <Badge label={labelOf(workOrderStatus, w.status)} /> },
+  { key: "status", header: "Status", sortKey: "status", render: (w) => <Badge label={labelOf(workOrderStatus, w.status)} />, mobile: true },
   { key: "priority", header: "Prioritet", sortKey: "priority", render: (w) => (w.priority === "Hitno" ? <Badge label={labelOf(priority, w.priority)} /> : "Normalan") },
-  { key: "progress", header: "Napredak", render: (w) => <ProgressBar completed={w.completedQty} ordered={w.orderedQty} percent={w.progressPercent} /> },
+  { key: "progress", header: "Napredak", render: (w) => <ProgressBar completed={w.completedQty} ordered={w.orderedQty} percent={w.progressPercent} />, csv: (w) => `${w.completedQty} / ${w.orderedQty}` },
   {
-    key: "due", header: "Rok", sortKey: "dueDate",
+    key: "due", header: "Rok", sortKey: "dueDate", mobile: true, csv: (w) => csvDate(w.dueDate),
     render: (w) => {
       const tone = dueTone(w.dueDate, w.isOverdue, isFinished(w.status));
       return <span className={tone === "red" ? "font-semibold text-red-700" : tone === "amber" ? "font-semibold text-amber-800" : ""}>{formatDate(w.dueDate)}{w.isOverdue ? " · kasni" : ""}</span>;
     },
   },
-  { key: "quality", header: "Kvalitet", render: (w) => <QualityMarks laser={w.laserFirstPieceApproved} press={w.pressFirstPieceApproved} final={w.finalInspectionPassed} /> },
+  { key: "quality", header: "Kvalitet", render: (w) => <QualityMarks laser={w.laserFirstPieceApproved} press={w.pressFirstPieceApproved} final={w.finalInspectionPassed} />,
+    csv: (w) => `Laser: ${w.laserFirstPieceApproved ? "Da" : "Ne"}, Presa: ${w.pressFirstPieceApproved ? "Da" : "Ne"}, Završna: ${w.finalInspectionPassed ? "Da" : "Ne"}` },
 ];
 
 /** Boolean shortcut filters from the dashboard (UI §3: every number links to a filtered list). */
@@ -47,6 +49,8 @@ export function WorkOrderListPage() {
         )}
       </PageHeader>
       <DataTable
+        exportPath="/api/work-orders"
+        exportName="nalozi"
         columns={columns}
         query={query}
         state={state}

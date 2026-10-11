@@ -54,7 +54,7 @@ function TodayTable({ d }: { d: Dashboard }) {
   const t = d.todayTotals;
   return (
     <div className="overflow-x-auto rounded border border-slate-200">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm cards-sm">
         <thead className="bg-slate-50 text-left text-xs text-slate-600">
           <tr>
             <th className="px-2 py-1.5 font-medium">Operater</th>
@@ -69,24 +69,24 @@ function TodayTable({ d }: { d: Dashboard }) {
         <tbody>
           {d.todayEntries.map((e) => (
             <tr key={e.id} className="border-t border-slate-100">
-              <td className="px-2 py-1"><Link to={`/proizvodnja/${e.id}`} className="text-blue-800 hover:underline">{e.operatorName}</Link></td>
-              <td className="px-2 py-1"><Link to={`/nalozi/${e.workOrderId}`} className="text-blue-800 hover:underline">{e.workOrderNumber}</Link><span className="block text-xs text-slate-500">{e.customer}</span></td>
-              <td className="px-2 py-1 text-right tabular-nums">{formatPieces(e.laserCutQty)}</td>
-              <td className="px-2 py-1 text-right tabular-nums">{formatPieces(e.pressedQty)}</td>
-              <td className="px-2 py-1 text-right tabular-nums">{formatPieces(e.goodQty)}</td>
-              <td className="px-2 py-1 text-right tabular-nums">{formatPieces(e.scrapQty)}</td>
-              <td className="px-2 py-1 text-right tabular-nums">{formatHours(e.laborHours)}</td>
+              <td data-label="Operater" className="px-2 py-1"><Link to={`/proizvodnja/${e.id}`} className="text-blue-800 hover:underline">{e.operatorName}</Link></td>
+              <td data-label="Nalog" className="px-2 py-1"><Link to={`/nalozi/${e.workOrderId}`} className="text-blue-800 hover:underline">{e.workOrderNumber}</Link><span className="block text-xs text-slate-500">{e.customer}</span></td>
+              <td data-label="Laser" className="px-2 py-1 text-right tabular-nums">{formatPieces(e.laserCutQty)}</td>
+              <td data-label="Presa" className="px-2 py-1 text-right tabular-nums">{formatPieces(e.pressedQty)}</td>
+              <td data-label="Gotovo" className="px-2 py-1 text-right tabular-nums">{formatPieces(e.goodQty)}</td>
+              <td data-label="Škart" className="px-2 py-1 text-right tabular-nums">{formatPieces(e.scrapQty)}</td>
+              <td data-label="Sati" className="px-2 py-1 text-right tabular-nums">{formatHours(e.laborHours)}</td>
             </tr>
           ))}
         </tbody>
         <tfoot className="border-t-2 border-slate-300 font-semibold">
           <tr>
             <td className="px-2 py-1" colSpan={2}>Ukupno</td>
-            <td className="px-2 py-1 text-right tabular-nums">{formatPieces(t.laserCutQty)}</td>
-            <td className="px-2 py-1 text-right tabular-nums">{formatPieces(t.pressedQty)}</td>
-            <td className="px-2 py-1 text-right tabular-nums">{formatPieces(t.goodQty)}</td>
-            <td className="px-2 py-1 text-right tabular-nums">{formatPieces(t.scrapQty)}</td>
-            <td className="px-2 py-1 text-right tabular-nums">{formatHours(t.laborHours)}</td>
+            <td data-label="Laser" className="px-2 py-1 text-right tabular-nums">{formatPieces(t.laserCutQty)}</td>
+            <td data-label="Presa" className="px-2 py-1 text-right tabular-nums">{formatPieces(t.pressedQty)}</td>
+            <td data-label="Gotovo" className="px-2 py-1 text-right tabular-nums">{formatPieces(t.goodQty)}</td>
+            <td data-label="Škart" className="px-2 py-1 text-right tabular-nums">{formatPieces(t.scrapQty)}</td>
+            <td data-label="Sati" className="px-2 py-1 text-right tabular-nums">{formatHours(t.laborHours)}</td>
           </tr>
         </tfoot>
       </table>
@@ -115,7 +115,7 @@ function OrdersByDue({ d }: { d: Dashboard }) {
   if (d.ordersByDue.items.length === 0) return <p className="rounded border border-slate-200 p-3 text-sm text-slate-600">Nema aktivnih naloga.</p>;
   return (
     <div className="overflow-x-auto rounded border border-slate-200">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm cards-sm">
         <thead className="bg-slate-50 text-left text-xs text-slate-600">
           <tr>
             <th className="px-2 py-1.5 font-medium">Broj</th>
@@ -133,14 +133,14 @@ function OrdersByDue({ d }: { d: Dashboard }) {
             const tone = dueTone(w.dueDate, w.isOverdue, isFinished(w.status), d.today);
             return (
               <tr key={w.id} className="border-t border-slate-100">
-                <td className="px-2 py-1"><Link to={`/nalozi/${w.id}`} className="font-medium text-blue-800 hover:underline">{w.number}</Link></td>
-                <td className="px-2 py-1">{w.customer}</td>
-                <td className="px-2 py-1"><span className="line-clamp-1">{w.productDescription}</span></td>
-                <td className="px-2 py-1"><Badge label={labelOf(workOrderStatus, w.status)} /></td>
-                <td className="px-2 py-1">{w.priority === "Hitno" ? <Badge label={labelOf(priority, w.priority)} /> : "Normalan"}</td>
-                <td className="px-2 py-1"><ProgressBar completed={w.completedQty} ordered={w.orderedQty} percent={w.progressPercent} /></td>
-                <td className={`whitespace-nowrap px-2 py-1 ${tone === "red" ? "font-semibold text-red-700" : tone === "amber" ? "font-semibold text-amber-800" : ""}`}>{formatDate(w.dueDate)}</td>
-                <td className="px-2 py-1"><QualityMarks laser={w.laserFirstPieceApproved} press={w.pressFirstPieceApproved} final={w.finalInspectionPassed} /></td>
+                <td data-label="Broj" className="px-2 py-1"><Link to={`/nalozi/${w.id}`} className="font-medium text-blue-800 hover:underline">{w.number}</Link></td>
+                <td data-label="Kupac" className="px-2 py-1">{w.customer}</td>
+                <td data-label="Proizvod" className="px-2 py-1"><span className="line-clamp-1">{w.productDescription}</span></td>
+                <td data-label="Status" className="px-2 py-1"><Badge label={labelOf(workOrderStatus, w.status)} /></td>
+                <td data-label="Prioritet" className="px-2 py-1">{w.priority === "Hitno" ? <Badge label={labelOf(priority, w.priority)} /> : "Normalan"}</td>
+                <td data-label="Napredak" className="px-2 py-1"><ProgressBar completed={w.completedQty} ordered={w.orderedQty} percent={w.progressPercent} /></td>
+                <td data-label="Rok" className={`whitespace-nowrap px-2 py-1 ${tone === "red" ? "font-semibold text-red-700" : tone === "amber" ? "font-semibold text-amber-800" : ""}`}>{formatDate(w.dueDate)}</td>
+                <td data-label="Kvalitet" className="px-2 py-1"><QualityMarks laser={w.laserFirstPieceApproved} press={w.pressFirstPieceApproved} final={w.finalInspectionPassed} /></td>
               </tr>
             );
           })}
@@ -154,7 +154,7 @@ function StockTable({ d }: { d: Dashboard }) {
   if (d.stock.items.length === 0) return <p className="rounded border border-slate-200 p-3 text-sm text-slate-600">Nema artikala.</p>;
   return (
     <div className="overflow-x-auto rounded border border-slate-200">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm cards-sm">
         <thead className="bg-slate-50 text-left text-xs text-slate-600">
           <tr>
             <th className="px-2 py-1.5 font-medium">Artikal</th>
@@ -170,14 +170,14 @@ function StockTable({ d }: { d: Dashboard }) {
         <tbody>
           {d.stock.items.map((s) => (
             <tr key={s.materialItemId} className="border-t border-slate-100">
-              <td className="px-2 py-1"><Link to={`/zalihe/artikli/${s.materialItemId}`} className="text-blue-800 hover:underline">{s.name}</Link></td>
-              <td className="px-2 py-1">{s.grade ?? EMPTY}</td>
-              <td className="px-2 py-1 text-right tabular-nums">{s.thicknessMm == null ? EMPTY : formatQuantity(s.thicknessMm)}</td>
-              <td className="px-2 py-1 text-right tabular-nums">{qtyWithUnit(s.onHand, s.unit)}</td>
-              <td className="px-2 py-1 text-right tabular-nums">{qtyWithUnit(s.reserved, s.unit)}</td>
-              <td className={`px-2 py-1 text-right tabular-nums ${s.available < 0 ? "font-semibold text-red-700" : ""}`}>{qtyWithUnit(s.available, s.unit)}</td>
-              <td className="px-2 py-1 text-right tabular-nums">{qtyWithUnit(s.minimumStock, s.unit)}</td>
-              <td className="px-2 py-1"><Badge label={labelOf(stockLevel, s.stockLevel)} /></td>
+              <td data-label="Artikal" className="px-2 py-1"><Link to={`/zalihe/artikli/${s.materialItemId}`} className="text-blue-800 hover:underline">{s.name}</Link></td>
+              <td data-label="Kvalitet" className="px-2 py-1">{s.grade ?? EMPTY}</td>
+              <td data-label="Debljina mm" className="px-2 py-1 text-right tabular-nums">{s.thicknessMm == null ? EMPTY : formatQuantity(s.thicknessMm)}</td>
+              <td data-label="Na stanju" className="px-2 py-1 text-right tabular-nums">{qtyWithUnit(s.onHand, s.unit)}</td>
+              <td data-label="Rezervisano" className="px-2 py-1 text-right tabular-nums">{qtyWithUnit(s.reserved, s.unit)}</td>
+              <td data-label="Raspoloživo" className={`px-2 py-1 text-right tabular-nums ${s.available < 0 ? "font-semibold text-red-700" : ""}`}>{qtyWithUnit(s.available, s.unit)}</td>
+              <td data-label="Minimum" className="px-2 py-1 text-right tabular-nums">{qtyWithUnit(s.minimumStock, s.unit)}</td>
+              <td data-label="Nivo" className="px-2 py-1"><Badge label={labelOf(stockLevel, s.stockLevel)} /></td>
             </tr>
           ))}
         </tbody>

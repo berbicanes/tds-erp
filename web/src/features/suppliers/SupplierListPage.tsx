@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { csvDate } from "../../lib/csv";
 import { DataTable, type Column } from "../../components/DataTable";
 import { FilterChips } from "../../components/FilterChips";
 import { PageHeader } from "../../components/PageHeader";
@@ -13,7 +14,7 @@ const columns: Column<Supplier>[] = [
   { key: "name", header: "Naziv", sortKey: "name", render: (s) => s.name },
   { key: "material", header: "Materijal / usluga", render: (s) => s.materialOrService ?? EMPTY },
   { key: "status", header: "Status odobrenja", sortKey: "approvalStatus", render: (s) => <Badge label={labelOf(supplierApprovalStatus, s.approvalStatus)} /> },
-  { key: "next", header: "Sljedeća ocjena", sortKey: "nextEvaluationDate", render: (s) => formatDate(s.nextEvaluationDate) },
+  { key: "next", header: "Sljedeća ocjena", sortKey: "nextEvaluationDate", render: (s) => formatDate(s.nextEvaluationDate), csv: (s) => csvDate(s.nextEvaluationDate) },
   { key: "owner", header: "Odgovorna osoba", render: (s) => s.responsibleEmployeeName ?? EMPTY },
 ];
 
@@ -29,6 +30,8 @@ export function SupplierListPage() {
         )}
       </PageHeader>
       <DataTable
+        exportPath="/api/suppliers"
+        exportName="dobavljaci"
         columns={columns}
         query={query}
         state={state}

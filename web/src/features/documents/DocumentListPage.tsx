@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { csvDate } from "../../lib/csv";
 import { DataTable, type Column } from "../../components/DataTable";
 import { FilterChips } from "../../components/FilterChips";
 import { PageHeader } from "../../components/PageHeader";
@@ -19,12 +20,12 @@ function Review({ d }: { d: ControlledDocument }) {
 const columns: Column<ControlledDocument>[] = [
   { key: "code", header: "Oznaka", sortKey: "code", render: (d) => d.code },
   { key: "version", header: "Verzija", render: (d) => d.docVersion },
-  { key: "title", header: "Naziv", sortKey: "title", render: (d) => d.title },
+  { key: "title", header: "Naziv", sortKey: "title", render: (d) => d.title, mobile: true },
   { key: "kind", header: "Vrsta", render: (d) => labelOf(documentKind, d.kind).text },
-  { key: "status", header: "Status", sortKey: "status", render: (d) => (d.isVoided ? `Poništen: ${d.voidedReason ?? ""}` : <Badge label={labelOf(documentStatus, d.status)} />) },
+  { key: "status", header: "Status", sortKey: "status", render: (d) => (d.isVoided ? `Poništen: ${d.voidedReason ?? ""}` : <Badge label={labelOf(documentStatus, d.status)} />), mobile: true },
   { key: "owner", header: "Vlasnik", render: (d) => d.ownerName ?? EMPTY },
-  { key: "approved", header: "Odobren", render: (d) => formatDate(d.approvalDate) },
-  { key: "review", header: "Sljedeća provjera", sortKey: "nextReviewDate", render: (d) => <Review d={d} /> },
+  { key: "approved", header: "Odobren", render: (d) => formatDate(d.approvalDate), csv: (d) => csvDate(d.approvalDate) },
+  { key: "review", header: "Sljedeća provjera", sortKey: "nextReviewDate", render: (d) => <Review d={d} />, mobile: true, csv: (d) => csvDate(d.nextReviewDate) },
 ];
 
 const voided = { true: { text: "Prikaži i poništene", tone: "slate" as const } };
@@ -41,6 +42,8 @@ export function DocumentListPage() {
         )}
       </PageHeader>
       <DataTable
+        exportPath="/api/documents"
+        exportName="dokumenti"
         columns={columns}
         query={query}
         state={state}

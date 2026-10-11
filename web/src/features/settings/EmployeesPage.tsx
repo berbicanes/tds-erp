@@ -30,6 +30,8 @@ export function EmployeesPage() {
 
   return (
     <DataTable
+      exportPath="/api/employees"
+      exportName="zaposlenici"
       columns={columns}
       query={query}
       state={state}

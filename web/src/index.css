@@ -20,3 +20,43 @@ body {
 .overflow-x-auto {
   position: relative;
 }
+
+/* UI §5: on phones, tables inside pages (tabs, dashboard) become cards: one row = one card,
+   each cell shows its column name from data-label. No horizontal scrolling. */
+@media (max-width: 639.98px) {
+  table.cards-sm thead {
+    display: none;
+  }
+  table.cards-sm,
+  table.cards-sm tbody,
+  table.cards-sm tfoot,
+  table.cards-sm tr,
+  table.cards-sm td {
+    display: block;
+    width: 100%;
+  }
+  table.cards-sm tr {
+    border-bottom: 1px solid var(--color-slate-200);
+    padding: 0.5rem 0.25rem;
+  }
+  table.cards-sm td {
+    position: relative;
+    padding: 0.125rem 0.5rem;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+  table.cards-sm td[data-label] {
+    padding-left: 9.5rem;
+    min-height: 1.5rem;
+  }
+  table.cards-sm td[data-label]::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0.5rem;
+    width: 8.5rem;
+    color: var(--color-slate-500);
+  }
+  table.cards-sm td:empty {
+    display: none;
+  }
+}

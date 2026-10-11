@@ -48,7 +48,7 @@ export function CheckTable({ checks, emptyText }: { checks: QualityCheck[] | und
   const isAdmin = hasRole(me.data, "Admin");
   return (
     <div className="overflow-x-auto rounded border border-slate-200">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm cards-sm">
         <thead className="bg-slate-50 text-left text-xs text-slate-600">
           <tr>
             <th className="px-2 py-2 font-medium">Broj</th>
@@ -67,19 +67,19 @@ export function CheckTable({ checks, emptyText }: { checks: QualityCheck[] | und
           {checks?.length === 0 && <tr><td colSpan={10} className="px-2 py-4 text-center text-slate-600">{emptyText}</td></tr>}
           {checks?.map((c) => (
             <tr key={c.id} className={`border-t border-slate-100 ${c.isVoided ? "text-slate-400" : ""}`}>
-              <td className="px-2 py-1.5 tabular-nums">
+              <td data-label="Broj" className="px-2 py-1.5 tabular-nums">
                 <Link to={`/kvalitet/kontrole/${c.id}`} className="text-blue-800 underline">{c.number}</Link>
                 {c.evidenceCount > 0 && <span className="block text-xs text-slate-500">Dokazi: {c.evidenceCount}</span>}
                 {c.isVoided && <span className="block text-xs">Poništena: {c.voidedReason}</span>}
               </td>
-              <td className="px-2 py-1.5">{labelOf(inspectionPhase, c.phase).text}</td>
-              <td className="px-2 py-1.5">{c.characteristic}{c.acceptanceCriterion ? <span className="block text-xs text-slate-500">{c.acceptanceCriterion}</span> : null}</td>
-              <td className="px-2 py-1.5">{c.measuredResult ?? EMPTY}</td>
-              <td className="px-2 py-1.5">{c.isVoided ? "Poništena" : <Badge label={labelOf(inspectionResult, c.result)} />}</td>
-              <td className="px-2 py-1.5">{c.measuringEquipmentCode ?? EMPTY} <CalibrationMark status={c.calibrationStatusAtCheck} /></td>
-              <td className="px-2 py-1.5"><NcCell check={c} /></td>
-              <td className="px-2 py-1.5">{c.inspectedByName}</td>
-              <td className="px-2 py-1.5">{formatDate(c.inspectionDate)}</td>
+              <td data-label="Faza" className="px-2 py-1.5">{labelOf(inspectionPhase, c.phase).text}</td>
+              <td data-label="Karakteristika" className="px-2 py-1.5">{c.characteristic}{c.acceptanceCriterion ? <span className="block text-xs text-slate-500">{c.acceptanceCriterion}</span> : null}</td>
+              <td data-label="Izmjereno" className="px-2 py-1.5">{c.measuredResult ?? EMPTY}</td>
+              <td data-label="Rezultat" className="px-2 py-1.5">{c.isVoided ? "Poništena" : <Badge label={labelOf(inspectionResult, c.result)} />}</td>
+              <td data-label="Mjerno sredstvo" className="px-2 py-1.5">{c.measuringEquipmentCode ?? EMPTY} <CalibrationMark status={c.calibrationStatusAtCheck} /></td>
+              <td data-label="NC" className="px-2 py-1.5"><NcCell check={c} /></td>
+              <td data-label="Kontrolisao" className="px-2 py-1.5">{c.inspectedByName}</td>
+              <td data-label="Datum" className="px-2 py-1.5">{formatDate(c.inspectionDate)}</td>
               {isAdmin && <td className="px-2 py-1.5 text-right">{!c.isVoided && <VoidCheckButton check={c} />}</td>}
             </tr>
           ))}

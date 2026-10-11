@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { csvDate, csvNumber } from "../../lib/csv";
 import { DataTable, type Column } from "../../components/DataTable";
 import { PageHeader } from "../../components/PageHeader";
 import { useListState } from "../../hooks/useListState";
@@ -9,14 +10,14 @@ import { useProductionEntries, type ProductionEntry } from "./api";
 
 const columns: Column<ProductionEntry>[] = [
   { key: "number", header: "Zapis", sortKey: "number", render: (e) => e.number },
-  { key: "date", header: "Datum", sortKey: "date", render: (e) => formatDate(e.date) },
-  { key: "wo", header: "Nalog", sortKey: "workOrderNumber", render: (e) => <span>{e.workOrderNumber}<span className="block text-xs text-slate-500">{e.customer}</span></span> },
+  { key: "date", header: "Datum", sortKey: "date", render: (e) => formatDate(e.date), mobile: true, csv: (e) => csvDate(e.date) },
+  { key: "wo", header: "Nalog", sortKey: "workOrderNumber", render: (e) => <span>{e.workOrderNumber}<span className="block text-xs text-slate-500">{e.customer}</span></span>, mobile: true, csv: (e) => `${e.workOrderNumber} ${e.customer}` },
   { key: "operator", header: "Operater", sortKey: "operatorName", render: (e) => e.operatorName },
-  { key: "laser", header: "Laser", align: "right", render: (e) => formatPieces(e.laserCutQty) },
-  { key: "press", header: "Presa", align: "right", render: (e) => formatPieces(e.pressedQty) },
-  { key: "good", header: "Gotovo", sortKey: "goodQty", align: "right", render: (e) => formatPieces(e.goodQty) },
-  { key: "scrap", header: "Škart", align: "right", render: (e) => formatPieces(e.scrapQty) },
-  { key: "hours", header: "Sati", align: "right", render: (e) => formatHours(e.laborHours) },
+  { key: "laser", header: "Laser", align: "right", render: (e) => formatPieces(e.laserCutQty), csv: (e) => csvNumber(e.laserCutQty) },
+  { key: "press", header: "Presa", align: "right", render: (e) => formatPieces(e.pressedQty), csv: (e) => csvNumber(e.pressedQty) },
+  { key: "good", header: "Gotovo", sortKey: "goodQty", align: "right", render: (e) => formatPieces(e.goodQty), mobile: true, csv: (e) => csvNumber(e.goodQty) },
+  { key: "scrap", header: "Škart", align: "right", render: (e) => formatPieces(e.scrapQty), csv: (e) => csvNumber(e.scrapQty) },
+  { key: "hours", header: "Sati", align: "right", render: (e) => formatHours(e.laborHours), csv: (e) => csvNumber(e.laborHours) },
   { key: "machines", header: "Oprema", render: (e) => e.equipmentCodes.join(", ") },
 ];
 
@@ -39,6 +40,8 @@ export function ProductionListPage() {
         <Link to="/proizvodnja/novi" className="flex min-h-10 items-center rounded bg-blue-700 px-4 text-sm font-medium text-white">Novi zapis</Link>
       </PageHeader>
       <DataTable
+        exportPath="/api/production-entries"
+        exportName="dnevna-proizvodnja"
         columns={columns}
         query={query}
         state={state}

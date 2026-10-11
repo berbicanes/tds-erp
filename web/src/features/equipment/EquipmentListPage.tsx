@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { csvDate } from "../../lib/csv";
 import { DataTable, type Column } from "../../components/DataTable";
 import { FilterChips } from "../../components/FilterChips";
 import { PageHeader } from "../../components/PageHeader";
@@ -11,11 +12,11 @@ import { useEquipmentList, type Equipment } from "./api";
 
 const columns: Column<Equipment>[] = [
   { key: "code", header: "Oznaka", sortKey: "code", render: (e) => e.code },
-  { key: "name", header: "Naziv", sortKey: "name", render: (e) => e.name },
+  { key: "name", header: "Naziv", sortKey: "name", render: (e) => e.name, mobile: true },
   { key: "kind", header: "Vrsta", sortKey: "kind", render: (e) => <Badge label={labelOf(equipmentKind, e.kind)} /> },
   { key: "manufacturer", header: "Proizvođač", render: (e) => e.manufacturer ?? EMPTY },
-  { key: "next", header: "Sljedeća kalibracija", sortKey: "nextCalibrationDate", render: (e) => (e.kind === "MjernoSredstvo" ? formatDate(e.nextCalibrationDate) : "") },
-  { key: "cal", header: "Kalibracija", render: (e) => (e.calibrationStatus ? <Badge label={labelOf(calibrationStatusAtCheck, e.calibrationStatus)} /> : "") },
+  { key: "next", header: "Sljedeća kalibracija", sortKey: "nextCalibrationDate", render: (e) => (e.kind === "MjernoSredstvo" ? formatDate(e.nextCalibrationDate) : ""), mobile: true, csv: (e) => csvDate(e.nextCalibrationDate) },
+  { key: "cal", header: "Kalibracija", render: (e) => (e.calibrationStatus ? <Badge label={labelOf(calibrationStatusAtCheck, e.calibrationStatus)} /> : ""), mobile: true },
   { key: "active", header: "Status", sortKey: "isActive", render: (e) => (e.isActive ? "Aktivna" : "Neaktivna") },
 ];
 
@@ -31,6 +32,8 @@ export function EquipmentListPage() {
         )}
       </PageHeader>
       <DataTable
+        exportPath="/api/equipment"
+        exportName="oprema"
         columns={columns}
         query={query}
         state={state}

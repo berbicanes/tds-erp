@@ -97,7 +97,7 @@ export function LotMovements({ lot }: { lot: Lot }) {
       {hasRole(me.data, "Admin", "Kontrolor") && !lot.isVoided && <ManualMovementForm lot={lot} />}
       <ErrorBanner error={movements.error} />
       <div className="overflow-x-auto rounded border border-slate-200">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm cards-sm">
           <thead className="bg-slate-50 text-left text-xs text-slate-600">
             <tr>
               <th className="px-2 py-2 font-medium">Datum</th>
@@ -111,11 +111,11 @@ export function LotMovements({ lot }: { lot: Lot }) {
             {movements.data?.length === 0 && <tr><td colSpan={5} className="px-2 py-4 text-center text-slate-600">Nema pokreta.</td></tr>}
             {movements.data?.map((m) => (
               <tr key={m.id} className={`border-t border-slate-100 ${m.isVoided ? "text-slate-400 line-through" : ""}`}>
-                <td className="px-2 py-1.5">{formatDate(m.date)}</td>
-                <td className="px-2 py-1.5"><Badge label={labelOf(stockMovementType, m.type)} /></td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{m.quantity > 0 ? "+" : ""}{formatQuantity(m.quantity)} {lot.unit}</td>
-                <td className="px-2 py-1.5">{m.reason ?? (m.productionEntryId ? "Dnevni zapis" : "")}{m.isVoided && m.voidedReason ? ` (poništeno: ${m.voidedReason})` : ""}</td>
-                <td className="px-2 py-1.5">{userLabel(m.createdByName)}</td>
+                <td data-label="Datum" className="px-2 py-1.5">{formatDate(m.date)}</td>
+                <td data-label="Vrsta" className="px-2 py-1.5"><Badge label={labelOf(stockMovementType, m.type)} /></td>
+                <td data-label="Količina" className="px-2 py-1.5 text-right tabular-nums">{m.quantity > 0 ? "+" : ""}{formatQuantity(m.quantity)} {lot.unit}</td>
+                <td data-label="Razlog" className="px-2 py-1.5">{m.reason ?? (m.productionEntryId ? "Dnevni zapis" : "")}{m.isVoided && m.voidedReason ? ` (poništeno: ${m.voidedReason})` : ""}</td>
+                <td data-label="Unio" className="px-2 py-1.5">{userLabel(m.createdByName)}</td>
               </tr>
             ))}
           </tbody>

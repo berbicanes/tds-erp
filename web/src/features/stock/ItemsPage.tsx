@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { csvNumber } from "../../lib/csv";
 import { DataTable, type Column } from "../../components/DataTable";
 import { FilterChips } from "../../components/FilterChips";
 import { Badge } from "../../components/Badge";
@@ -12,15 +13,15 @@ import { useItemStock, type ItemStock } from "./stockApi";
 const columns: Column<ItemStock>[] = [
   { key: "name", header: "Artikal", sortKey: "name", render: (m) => m.name },
   { key: "grade", header: "Kvalitet", render: (m) => m.grade ?? EMPTY },
-  { key: "thickness", header: "Debljina mm", align: "right", render: (m) => (m.thicknessMm == null ? EMPTY : formatQuantity(m.thicknessMm)) },
-  { key: "onHand", header: "Na stanju", sortKey: "onHand", align: "right", render: (m) => qtyWithUnit(m.onHand, m.unit) },
+  { key: "thickness", header: "Debljina mm", align: "right", render: (m) => (m.thicknessMm == null ? EMPTY : formatQuantity(m.thicknessMm)), csv: (m) => csvNumber(m.thicknessMm) },
+  { key: "onHand", header: "Na stanju", sortKey: "onHand", align: "right", render: (m) => qtyWithUnit(m.onHand, m.unit), mobile: true },
   { key: "reserved", header: "Rezervisano", align: "right", render: (m) => qtyWithUnit(m.reserved, m.unit) },
   {
-    key: "available", header: "Raspoloživo", sortKey: "available", align: "right",
+    key: "available", header: "Raspoloživo", sortKey: "available", align: "right", mobile: true,
     render: (m) => <span className={m.available < 0 ? "font-semibold text-red-700" : ""}>{qtyWithUnit(m.available, m.unit)}</span>,
   },
   { key: "min", header: "Minimum", align: "right", render: (m) => qtyWithUnit(m.minimumStock, m.unit) },
-  { key: "level", header: "Nivo", render: (m) => <Badge label={labelOf(stockLevel, m.stockLevel)} /> },
+  { key: "level", header: "Nivo", render: (m) => <Badge label={labelOf(stockLevel, m.stockLevel)} />, mobile: true },
   { key: "onHold", header: "Na kontroli / karantin", align: "right", render: (m) => (m.onHoldQty === 0 ? EMPTY : qtyWithUnit(m.onHoldQty, m.unit)) },
 ];
 
@@ -31,6 +32,8 @@ export function ItemsPage() {
   const me = useMe();
   return (
     <DataTable
+      exportPath="/api/stock/items"
+      exportName="artikli"
       columns={columns}
       query={query}
       state={state}

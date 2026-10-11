@@ -99,7 +99,7 @@ export function WorkOrderMaterialsTab({ wo }: { wo: WorkOrder }) {
       {canEdit && <LinkLotForm wo={wo} onWarnings={setWarnings} />}
       <ErrorBanner error={materials.error} />
       <div className="overflow-x-auto rounded border border-slate-200">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm cards-sm">
           <thead className="bg-slate-50 text-left text-xs text-slate-600">
             <tr>
               <th className="px-2 py-2 font-medium">Lot</th>
@@ -115,13 +115,13 @@ export function WorkOrderMaterialsTab({ wo }: { wo: WorkOrder }) {
             {materials.data?.length === 0 && <tr><td colSpan={7} className="px-2 py-4 text-center text-slate-600">Za nalog još nije vezan nijedan lot.</td></tr>}
             {materials.data?.map((m) => (
               <tr key={m.id} className="border-t border-slate-100">
-                <td className="px-2 py-1.5 font-medium">{m.lotNumber}</td>
-                <td className="px-2 py-1.5">{itemTitle({ name: m.itemName, grade: m.itemGrade, thicknessMm: m.itemThicknessMm })}</td>
-                <td className="px-2 py-1.5"><Badge label={labelOf(receiptDecision, m.receiptDecision)} /></td>
-                <td className="px-2 py-1.5 tabular-nums"><ReservationCell wo={wo} m={m} canEdit={canEdit} onWarnings={setWarnings} /></td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatQuantity(m.consumedQty)} {m.unit}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{qtyWithUnit(m.lotOnHand, m.unit)}</td>
-                <td className={`px-2 py-1.5 text-right tabular-nums ${m.lotAvailable < 0 ? "font-semibold text-red-700" : ""}`}>{qtyWithUnit(m.lotAvailable, m.unit)}</td>
+                <td data-label="Lot" className="px-2 py-1.5 font-medium">{m.lotNumber}</td>
+                <td data-label="Artikal" className="px-2 py-1.5">{itemTitle({ name: m.itemName, grade: m.itemGrade, thicknessMm: m.itemThicknessMm })}</td>
+                <td data-label="Odluka" className="px-2 py-1.5"><Badge label={labelOf(receiptDecision, m.receiptDecision)} /></td>
+                <td data-label="Rezervisano" className="px-2 py-1.5 tabular-nums"><ReservationCell wo={wo} m={m} canEdit={canEdit} onWarnings={setWarnings} /></td>
+                <td data-label="Utrošeno" className="px-2 py-1.5 text-right tabular-nums">{formatQuantity(m.consumedQty)} {m.unit}</td>
+                <td data-label="Na stanju lota" className="px-2 py-1.5 text-right tabular-nums">{qtyWithUnit(m.lotOnHand, m.unit)}</td>
+                <td data-label="Raspoloživo" className={`px-2 py-1.5 text-right tabular-nums ${m.lotAvailable < 0 ? "font-semibold text-red-700" : ""}`}>{qtyWithUnit(m.lotAvailable, m.unit)}</td>
               </tr>
             ))}
           </tbody>

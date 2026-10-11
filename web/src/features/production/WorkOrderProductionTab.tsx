@@ -13,7 +13,7 @@ export function WorkOrderProductionTab({ wo }: { wo: WorkOrder }) {
       <Link to={`/proizvodnja/novi?nalog=${wo.id}`} className="inline-flex min-h-11 items-center rounded bg-blue-700 px-4 text-sm font-medium text-white">Novi dnevni zapis</Link>
       <ErrorBanner error={data.error} />
       <div className="overflow-x-auto rounded border border-slate-200">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm cards-sm">
           <thead className="bg-slate-50 text-left text-xs text-slate-600">
             <tr>
               <th className="px-2 py-2 font-medium">Zapis</th>
@@ -31,15 +31,15 @@ export function WorkOrderProductionTab({ wo }: { wo: WorkOrder }) {
             {data.data?.items.length === 0 && <tr><td colSpan={9} className="px-2 py-4 text-center text-slate-600">Na nalogu još nema dnevnih zapisa.</td></tr>}
             {data.data?.items.map((e) => (
               <tr key={e.id} className={`border-t border-slate-100 ${e.isVoided ? "text-slate-400 line-through" : ""}`}>
-                <td className="px-2 py-1.5"><Link to={`/proizvodnja/${e.id}`} className="text-blue-800 hover:underline">{e.number}</Link></td>
-                <td className="px-2 py-1.5">{formatDate(e.date)}</td>
-                <td className="px-2 py-1.5">{e.operatorName}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatPieces(e.laserCutQty)}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatPieces(e.pressedQty)}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatPieces(e.goodQty)}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatPieces(e.scrapQty)}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatHours(e.laborHours)}</td>
-                <td className="px-2 py-1.5">{e.lotNumber ?? ""}{e.materialConsumed != null ? ` · ${formatQuantity(e.materialConsumed)} ${e.lotUnit ?? ""}` : ""}</td>
+                <td data-label="Zapis" className="px-2 py-1.5"><Link to={`/proizvodnja/${e.id}`} className="text-blue-800 hover:underline">{e.number}</Link></td>
+                <td data-label="Datum" className="px-2 py-1.5">{formatDate(e.date)}</td>
+                <td data-label="Operater" className="px-2 py-1.5">{e.operatorName}</td>
+                <td data-label="Laser" className="px-2 py-1.5 text-right tabular-nums">{formatPieces(e.laserCutQty)}</td>
+                <td data-label="Presa" className="px-2 py-1.5 text-right tabular-nums">{formatPieces(e.pressedQty)}</td>
+                <td data-label="Gotovo" className="px-2 py-1.5 text-right tabular-nums">{formatPieces(e.goodQty)}</td>
+                <td data-label="Škart" className="px-2 py-1.5 text-right tabular-nums">{formatPieces(e.scrapQty)}</td>
+                <td data-label="Sati" className="px-2 py-1.5 text-right tabular-nums">{formatHours(e.laborHours)}</td>
+                <td data-label="Lot / utrošak" className="px-2 py-1.5">{e.lotNumber ?? ""}{e.materialConsumed != null ? ` · ${formatQuantity(e.materialConsumed)} ${e.lotUnit ?? ""}` : ""}</td>
               </tr>
             ))}
           </tbody>
@@ -47,12 +47,12 @@ export function WorkOrderProductionTab({ wo }: { wo: WorkOrder }) {
             <tfoot className="border-t-2 border-slate-300 font-semibold">
               <tr>
                 <td className="px-2 py-1.5" colSpan={3}>Ukupno ({t.entries} zapisa)</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatPieces(t.laserCutQty)}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatPieces(t.pressedQty)}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatPieces(t.goodQty)}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatPieces(t.scrapQty)}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatHours(t.laborHours)}</td>
-                <td />
+                <td data-label="Laser" className="px-2 py-1.5 text-right tabular-nums">{formatPieces(t.laserCutQty)}</td>
+                <td data-label="Presa" className="px-2 py-1.5 text-right tabular-nums">{formatPieces(t.pressedQty)}</td>
+                <td data-label="Gotovo" className="px-2 py-1.5 text-right tabular-nums">{formatPieces(t.goodQty)}</td>
+                <td data-label="Škart" className="px-2 py-1.5 text-right tabular-nums">{formatPieces(t.scrapQty)}</td>
+                <td data-label="Sati" className="px-2 py-1.5 text-right tabular-nums">{formatHours(t.laborHours)}</td>
+                <td data-label="Lot / utrošak" />
               </tr>
             </tfoot>
           )}

@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { csvDate } from "../../lib/csv";
 import { DataTable, type Column } from "../../components/DataTable";
 import { FilterChips } from "../../components/FilterChips";
 import { Badge } from "../../components/Badge";
@@ -11,12 +12,12 @@ import { useLots, type Lot } from "./lotsApi";
 
 const columns: Column<Lot>[] = [
   { key: "lotNumber", header: "Lot / heat broj", sortKey: "lotNumber", render: (l) => l.lotNumber },
-  { key: "item", header: "Artikal", sortKey: "itemName", render: (l) => itemTitle({ name: l.itemName, grade: l.itemGrade, thicknessMm: l.itemThicknessMm }) },
+  { key: "item", header: "Artikal", sortKey: "itemName", render: (l) => itemTitle({ name: l.itemName, grade: l.itemGrade, thicknessMm: l.itemThicknessMm }), mobile: true },
   { key: "supplier", header: "Dobavljač", sortKey: "supplierName", render: (l) => l.supplierName },
-  { key: "received", header: "Prijem", sortKey: "receivedDate", render: (l) => formatDate(l.receivedDate) },
+  { key: "received", header: "Prijem", sortKey: "receivedDate", render: (l) => formatDate(l.receivedDate), csv: (l) => csvDate(l.receivedDate) },
   { key: "receivedQty", header: "Primljeno", align: "right", render: (l) => qtyWithUnit(l.receivedQty, l.unit) },
-  { key: "onHand", header: "Na stanju", sortKey: "onHand", align: "right", render: (l) => qtyWithUnit(l.onHand, l.unit) },
-  { key: "decision", header: "Odluka prijema", sortKey: "receiptDecision", render: (l) => <Badge label={labelOf(receiptDecision, l.receiptDecision)} /> },
+  { key: "onHand", header: "Na stanju", sortKey: "onHand", align: "right", render: (l) => qtyWithUnit(l.onHand, l.unit), mobile: true },
+  { key: "decision", header: "Odluka prijema", sortKey: "receiptDecision", render: (l) => <Badge label={labelOf(receiptDecision, l.receiptDecision)} />, mobile: true },
   { key: "location", header: "Lokacija", render: (l) => l.storageLocation ?? EMPTY },
 ];
 
@@ -26,6 +27,8 @@ export function LotsPage() {
   const me = useMe();
   return (
     <DataTable
+      exportPath="/api/lots"
+      exportName="lotovi"
       columns={columns}
       query={query}
       state={state}

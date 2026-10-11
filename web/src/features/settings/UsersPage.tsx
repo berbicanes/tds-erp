@@ -128,7 +128,7 @@ export function UsersPage() {
       <CreateUserForm />
       <ErrorBanner error={users.error ?? update.error} onRefresh={() => void users.refetch()} />
       <div className="overflow-x-auto rounded border border-slate-200">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm cards-sm">
           <thead className="bg-slate-50 text-left text-xs text-slate-600">
             <tr>
               <th className="px-2 py-2 font-medium">Korisničko ime</th>
@@ -144,8 +144,8 @@ export function UsersPage() {
               const self = u.id === me.data?.id;
               return (
                 <tr key={u.id} className="border-t border-slate-100">
-                  <td className="px-2 py-1.5 font-medium">{u.userName}</td>
-                  <td className="px-2 py-1.5">
+                  <td data-label="Korisničko ime" className="px-2 py-1.5 font-medium">{u.userName}</td>
+                  <td data-label="Uloga" className="px-2 py-1.5">
                     <select
                       aria-label={`Uloga za ${u.userName}`}
                       value={u.role}
@@ -156,8 +156,8 @@ export function UsersPage() {
                       {ROLES.map((r) => <option key={r.value} value={r.value}>{r.text}</option>)}
                     </select>
                   </td>
-                  <td className="px-2 py-1.5">{u.employeeName ?? "Nije vezan"}</td>
-                  <td className="px-2 py-1.5">{u.isActive ? "Aktivan" : "Deaktiviran"}</td>
+                  <td data-label="Zaposlenik" className="px-2 py-1.5">{u.employeeName ?? "Nije vezan"}</td>
+                  <td data-label="Status" className="px-2 py-1.5">{u.isActive ? "Aktivan" : "Deaktiviran"}</td>
                   <td className="space-x-2 whitespace-nowrap px-2 py-1.5 text-right">
                     <button type="button" onClick={() => setPasswordFor(u)} className="min-h-9 rounded border border-slate-300 px-2">
                       Nova lozinka

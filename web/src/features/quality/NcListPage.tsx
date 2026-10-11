@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { csvDate } from "../../lib/csv";
 import { DataTable, type Column } from "../../components/DataTable";
 import { FilterChips } from "../../components/FilterChips";
 import { Badge } from "../../components/Badge";
@@ -11,13 +12,13 @@ import { NcDue } from "./NcTable";
 
 const columns: Column<NonConformity>[] = [
   { key: "number", header: "NC broj", sortKey: "number", render: (n) => <span className="tabular-nums">{n.number}</span> },
-  { key: "status", header: "Status", sortKey: "status", render: (n) => (n.isVoided ? `Poništena: ${n.voidedReason ?? ""}` : <Badge label={labelOf(ncStatus, n.status)} />) },
+  { key: "status", header: "Status", sortKey: "status", render: (n) => (n.isVoided ? `Poništena: ${n.voidedReason ?? ""}` : <Badge label={labelOf(ncStatus, n.status)} />), mobile: true },
   { key: "source", header: "Izvor", sortKey: "source", render: (n) => labelOf(ncSource, n.source).text },
-  { key: "desc", header: "Opis", render: (n) => n.description },
+  { key: "desc", header: "Opis", render: (n) => n.description, mobile: true },
   { key: "ref", header: "Nalog / lot", render: (n) => [n.workOrderNumber, n.lotNumber ? `Lot ${n.lotNumber}` : null].filter(Boolean).join(" · ") || EMPTY },
   { key: "decision", header: "Odluka", render: (n) => labelOf(productDecision, n.productDecision).text },
   { key: "owner", header: "Vlasnik radnje", render: (n) => n.actionOwnerName ?? EMPTY },
-  { key: "due", header: "Rok", sortKey: "dueDate", render: (n) => <NcDue nc={n} /> },
+  { key: "due", header: "Rok", sortKey: "dueDate", render: (n) => <NcDue nc={n} />, mobile: true, csv: (n) => csvDate(n.dueDate) },
 ];
 
 const overdue = { true: { text: "Kasni rok", tone: "red" as const } };
@@ -35,6 +36,8 @@ export function NcListPage() {
         </div>
       )}
       <DataTable
+        exportPath="/api/non-conformities"
+        exportName="neusaglasenosti"
         columns={columns}
         query={query}
         state={state}

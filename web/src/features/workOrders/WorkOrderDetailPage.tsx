@@ -80,7 +80,7 @@ export function WorkOrderDetailPage() {
         {hasRole(me.data, "Admin", "Kontrolor") && w.status !== "Isporuceno" && <StatusChange key={w.version} wo={w} />}
       </div>
 
-      <nav aria-label="Detalj naloga" className="flex gap-1 overflow-x-auto border-b border-slate-200 px-4">
+      <nav aria-label="Detalj naloga" className="flex flex-wrap gap-x-1 border-b border-slate-200 px-4">
         {tabs.map((t) => (
           <button key={t.key} type="button" onClick={() => setTab(t.key)} aria-pressed={tab === t.key}
             className={`flex min-h-11 items-center whitespace-nowrap border-b-2 px-3 text-sm ${tab === t.key ? "border-blue-700 font-semibold text-blue-800" : "border-transparent text-slate-600"}`}>

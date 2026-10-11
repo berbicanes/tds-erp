@@ -113,7 +113,7 @@ export function CalibrationSection({ equipment, canEdit }: { equipment: Equipmen
       {adding && <RecordForm equipment={equipment} onDone={() => setAdding(false)} />}
       <ErrorBanner error={list.error ?? voidCal.error} />
       <div className="overflow-x-auto rounded border border-slate-200">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm cards-sm">
           <thead className="bg-slate-50 text-left text-xs text-slate-600">
             <tr>
               <th className="px-2 py-2 font-medium">Datum</th>
@@ -130,13 +130,13 @@ export function CalibrationSection({ equipment, canEdit }: { equipment: Equipmen
             {list.data?.length === 0 && <tr><td colSpan={8} className="px-2 py-4 text-center text-slate-600">Kalibracija još nije zabilježena.</td></tr>}
             {list.data?.map((c) => (
               <tr key={c.id} className={`border-t border-slate-100 ${c.isVoided ? "text-slate-400" : ""}`}>
-                <td className="px-2 py-1.5">{formatDate(c.calibrationDate)}{c.isVoided && <span className="block text-xs">Poništeno: {c.voidedReason}</span>}</td>
-                <td className="px-2 py-1.5">{formatDate(c.nextCalibrationDate)}</td>
-                <td className="px-2 py-1.5"><Badge label={labelOf(calibrationResult, c.result)} /></td>
-                <td className="px-2 py-1.5">{c.performedBy}</td>
-                <td className="px-2 py-1.5">{c.certificateFileId ? <a href={fileUrl(c.certificateFileId)} target="_blank" rel="noreferrer" className="text-blue-800 underline">{c.certificateFileName}</a> : EMPTY}</td>
-                <td className="px-2 py-1.5">{c.note ?? EMPTY}</td>
-                <td className="px-2 py-1.5">{userLabel(c.createdByName)}</td>
+                <td data-label="Datum" className="px-2 py-1.5">{formatDate(c.calibrationDate)}{c.isVoided && <span className="block text-xs">Poništeno: {c.voidedReason}</span>}</td>
+                <td data-label="Sljedeća" className="px-2 py-1.5">{formatDate(c.nextCalibrationDate)}</td>
+                <td data-label="Rezultat" className="px-2 py-1.5"><Badge label={labelOf(calibrationResult, c.result)} /></td>
+                <td data-label="Izvršio" className="px-2 py-1.5">{c.performedBy}</td>
+                <td data-label="Certifikat" className="px-2 py-1.5">{c.certificateFileId ? <a href={fileUrl(c.certificateFileId)} target="_blank" rel="noreferrer" className="text-blue-800 underline">{c.certificateFileName}</a> : EMPTY}</td>
+                <td data-label="Napomena" className="px-2 py-1.5">{c.note ?? EMPTY}</td>
+                <td data-label="Unio" className="px-2 py-1.5">{userLabel(c.createdByName)}</td>
                 {hasRole(me.data, "Admin") && (
                   <td className="px-2 py-1.5 text-right">
                     {!c.isVoided && <button type="button" onClick={() => setVoiding({ id: c.id, version: c.version })} className="min-h-9 rounded border border-slate-300 px-2 text-xs">Poništi</button>}
