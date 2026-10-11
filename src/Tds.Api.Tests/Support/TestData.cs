@@ -38,12 +38,15 @@ public static class TestData
             drawingNumber = "TDS-0412", drawingRevision = "B",
         }, Ct)).ReadAsync<WorkOrderDto>(HttpStatusCode.Created);
 
-    public static async Task<QualityCheckDto> Check(HttpClient client, Guid workOrderId, Guid inspectorId, string phase, string result = "Prihvaceno", string date = "2026-10-08") =>
-        await (await client.PostAsJsonAsync("/api/quality-checks", new
+    public static async Task<QualityCheckDto> Check(HttpClient client, Guid workOrderId, Guid inspectorId, string phase, string result = "Prihvaceno", string date = "2026-10-08", Guid? instrumentId = null) =>
+        (await CheckWithWarnings(client, new
         {
             workOrderId, phase, characteristic = "Mjera 120 ±0,5 mm", acceptanceCriterion = "119,5–120,5 mm", measuredResult = "120,1 mm",
-            sampleSize = 1, result, inspectedByEmployeeId = inspectorId, inspectionDate = date,
-        }, Ct)).ReadAsync<QualityCheckDto>(HttpStatusCode.Created);
+            sampleSize = 1, result, inspectedByEmployeeId = inspectorId, inspectionDate = date, measuringEquipmentId = instrumentId,
+        })).Data;
+
+    public static async Task<WithWarnings<QualityCheckDto>> CheckWithWarnings(HttpClient client, object body) =>
+        await (await client.PostAsJsonAsync("/api/quality-checks", body, Ct)).ReadAsync<WithWarnings<QualityCheckDto>>(HttpStatusCode.Created);
 
     public static async Task<LotDto> AcceptedLot(HttpClient admin, Guid itemId, Guid supplierId, Guid inspectorId, decimal qty, string lotNumber = "H-4471")
     {

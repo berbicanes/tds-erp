@@ -808,6 +808,173 @@ namespace Tds.Api.Data.Migrations
                     b.ToTable("material_lot", (string)null);
                 });
 
+            modelBuilder.Entity("Tds.Api.Domain.NonConformity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ActionOwnerEmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("action_owner_employee_id");
+
+                    b.Property<string>("Containment")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("containment");
+
+                    b.Property<string>("CorrectiveAction")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("corrective_action");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<DateOnly?>("EffectivenessCheckDate")
+                        .HasColumnType("date")
+                        .HasColumnName("effectiveness_check_date");
+
+                    b.Property<bool>("IsVoided")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_voided");
+
+                    b.Property<Guid?>("MaterialLotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_lot_id");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("number");
+
+                    b.Property<string>("ProductDecision")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("product_decision");
+
+                    b.Property<Guid?>("QualityCheckId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("quality_check_id");
+
+                    b.Property<string>("RootCause")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("root_cause");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<DateTimeOffset?>("VoidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("voided_at");
+
+                    b.Property<Guid?>("VoidedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("voided_by");
+
+                    b.Property<string>("VoidedReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("voided_reason");
+
+                    b.Property<Guid?>("WorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("work_order_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_non_conformity");
+
+                    b.HasIndex("ActionOwnerEmployeeId")
+                        .HasDatabaseName("ix_non_conformity_action_owner_employee_id");
+
+                    b.HasIndex("MaterialLotId")
+                        .HasDatabaseName("ix_non_conformity_material_lot_id");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_non_conformity_number");
+
+                    b.HasIndex("QualityCheckId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_non_conformity_quality_check_id")
+                        .HasFilter("quality_check_id IS NOT NULL AND NOT is_voided");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_non_conformity_status");
+
+                    b.HasIndex("SupplierId")
+                        .HasDatabaseName("ix_non_conformity_supplier_id");
+
+                    b.HasIndex("WorkOrderId")
+                        .HasDatabaseName("ix_non_conformity_work_order_id");
+
+                    b.ToTable("non_conformity", (string)null);
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.NonConformityEvidence", b =>
+                {
+                    b.Property<Guid>("NonConformityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("non_conformity_id");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
+
+                    b.HasKey("NonConformityId", "FileId")
+                        .HasName("pk_non_conformity_evidence");
+
+                    b.HasIndex("FileId")
+                        .HasDatabaseName("ix_non_conformity_evidence_file_id");
+
+                    b.ToTable("non_conformity_evidence", (string)null);
+                });
+
             modelBuilder.Entity("Tds.Api.Domain.Note", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1031,6 +1198,12 @@ namespace Tds.Api.Data.Migrations
                         .HasColumnType("character varying(300)")
                         .HasColumnName("acceptance_criterion");
 
+                    b.Property<string>("CalibrationStatusAtCheck")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("calibration_status_at_check");
+
                     b.Property<string>("Characteristic")
                         .IsRequired()
                         .HasMaxLength(300)
@@ -1143,6 +1316,25 @@ namespace Tds.Api.Data.Migrations
                         .HasDatabaseName("ix_quality_check_work_order_id_phase_result");
 
                     b.ToTable("quality_check", (string)null);
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.QualityCheckEvidence", b =>
+                {
+                    b.Property<Guid>("QualityCheckId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("quality_check_id");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
+
+                    b.HasKey("QualityCheckId", "FileId")
+                        .HasName("pk_quality_check_evidence");
+
+                    b.HasIndex("FileId")
+                        .HasDatabaseName("ix_quality_check_evidence_file_id");
+
+                    b.ToTable("quality_check_evidence", (string)null);
                 });
 
             modelBuilder.Entity("Tds.Api.Domain.StockMovement", b =>
@@ -1318,6 +1510,25 @@ namespace Tds.Api.Data.Migrations
                         .HasDatabaseName("ix_supplier_responsible_employee_id");
 
                     b.ToTable("supplier", (string)null);
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.SupplierCertificate", b =>
+                {
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<Guid>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
+
+                    b.HasKey("SupplierId", "FileId")
+                        .HasName("pk_supplier_certificate");
+
+                    b.HasIndex("FileId")
+                        .HasDatabaseName("ix_supplier_certificate_file_id");
+
+                    b.ToTable("supplier_certificate", (string)null);
                 });
 
             modelBuilder.Entity("Tds.Api.Domain.WorkOrder", b =>
@@ -1612,6 +1823,56 @@ namespace Tds.Api.Data.Migrations
                         .HasConstraintName("fk_material_lot_suppliers_supplier_id");
                 });
 
+            modelBuilder.Entity("Tds.Api.Domain.NonConformity", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("ActionOwnerEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_non_conformity_employee_action_owner_employee_id");
+
+                    b.HasOne("Tds.Api.Domain.MaterialLot", null)
+                        .WithMany()
+                        .HasForeignKey("MaterialLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_non_conformity_material_lot_material_lot_id");
+
+                    b.HasOne("Tds.Api.Domain.QualityCheck", null)
+                        .WithMany()
+                        .HasForeignKey("QualityCheckId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_non_conformity_quality_checks_quality_check_id");
+
+                    b.HasOne("Tds.Api.Domain.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_non_conformity_suppliers_supplier_id");
+
+                    b.HasOne("Tds.Api.Domain.WorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_non_conformity_work_orders_work_order_id");
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.NonConformityEvidence", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.FileAttachment", null)
+                        .WithMany()
+                        .HasForeignKey("FileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_non_conformity_evidence_file_attachment_file_id");
+
+                    b.HasOne("Tds.Api.Domain.NonConformity", null)
+                        .WithMany("Evidence")
+                        .HasForeignKey("NonConformityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_non_conformity_evidence_non_conformities_non_conformity_id");
+                });
+
             modelBuilder.Entity("Tds.Api.Domain.ProductionEntry", b =>
                 {
                     b.HasOne("Tds.Api.Domain.MaterialLot", null)
@@ -1680,6 +1941,23 @@ namespace Tds.Api.Data.Migrations
                         .HasConstraintName("fk_quality_check_work_orders_work_order_id");
                 });
 
+            modelBuilder.Entity("Tds.Api.Domain.QualityCheckEvidence", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.FileAttachment", null)
+                        .WithMany()
+                        .HasForeignKey("FileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_quality_check_evidence_file_attachment_file_id");
+
+                    b.HasOne("Tds.Api.Domain.QualityCheck", null)
+                        .WithMany("Evidence")
+                        .HasForeignKey("QualityCheckId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_quality_check_evidence_quality_checks_quality_check_id");
+                });
+
             modelBuilder.Entity("Tds.Api.Domain.StockMovement", b =>
                 {
                     b.HasOne("Tds.Api.Domain.MaterialLot", null)
@@ -1709,6 +1987,23 @@ namespace Tds.Api.Data.Migrations
                         .HasForeignKey("ResponsibleEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_supplier_employee_responsible_employee_id");
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.SupplierCertificate", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.FileAttachment", null)
+                        .WithMany()
+                        .HasForeignKey("FileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_supplier_certificate_file_attachment_file_id");
+
+                    b.HasOne("Tds.Api.Domain.Supplier", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_supplier_certificate_suppliers_supplier_id");
                 });
 
             modelBuilder.Entity("Tds.Api.Domain.WorkOrder", b =>
@@ -1743,9 +2038,19 @@ namespace Tds.Api.Data.Migrations
                         .HasConstraintName("fk_work_order_material_work_order_work_order_id");
                 });
 
+            modelBuilder.Entity("Tds.Api.Domain.NonConformity", b =>
+                {
+                    b.Navigation("Evidence");
+                });
+
             modelBuilder.Entity("Tds.Api.Domain.ProductionEntry", b =>
                 {
                     b.Navigation("Equipment");
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.QualityCheck", b =>
+                {
+                    b.Navigation("Evidence");
                 });
 #pragma warning restore 612, 618
         }

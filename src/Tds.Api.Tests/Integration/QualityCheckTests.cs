@@ -61,20 +61,25 @@ public class QualityCheckTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Incoming_material_phase_and_missing_fields_are_rejected_in_phase_1()
+    public async Task Owner_rules_and_missing_fields_are_rejected()
     {
         await using var factory = await TdsApiFactory.CreateAsync(postgres);
         var admin = await factory.AdminAsync();
         var inspector = await TestData.Employee(admin);
         var wo = await TestData.WorkOrder(admin);
 
-        var incoming = await admin.PostAsJsonAsync("/api/quality-checks", new
+        var incomingOnOrder = await admin.PostAsJsonAsync("/api/quality-checks", new
         {
             workOrderId = wo.Id, phase = "UlazniMaterijal", characteristic = "Certifikat", result = "Prihvaceno",
             inspectedByEmployeeId = inspector.Id, inspectionDate = "2026-10-08",
         }, Ct);
-        Assert.Equal("Na nalogu se unose kontrole faza Lasersko rezanje, Hidraulično presanje i Završna kontrola.",
-            (await incoming.ProblemAsync(HttpStatusCode.BadRequest)).FieldError("phase"));
+        Assert.Equal("Ulazna kontrola se veže za lot — odaberi lot.", (await incomingOnOrder.ProblemAsync(HttpStatusCode.BadRequest)).FieldError("materialLotId"));
+
+        var laserWithoutOrder = await admin.PostAsJsonAsync("/api/quality-checks", new
+        {
+            phase = "LaserskoRezanje", characteristic = "Mjera", result = "Prihvaceno", inspectedByEmployeeId = inspector.Id, inspectionDate = "2026-10-08",
+        }, Ct);
+        Assert.Equal("Kontrola faze Lasersko rezanje se veže za nalog — odaberi nalog.", (await laserWithoutOrder.ProblemAsync(HttpStatusCode.BadRequest)).FieldError("workOrderId"));
 
         var empty = await admin.PostAsJsonAsync("/api/quality-checks", new
         {

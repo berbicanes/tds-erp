@@ -19,5 +19,17 @@ public class QualityCheckConfiguration : IEntityTypeConfiguration<QualityCheck>
         b.HasOne<Employee>().WithMany().HasForeignKey(x => x.InspectedByEmployeeId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Equipment>().WithMany().HasForeignKey(x => x.MeasuringEquipmentId).OnDelete(DeleteBehavior.Restrict);
         b.HasIndex(x => new { x.WorkOrderId, x.Phase, x.Result });
+        b.HasIndex(x => x.MaterialLotId);
+        b.HasMany(x => x.Evidence).WithOne().HasForeignKey(x => x.QualityCheckId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public class QualityCheckEvidenceConfiguration : IEntityTypeConfiguration<QualityCheckEvidence>
+{
+    public void Configure(EntityTypeBuilder<QualityCheckEvidence> b)
+    {
+        b.ToTable("quality_check_evidence");
+        b.HasKey(x => new { x.QualityCheckId, x.FileId });
+        b.HasOne<FileAttachment>().WithMany().HasForeignKey(x => x.FileId).OnDelete(DeleteBehavior.Restrict);
     }
 }
