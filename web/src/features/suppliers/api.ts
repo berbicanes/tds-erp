@@ -50,3 +50,25 @@ export function useSaveSupplier(id: string | undefined) {
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 }
+
+export interface SupplierCertificate {
+  fileId: string;
+  originalName: string;
+  contentType: string;
+  sizeBytes: number;
+}
+
+/** DATA_MODEL §4 supplier_certificate (ISO, EN 1090 …); DOMAIN §7.7. */
+export function useSupplierCertificates(supplierId: string) {
+  const qc = useQueryClient();
+  const queryKey = [...key, supplierId, "certificates"];
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey });
+    void qc.invalidateQueries({ queryKey: ["history"] });
+  };
+  return {
+    list: useQuery({ queryKey, queryFn: () => api.get<SupplierCertificate[]>(`/api/suppliers/${supplierId}/certificates`) }),
+    add: useMutation({ mutationFn: (fileId: string) => api.post<void>(`/api/suppliers/${supplierId}/certificates`, { fileId }), onSuccess: invalidate }),
+    remove: useMutation({ mutationFn: (fileId: string) => api.post<void>(`/api/suppliers/${supplierId}/certificates/${fileId}/remove`), onSuccess: invalidate }),
+  };
+}

@@ -48,6 +48,8 @@ export function warningText(w: WarningLike, today: string): string {
       return `Mjerno sredstvo ${w.title} (${w.detail ?? ""}) nema datum sljedeće kalibracije`;
     case "CalibrationFailed":
       return `Mjerno sredstvo ${w.title} (${w.detail ?? ""}) je van kalibracije — zadnja kalibracija neusklađena`;
+    case "DocumentReview":
+      return `Provjera dokumenta ${w.title} v${w.itemName ?? ""} (${w.detail ?? ""}) ${dueText(w.date, today)}`;
     case "NcDue":
       return `${w.title} (${w.detail ?? ""}) — rok korektivne radnje ${dueText(w.date, today)}`;
     case "Stocktake":
@@ -69,6 +71,8 @@ export function warningHref(w: WarningLike): string {
       return `/dobavljaci/${w.entityId}`;
     case "NcDue":
       return `/kvalitet/nc/${w.entityId}`;
+    case "DocumentReview":
+      return `/dokumenti/${w.entityId}`;
     case "Calibration":
     case "CalibrationMissing":
     case "CalibrationFailed":

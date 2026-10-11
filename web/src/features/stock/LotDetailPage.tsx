@@ -19,6 +19,8 @@ import { fileUrl, uploadFile } from "../../lib/files";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type WithWarnings } from "../../lib/api";
 import { lotKey } from "./lotsApi";
+import { HistoryList } from "../../components/HistoryList";
+import { LotQualitySection } from "../quality/LotQualitySection";
 
 function Info({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -199,6 +201,12 @@ export function LotDetailPage() {
       )}
 
       <LotMovements lot={l} />
+      <LotQualitySection lotId={l.id} isVoided={l.isVoided} />
+      <section>
+        <h2 className="font-semibold">Istorija</h2>
+        <p className="text-xs text-slate-600">Lot, njegove kontrole, neusaglašenosti, pokreti zalihe i rezervacije za naloge.</p>
+        <HistoryList scope="lot" id={l.id} />
+      </section>
     </div>
   );
 }

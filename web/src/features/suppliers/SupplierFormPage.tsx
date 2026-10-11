@@ -2,6 +2,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate, useParams } from "react-router";
+import { EvidenceFiles } from "../../components/EvidenceFiles";
 import { Field, inputClass, textareaClass } from "../../components/form/Field";
 import { Combobox } from "../../components/form/Combobox";
 import { ErrorBanner } from "../../components/ErrorBanner";
@@ -13,7 +14,7 @@ import { dateInput, optionalText, requiredText } from "../../lib/schema";
 import { ChangedOnServerNotice, useUnsavedChanges } from "../../components/UnsavedChanges";
 import { useServerForm } from "../../hooks/useServerForm";
 import { useEmployeeOptions } from "../settings/api";
-import { useSaveSupplier, useSupplier } from "./api";
+import { useSaveSupplier, useSupplier, useSupplierCertificates } from "./api";
 
 // Mirrors SaveSupplierValidator.
 const schema = z
@@ -129,6 +130,19 @@ export function SupplierFormPage() {
           </button>
         </div>
       </form>
+      {id && <SupplierCertificates supplierId={id} />}
     </>
+  );
+}
+
+function SupplierCertificates({ supplierId }: { supplierId: string }) {
+  const me = useMe();
+  const certs = useSupplierCertificates(supplierId);
+  return (
+    <div className="max-w-xl px-4 pb-6">
+      <ErrorBanner error={certs.list.error} />
+      <EvidenceFiles title="Certifikati dobavljača" files={certs.list.data ?? []} add={certs.add} remove={certs.remove}
+        canAdd={hasRole(me.data, "Admin", "Kontrolor")} canRemove={hasRole(me.data, "Admin")} emptyText="Nema priloženih certifikata (npr. ISO 9001, EN 1090)." />
+    </div>
   );
 }

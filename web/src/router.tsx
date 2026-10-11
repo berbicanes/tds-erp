@@ -18,6 +18,8 @@ const equipment = () => import("./features/equipment/pages");
 const suppliers = () => import("./features/suppliers/pages");
 const settings = () => import("./features/settings/pages");
 const dashboard = () => import("./features/dashboard/pages");
+const quality = () => import("./features/quality/pages");
+const documents = () => import("./features/documents/pages");
 
 export const router = createBrowserRouter([
   { path: "/prijava", element: <LoginPage /> },
@@ -49,14 +51,27 @@ export const router = createBrowserRouter([
               { path: "lotovi/:id", ...page(stock, (m) => m.LotDetailPage) },
             ],
           },
-          { path: "/kvalitet", element: <EmptyModulePage title="Kvalitet" /> },
+          {
+            path: "/kvalitet",
+            ...page(quality, (m) => m.QualityLayout),
+            children: [
+              { index: true, element: <Navigate to="/kvalitet/kontrole" replace /> },
+              { path: "kontrole", ...page(quality, (m) => m.ChecksPage) },
+              { path: "kontrole/:id", ...page(quality, (m) => m.CheckDetailPage) },
+              { path: "nc", ...page(quality, (m) => m.NcListPage) },
+              { path: "nc/nova", ...page(quality, (m) => m.NcFormPage) },
+              { path: "nc/:id", ...page(quality, (m) => m.NcFormPage) },
+            ],
+          },
           { path: "/dobavljaci", ...page(suppliers, (m) => m.SupplierListPage) },
           { path: "/dobavljaci/novi", ...page(suppliers, (m) => m.SupplierFormPage) },
           { path: "/dobavljaci/:id", ...page(suppliers, (m) => m.SupplierFormPage) },
           { path: "/oprema", ...page(equipment, (m) => m.EquipmentListPage) },
           { path: "/oprema/nova", ...page(equipment, (m) => m.EquipmentFormPage) },
           { path: "/oprema/:id", ...page(equipment, (m) => m.EquipmentFormPage) },
-          { path: "/dokumenti", element: <EmptyModulePage title="Dokumenti" /> },
+          { path: "/dokumenti", ...page(documents, (m) => m.DocumentListPage) },
+          { path: "/dokumenti/novi", ...page(documents, (m) => m.DocumentFormPage) },
+          { path: "/dokumenti/:id", ...page(documents, (m) => m.DocumentFormPage) },
           {
             element: <RequireRole roles={["Admin"]} />,
             children: [
