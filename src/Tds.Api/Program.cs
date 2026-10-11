@@ -11,6 +11,7 @@ using Tds.Api.Features.Dashboard;
 using Tds.Api.Features.Employees;
 using Tds.Api.Features.Equipment;
 using Tds.Api.Features.Files;
+using Tds.Api.Features.Health;
 using Tds.Api.Features.Materials;
 using Tds.Api.Features.Notes;
 using Tds.Api.Features.ProductionEntries;
@@ -131,6 +132,7 @@ app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthEndpoints();
 app.MapAuthEndpoints();
 app.MapEmployeeEndpoints();
 app.MapUserEndpoints();

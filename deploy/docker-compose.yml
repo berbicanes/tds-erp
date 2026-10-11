@@ -1,10 +1,19 @@
 # Production: one VPS, three containers. See deploy/README.md.
 name: tds-erp
 
+# Container logs (incl. API errors) are files rotated by Docker: at most 5 × 10 MB per service.
+# Read them with `docker compose logs api`.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   db:
     image: postgres:17
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_DB: tds
       POSTGRES_USER: tds
@@ -23,6 +32,7 @@ services:
       context: ..
       dockerfile: deploy/api.Dockerfile
     restart: unless-stopped
+    logging: *logging
     depends_on:
       db:
         condition: service_healthy
@@ -40,6 +50,7 @@ services:
       context: ..
       dockerfile: deploy/caddy.Dockerfile
     restart: unless-stopped
+    logging: *logging
     depends_on:
       - api
     environment:

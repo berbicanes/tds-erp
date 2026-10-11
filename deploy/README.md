@@ -112,6 +112,16 @@ docker compose start api
 ```
 (Automatski restore test je u Fazi 5.)
 
+## 5a. Monitoring
+
+- `https://TDS_DOMAIN/api/health` (bez prijave): `200 {"status":"ok","database":"ok","disk":"ok"}`, a `503` kad
+  baza ne odgovara (`database: "greska"`) ili je na disku manje od 1 GiB (`disk: "malo-prostora"`; prag:
+  `Health__MinFreeDiskBytes`). Ne vraća verzije, putanje ni brojeve.
+- Vanjski uptime ping (npr. UptimeRobot ili Hetzner monitoring) na tu adresu svakih 5 minuta, obavještenje
+  na e-mail kad nije 200. **Podesiti nakon deploya** — treba domen.
+- Logovi (i greške API-ja) su Docker log fajlovi sa rotacijom: najviše 5 × 10 MB po servisu
+  (`x-logging` u `docker-compose.yml`). Čitanje: `docker compose logs --since 24h api | grep -E "fail|error"`.
+
 ## 6. Ažuriranje
 
 **Prije svakog deploya obavezno ručno pokreni backup** — migracije se primjenjuju same pri
