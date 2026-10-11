@@ -288,6 +288,10 @@ Uklonjeno: `Broj naloga` (text).
 | ChangeDescription | string(1000)? | N (`Opis izmjene`) | |
 | FileId | FK → FileAttachment? | N (`Važeći dokument`) | |
 
+U kodu se polje `Version` zove `DocVersion` (kolona `version`), jer je `Version` na svakom entitetu
+concurrency token (`xmin`). U API-ju: `docVersion`. Jedinstvenost (`Code`, `Version`) važi za neponištene zapise,
+da se pogrešno unesena pa poništena verzija može unijeti ponovo.
+
 ## 13. Note — Bilješka (NOVO, Notion "Notes" blok na vrhu stranice)
 
 Kratke stavke tipa "Messer plin naručiti", "Hladnjak ispuhati".
@@ -335,7 +339,7 @@ Ime fajla na disku je Guid, originalno ime se čuva samo u `OriginalName` (za do
 | EntityType | string(60) |
 | EntityId | Guid |
 | Action | enum `Create`, `Update`, `Void` |
-| ChangesJson | jsonb — `{polje: [staro, novo]}` |
+| ChangesJson | jsonb — `{polje: [staro, novo]}`; enum vrijednosti se upisuju imenom (`"Odobren"`), razlog kao `"reason": [null, tekst]` |
 | UserId | Guid? — `null` = sistemska akcija |
 | At | DateTimeOffset |
 

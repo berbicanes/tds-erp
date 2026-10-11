@@ -14,6 +14,9 @@ namespace Tds.Api.Data;
 /// </summary>
 public sealed class AuditInterceptor(IClock clock, ICurrentUser currentUser, AuditContext? auditContext = null) : SaveChangesInterceptor
 {
+    /// <summary>Enums are written by name ("Odobren"), so the history stays readable without the CLR type.</summary>
+    private static readonly JsonSerializerOptions Json = new() { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } };
+
     private static readonly HashSet<string> AuditFieldNames =
     [
         nameof(Entity.CreatedAt), nameof(Entity.CreatedBy),
@@ -86,7 +89,7 @@ public sealed class AuditInterceptor(IClock clock, ICurrentUser currentUser, Aud
             logs.Add(new AuditLog
             {
                 EntityType = parentType, EntityId = parentId, Action = AuditAction.Update,
-                ChangesJson = JsonSerializer.Serialize(fields), UserId = userId, At = now,
+                ChangesJson = JsonSerializer.Serialize(fields, Json), UserId = userId, At = now,
             });
 
         context.Set<AuditLog>().AddRange(logs);
@@ -154,7 +157,7 @@ public sealed class AuditInterceptor(IClock clock, ICurrentUser currentUser, Aud
             EntityType = entry.Metadata.ClrType.Name,
             EntityId = entry.Entity.Id,
             Action = action,
-            ChangesJson = JsonSerializer.Serialize(changes),
+            ChangesJson = JsonSerializer.Serialize(changes, Json),
             UserId = userId,
             At = at,
         };

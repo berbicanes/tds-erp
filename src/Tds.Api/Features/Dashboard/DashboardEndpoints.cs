@@ -134,6 +134,7 @@ public static class DashboardEndpoints
     /// One UNION query over everything that needs attention (UI §3, DOMAIN §7.6). Phase 2 sources: lots NaKontroli/
     /// Karantin, Blokirano orders, supplier evaluation, calibration state from the latest calibration (DOMAIN §7.5:
     /// missing date, Neuskladjeno or due ≤ 30 days / past), NC deadlines (not Zatvorena, without a deadline = no warning),
+    /// document review (Odobren only; item_name carries the version),
     /// stocktake (≤ 30 days or past).
     /// Order: red first (past deadlines, out of calibration, Blokirano, Karantin), then amber; earliest date first.
     /// </summary>
@@ -176,6 +177,10 @@ public static class DashboardEndpoints
             SELECT 'NcDue', n.id, n.number, left(n.description, 120), NULL, NULL, NULL, n.due_date, n.due_date < @today
             FROM non_conformity n
             WHERE NOT n.is_voided AND n.status <> 'Zatvorena' AND n.due_date <= @limit
+            UNION ALL
+            SELECT 'DocumentReview', d.id, d.code, d.title, d.version, NULL, NULL, d.next_review_date, d.next_review_date < @today
+            FROM controlled_document d
+            WHERE NOT d.is_voided AND d.status = 'Odobren' AND d.next_review_date <= @limit
             UNION ALL
             SELECT 'Stocktake', i.id, i.name, NULL, i.name, i.grade, i.thickness_mm, i.next_stocktake_date, i.next_stocktake_date < @today
             FROM material_item i

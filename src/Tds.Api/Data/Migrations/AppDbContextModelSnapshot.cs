@@ -312,6 +312,128 @@ namespace Tds.Api.Data.Migrations
                     b.ToTable("audit_log", (string)null);
                 });
 
+            modelBuilder.Entity("Tds.Api.Domain.ControlledDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly?>("ApprovalDate")
+                        .HasColumnType("date")
+                        .HasColumnName("approval_date");
+
+                    b.Property<string>("ChangeDescription")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("change_description");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DocVersion")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("version");
+
+                    b.Property<DateOnly?>("EffectiveDate")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_date");
+
+                    b.Property<Guid?>("FileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("file_id");
+
+                    b.Property<bool>("IsVoided")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_voided");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateOnly?>("NextReviewDate")
+                        .HasColumnType("date")
+                        .HasColumnName("next_review_date");
+
+                    b.Property<Guid?>("OwnerEmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_employee_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<DateTimeOffset?>("VoidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("voided_at");
+
+                    b.Property<Guid?>("VoidedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("voided_by");
+
+                    b.Property<string>("VoidedReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("voided_reason");
+
+                    b.HasKey("Id")
+                        .HasName("pk_controlled_document");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_controlled_document_one_approved_per_code")
+                        .HasFilter("status = 'Odobren' AND NOT is_voided");
+
+                    b.HasIndex("FileId")
+                        .HasDatabaseName("ix_controlled_document_file_id");
+
+                    b.HasIndex("OwnerEmployeeId")
+                        .HasDatabaseName("ix_controlled_document_owner_employee_id");
+
+                    b.HasIndex("Code", "DocVersion")
+                        .IsUnique()
+                        .HasDatabaseName("ix_controlled_document_code_version")
+                        .HasFilter("NOT is_voided");
+
+                    b.ToTable("controlled_document", (string)null);
+                });
+
             modelBuilder.Entity("Tds.Api.Domain.Employee", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1758,6 +1880,21 @@ namespace Tds.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_asp_net_user_tokens_asp_net_users_user_id");
+                });
+
+            modelBuilder.Entity("Tds.Api.Domain.ControlledDocument", b =>
+                {
+                    b.HasOne("Tds.Api.Domain.FileAttachment", null)
+                        .WithMany()
+                        .HasForeignKey("FileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_controlled_document_file_attachments_file_id");
+
+                    b.HasOne("Tds.Api.Domain.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_controlled_document_employees_owner_employee_id");
                 });
 
             modelBuilder.Entity("Tds.Api.Domain.Employee", b =>

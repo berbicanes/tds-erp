@@ -24,6 +24,7 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
     public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
     public DbSet<QualityCheck> QualityChecks => Set<QualityCheck>();
     public DbSet<NonConformity> NonConformities => Set<NonConformity>();
+    public DbSet<ControlledDocument> ControlledDocuments => Set<ControlledDocument>();
     public DbSet<WorkOrderMaterial> WorkOrderMaterials => Set<WorkOrderMaterial>();
     public DbSet<ProductionEntry> ProductionEntries => Set<ProductionEntry>();
     public DbSet<Note> Notes => Set<Note>();
