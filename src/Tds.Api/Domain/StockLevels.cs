@@ -25,4 +25,15 @@ public static class StockLevels
             return StockLevel.Nisko;
         return StockLevel.Ok;
     }
+
+    /// <summary>
+    /// DOMAIN §2.4 / §2.6: with lots of unknown stock the real level is only known when it cannot get better or does
+    /// not depend on the amount (a lot without quantity can only add stock): OK and Nije definisano stay, the
+    /// other levels are unknown (null, UI "—").
+    /// </summary>
+    public static StockLevel? Level(decimal available, decimal? minimumStock, int unknownLots)
+    {
+        var level = Level(available, minimumStock);
+        return unknownLots == 0 || level is StockLevel.Ok or StockLevel.NijeDefinisano ? level : null;
+    }
 }

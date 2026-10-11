@@ -38,4 +38,17 @@ public class StockLevelTests
     [InlineData(0, 3, 0)]
     public void Effective_reservation_is_reduced_by_issued_and_never_negative(decimal reserved, decimal issued, decimal expected) =>
         Assert.Equal(expected, StockLevels.EffectiveReservation(reserved, issued));
+
+    [Theory]
+    [InlineData(20.0, 10.0, StockLevel.Ok)]               // known lots already OK: an unknown lot can only add stock
+    [InlineData(5.0, null, StockLevel.NijeDefinisano)] // no minimum: does not depend on the amount
+    [InlineData(0.0, 10.0, null)]                        // would be Nema
+    [InlineData(5.0, 10.0, null)]                        // would be Ispod minimuma
+    [InlineData(12.0, 10.0, null)]                       // would be Nisko
+    public void With_unknown_lots_only_ok_and_undefined_are_known(double available, double? minimum, StockLevel? expected) =>
+        Assert.Equal(expected, StockLevels.Level((decimal)available, (decimal?)minimum, unknownLots: 1));
+
+    [Fact]
+    public void Without_unknown_lots_the_level_is_unchanged() =>
+        Assert.Equal(StockLevel.IspodMinimuma, StockLevels.Level(5m, 10m, unknownLots: 0));
 }

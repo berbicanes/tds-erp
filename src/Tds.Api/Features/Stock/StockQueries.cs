@@ -29,7 +29,8 @@ public sealed record ItemStockDto
     public required decimal OnHand { get; init; }
     public required decimal Reserved { get; init; }
     public required decimal Available { get; init; }
-    public required StockLevel StockLevel { get; init; }
+    /// <summary>Null = not known: some lots have unknown stock and the known ones are not OK (DOMAIN §2.4).</summary>
+    public StockLevel? StockLevel { get; init; }
     /// <summary>"Na kontroli / karantin": OnHand of NaKontroli + Karantin lots; not part of Available.</summary>
     public required decimal OnHoldQty { get; init; }
     /// <summary>Lots (not voided, not Odbijen) with unknown stock (DOMAIN §2.6); they are left out of every sum above.</summary>
@@ -104,15 +105,15 @@ public static class StockQueries
                     MaterialItemId = r.Get<Guid>("id"), Name = r.Get<string>("name"), Grade = r.NullableString("grade"),
                     ThicknessMm = r.Nullable<decimal>("thickness_mm"), Unit = Enum.Parse<Unit>(r.Get<string>("unit")),
                     MinimumStock = minimum, OnHand = onHand, Reserved = reserved, Available = onHand - reserved,
-                    StockLevel = StockLevels.Level(onHand - reserved, minimum), OnHoldQty = r.Get<decimal>("on_hold"),
+                    StockLevel = StockLevels.Level(onHand - reserved, minimum, (int)r.Get<long>("unknown_lots")), OnHoldQty = r.Get<decimal>("on_hold"),
                     UnknownLotCount = (int)r.Get<long>("unknown_lots"),
                     IsActive = r.Get<bool>("is_active"),
                 };
             }, ct);
 
-    /// <summary>Attention first (Nema, Ispod minimuma, Nisko, Nije definisano), then OK; by name within (UI §3).</summary>
+    /// <summary>Attention first (Nema, Ispod minimuma, Nisko, Nije definisano), then unknown ("—"), then OK; by name within (UI §3).</summary>
     public static IEnumerable<ItemStockDto> AttentionFirst(IEnumerable<ItemStockDto> rows) =>
-        rows.OrderBy(r => r.StockLevel == StockLevel.Ok ? 1 : 0).ThenBy(r => r.StockLevel).ThenBy(r => r.Name).ThenBy(r => r.Grade).ThenBy(r => r.ThicknessMm);
+        rows.OrderBy(r => r.StockLevel == StockLevel.Ok ? 2 : r.StockLevel is null ? 1 : 0).ThenBy(r => r.StockLevel).ThenBy(r => r.Name).ThenBy(r => r.Grade).ThenBy(r => r.ThicknessMm);
 }
 
 /// <summary>Reservation usage per link (detail screens). Same formula as the SQL above.</summary>

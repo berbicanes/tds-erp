@@ -135,7 +135,8 @@ Izvedeno po artiklu (IZV, vidi DOMAIN §2.4):
 - `OnHoldQty` ("Na kontroli / karantin") — Σ OnHand lotova sa odlukom `NaKontroli` ili `Karantin`,
   da materijal koji fizički stoji u hali ne bude nevidljiv. Ne ulazi u `Available` ni `StockLevel`.
 - `UnknownLotCount` — broj neponištenih lotova (osim `Odbijen`) sa nepoznatim stanjem (DOMAIN §2.6). Ti lotovi
-  ne ulaze ni u jedan od gornjih zbirova; > 0 → oznaka "Nepotpuno".
+  ne ulaze ni u jedan od gornjih zbirova; > 0 → oznaka "Nepotpuno", a `StockLevel` je `null` ("—") osim kad je
+  `Ok` ili `NijeDefinisano` (DOMAIN §2.4).
 
 ## 6. MaterialLot — Ulazni lot 🔒 (`Ulazni materijal u proizvodnji`)
 

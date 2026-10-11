@@ -13,7 +13,8 @@ export interface ItemStock {
   onHand: number;
   reserved: number;
   available: number;
-  stockLevel: StockLevel;
+  /** null = not known: lots without quantity and the known ones are not OK (DOMAIN §2.4) → "—". */
+  stockLevel: StockLevel | null;
   onHoldQty: number;
   /** Lots with unknown stock (DOMAIN §2.6), not part of the sums. */
   unknownLotCount: number;

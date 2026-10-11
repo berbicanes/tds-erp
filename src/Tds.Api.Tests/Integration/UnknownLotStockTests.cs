@@ -46,7 +46,8 @@ public class UnknownLotStockTests(PostgresFixture postgres)
 
         // Item stock only from the known lot, marked incomplete.
         var row = (await (await admin.GetAsync("/api/stock/items", Ct)).ReadAsync<PagedResult<ItemStockDto>>()).Items.Single();
-        Assert.Equal((50m, 1, StockLevel.IspodMinimuma), (row.OnHand, row.UnknownLotCount, row.StockLevel));
+        // Known lots alone would be "Ispod minimuma"; the real level is not known (DOMAIN §2.4): "—".
+        Assert.Equal((50m, 1, (StockLevel?)null), (row.OnHand, row.UnknownLotCount, row.StockLevel));
         Assert.Empty((await (await admin.GetAsync("/api/stock/items?complete=true", Ct)).ReadAsync<PagedResult<ItemStockDto>>()).Items);
 
         // Not in the "below minimum" tile (stock unknown), but in the warnings.
@@ -66,9 +67,30 @@ public class UnknownLotStockTests(PostgresFixture postgres)
             new { type = "Korekcija", quantity = 0, date = "2026-10-01", reason = "Popis nakon importa" }, Ct)).StatusCode);
         Assert.Equal(0m, (await (await admin.GetAsync($"/api/lots/{imported.Id}", Ct)).ReadAsync<LotDto>()).OnHand);
         row = (await (await admin.GetAsync("/api/stock/items", Ct)).ReadAsync<PagedResult<ItemStockDto>>()).Items.Single();
-        Assert.Equal(0, row.UnknownLotCount);
+        Assert.Equal((0, StockLevel.IspodMinimuma), (row.UnknownLotCount, row.StockLevel!.Value));
         dash = await (await admin.GetAsync("/api/dashboard", Ct)).ReadAsync<DashboardDto>();
         Assert.Equal(1, dash.Kpi.ItemsBelowMinimum);
         Assert.DoesNotContain(dash.Warnings, w => w.Kind == "LotBezKolicine");
+    }
+
+    [Fact]
+    public async Task Incomplete_item_whose_known_lots_are_ok_stays_ok_and_is_not_in_the_tile()
+    {
+        await using var factory = await TdsApiFactory.CreateAsync(postgres);
+        var admin = await factory.AdminAsync();
+        var inspector = await TestData.Employee(admin);
+        var supplier = await TestData.Supplier(admin);
+        var item = await TestData.Item(admin, minimumStock: 10);
+        await TestData.AcceptedLot(admin, item.Id, supplier.Id, inspector.Id, 50, "H-1");
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.MaterialLots.Add(MaterialLot.ImportedFromNotion("AL-78", item.Id, supplier.Id, new DateOnly(2026, 9, 1), new DateOnly(2026, 10, 1)));
+            await db.SaveChangesAsync(Ct);
+        }
+
+        var row = (await (await admin.GetAsync("/api/stock/items", Ct)).ReadAsync<PagedResult<ItemStockDto>>()).Items.Single();
+        Assert.Equal((1, StockLevel.Ok), (row.UnknownLotCount, row.StockLevel!.Value));
+        Assert.Equal(0, (await (await admin.GetAsync("/api/dashboard", Ct)).ReadAsync<DashboardDto>()).Kpi.ItemsBelowMinimum);
     }
 }

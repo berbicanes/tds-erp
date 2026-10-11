@@ -26,7 +26,7 @@ public static class StockEndpoints
         if (list.Search is { } s)
             rows = rows.Where(r => r.Name.Contains(s, StringComparison.OrdinalIgnoreCase) || (r.Grade?.Contains(s, StringComparison.OrdinalIgnoreCase) ?? false));
         if (stockLevel is { Length: > 0 })
-            rows = rows.Where(r => stockLevel.Contains(r.StockLevel));
+            rows = rows.Where(r => r.StockLevel is { } level && stockLevel.Contains(level));
         // Dashboard tile "Materijal ispod minimuma" counts only items with a minimum (UI §3); its link uses this.
         if (hasMinimum is { } hm)
             rows = rows.Where(r => (r.MinimumStock is not null) == hm);

@@ -75,6 +75,10 @@ Nivo zalihe:
 - inače → **OK**
 - `MinimumStock` nije postavljen, a `Available > 0` → **Nije definisano** (ne "OK")
 
+**Artikal sa lotovima bez količine** (oznaka "Nepotpuno", §2.6): nivo se računa iz poznatih lotova. Lot bez
+količine stanje može samo povećati, pa `OK` i `Nije definisano` ostaju. `Nema`, `Ispod minimuma` i `Nisko` se
+prikazuju kao `—` (stvarni nivo nije poznat). Takav artikal ne ulazi u pločicu "Materijal ispod minimuma".
+
 Notion formula `Nivo zalihe` nije bila čitljiva iz snimka — ovo je naša definicija.
 Potvrditi pragove sa klijentom (vidi §9).
 
@@ -102,7 +106,7 @@ Lot uvezen iz Notiona nema količinu prijema (`ReceivedQty = null`). Ako uz to n
 - Na lotu se za "Na stanju" i "Raspoloživo" prikazuje `—`, nikad 0.
 - Stanje artikla (§2.4) se računa samo iz lotova sa poznatim stanjem. Artikal dobija oznaku
   **"Nepotpuno: X lotova bez količine"** (lista Zalihe i dashboard), gdje se broje neponišteni lotovi koji nisu
-  `Odbijen`.
+  `Odbijen`. Nivo: `OK` i `Nije definisano` ostaju; `Nema`, `Ispod minimuma` i `Nisko` postaju `—` (§2.4).
 - Takav artikal se **ne broji** u KPI pločici "Materijal ispod minimuma" (stanje nije poznato); svaki takav lot je
   u Upozorenjima kao "Lot bez količine prijema" (UI §3).
 - Izdavanje i otpis iz takvog lota se odbijaju: "Stanje lota {broj} nije poznato. Prvo upiši stvarno stanje
