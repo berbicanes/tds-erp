@@ -1,5 +1,31 @@
 # Noćni log (autonomni rad)
 
+## Faza 4 — plan
+
+1. Brzi unos `/brzi-unos` (UI §4): nalozi u proizvodnji kao velike stavke sa pretragom i zadnja 3 korištena na vrhu,
+   operater i mašine zapamćeni (localStorage u try/catch), stepperi 48 px sa `inputmode`, lot samo kad treba,
+   `Gotovo` onemogućeno sa objašnjenjem bez završne kontrole, toast "Spremljeno DP-…", greške iznad dugmeta.
+2. Mobilni prikaz lista: `DataTable` redovi postaju kartice ispod `sm`; ostale tabele (tabovi) bez horizontalnog skrolanja.
+3. CSV export iz `DataTable` (UTF-8 BOM, `;`, decimalni zarez) + test formata.
+4. PWA: ručno pisan `manifest.webmanifest` + ikona (PNG generisan bez paketa), bez service workera.
+5. Prolaz kroz tekstove u `web/src` (engleski, ekavica, greške bez uputstva) + lista ispravki.
+6. Provjera svih ekrana na 360×740 i 375×812 + lista u logu.
+
+### Faza 4 — odluke
+
+- **Radni sati u Brzom unosu.** Pitanje: UI §4 stavlja "Sati, utrošak materijala (opcionalno, sklopljeno)", a server
+  traži `LaborHours` (DATA_MODEL: decimal ≥ 0, nije null). Opcije: (a) sati vidljivi i obavezni, sklopljeni samo utrošak
+  i napomena; (b) prazni sati → 0 (krši zlatno pravilo 6 "nepoznato ≠ nula"); (c) `LaborHours` nullable (promjena
+  modela). Izabrano (a): bez promjene modela i pravila, najmanji obim, lako promijeniti.
+  Upisano u UI §4 "(nocna odluka — za potvrdu)".
+- **Lot u Brzom unosu** se prikazuje kad je laser > 0 **ili** utrošak > 0 (server traži lot u oba slučaja, DOMAIN §5.2).
+  Ako je na nalogu tačno jedan prihvaćen lot, on je unaprijed izabran. Kad nalog nema prihvaćen vezan lot, ekran kaže
+  gdje se veže (tab Materijal) — Brzi unos ne nudi lotove koji nisu vezani za nalog (UI §4: "samo lotovi vezani za nalog").
+- **Lista naloga u Brzom unosu** = nalozi u statusima iz DOMAIN §5.1 (Spreman, Laser, Presanje, Kontrola, Doraditi).
+- **Datum** je uvijek danas (prikazan, ne mijenja se na ovom ekranu); stariji datum ide kroz "Dnevna proizvodnja → Novi".
+- Uklonjen `EmptyModulePage` (više nije korišten).
+- Usput u Fazi 3: `Combobox` s praznom opcijom je na Enter tokom pretrage birao praznu opciju — ispravljeno (commit 149e66e).
+
 Pravila rada: vlasnikove upute od 11.10.2026. (plan faze na vrh, odluke ovdje, promjene pravila u docs sa
 oznakom "(nocna odluka — za potvrdu)").
 

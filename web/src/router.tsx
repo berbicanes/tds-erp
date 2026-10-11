@@ -4,7 +4,6 @@ import { LoginPage } from "./features/auth/LoginPage";
 import { RequireAuth } from "./features/auth/RequireAuth";
 import { RequireRole } from "./features/auth/RequireRole";
 import { NotFoundPage } from "./features/NotFoundPage";
-import { EmptyModulePage } from "./components/EmptyModulePage";
 
 /** Module screens load on first visit (keeps the first download small on phones in the hall). */
 function page<M>(load: () => Promise<M>, pick: (m: M) => React.ComponentType): Pick<RouteObject, "lazy"> {
@@ -20,6 +19,7 @@ const settings = () => import("./features/settings/pages");
 const dashboard = () => import("./features/dashboard/pages");
 const quality = () => import("./features/quality/pages");
 const documents = () => import("./features/documents/pages");
+const quickEntry = () => import("./features/quickEntry/pages");
 
 export const router = createBrowserRouter([
   { path: "/prijava", element: <LoginPage /> },
@@ -30,7 +30,7 @@ export const router = createBrowserRouter([
         element: <Layout />,
         children: [
           { path: "/", ...page(dashboard, (m) => m.DashboardPage) },
-          { path: "/brzi-unos", element: <EmptyModulePage title="Brzi unos" /> },
+          { path: "/brzi-unos", ...page(quickEntry, (m) => m.QuickEntryPage) },
           { path: "/nalozi", ...page(workOrders, (m) => m.WorkOrderListPage) },
           { path: "/nalozi/novi", ...page(workOrders, (m) => m.WorkOrderFormPage) },
           { path: "/nalozi/:id", ...page(workOrders, (m) => m.WorkOrderDetailPage) },
