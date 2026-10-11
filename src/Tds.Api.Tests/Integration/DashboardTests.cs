@@ -82,6 +82,9 @@ public class DashboardTests(PostgresFixture postgres)
         await admin.PostAsJsonAsync($"/api/equipment/{ms.Id}/calibrations", new { calibrationDate = Day(-366), nextCalibrationDate = Day(-1), performedBy = "Lab", result = "Uskladjeno" }, Ct);
         await admin.PutAsJsonAsync($"/api/suppliers/{supplier.Id}", new { name = supplier.Name, approvalStatus = "Odobren", nextEvaluationDate = Day(10), version = supplier.Version }, Ct);
         await admin.PostAsJsonAsync("/api/notes", new { text = "Hladnjak ispuhati" }, Ct);
+        // NC deadline in 12 days → amber; NC without a deadline → no warning (DOMAIN §7.6).
+        await admin.PostAsJsonAsync("/api/non-conformities", new { source = "Audit", description = "Obrazac OB-07 zastario", productDecision = "CekaOdluku", dueDate = Day(12), version = 0 }, Ct);
+        await admin.PostAsJsonAsync("/api/non-conformities", new { source = "Ostalo", description = "Bez roka", productDecision = "CekaOdluku", version = 0 }, Ct);
 
         var d = await (await admin.GetAsync("/api/dashboard", Ct)).ReadAsync<DashboardDto>();
 
@@ -100,7 +103,7 @@ public class DashboardTests(PostgresFixture postgres)
         // Warnings: red first (overdue calibration, quarantine, blocked), then amber (lot on inspection, supplier evaluation), by date.
         // Within a colour: earliest date first (quarantined lot received 2026-10-01 < calibration due yesterday < order due in 20 days).
         Assert.Equal(
-            [("red", "LotKarantin"), ("red", "Calibration"), ("red", "OrderBlocked"), ("amber", "LotNaKontroli"), ("amber", "SupplierEvaluation")],
+            [("red", "LotKarantin"), ("red", "Calibration"), ("red", "OrderBlocked"), ("amber", "LotNaKontroli"), ("amber", "SupplierEvaluation"), ("amber", "NcDue")],
             d.Warnings.Select(w => (w.Severity, w.Kind)).ToList());
         Assert.Equal(d.Warnings.Where(w => w.Severity == "red").Select(w => w.Date).Order(), d.Warnings.Where(w => w.Severity == "red").Select(w => w.Date));
         Assert.Equal("Lim crni", d.Warnings.Single(w => w.Kind == "LotKarantin").ItemName);

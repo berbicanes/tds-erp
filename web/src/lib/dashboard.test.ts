@@ -14,6 +14,7 @@ describe("dashboard warnings", () => {
     [{ kind: "Calibration", title: "MS-002", detail: "Mikrometar", date: "2026-10-13" }, "Kalibracija MS-002 (Mikrometar) za 1 dan (13.10.2026.)", "/oprema/x1"],
     [{ kind: "CalibrationMissing", severity: "red", title: "MS-002", detail: "Mikrometar" }, "Mjerno sredstvo MS-002 (Mikrometar) nema datum sljedeće kalibracije", "/oprema/x1"],
     [{ kind: "CalibrationFailed", severity: "red", title: "MS-003", detail: "Mikrometar", date: "2027-10-01" }, "Mjerno sredstvo MS-003 (Mikrometar) je van kalibracije — zadnja kalibracija neusklađena", "/oprema/x1"],
+    [{ kind: "NcDue", severity: "red", title: "NC-2026-007", detail: "Rupe izvan tolerancije", date: "2026-10-01" }, "NC-2026-007 (Rupe izvan tolerancije) — rok korektivne radnje kasni 11 dana (01.10.2026.)", "/kvalitet/nc/x1"],
     [{ kind: "SupplierEvaluation", title: "Metalia d.o.o.", date: "2026-11-01" }, "Ocjena dobavljača Metalia d.o.o. za 20 dana (01.11.2026.)", "/dobavljaci/x1"],
     [{ kind: "Stocktake", severity: "red", title: "Lim crni", itemName: "Lim crni", itemGrade: "S235", itemThicknessMm: 3, date: "2026-10-11" }, "Popis artikla Lim crni S235 3 mm — kasni 1 dan (11.10.2026.)", "/zalihe/artikli/x1"],
   ] as const)("%#", (partial, text, href) => {

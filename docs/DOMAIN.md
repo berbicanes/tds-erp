@@ -211,7 +211,7 @@ Dobavljač koji se više ne koristi prebacuje se u `Blokiran`, a razlog se upiš
 7.1a NC iz kontrole: najviše jedna neponištena NC po kontroli. Ako postoji, UI vodi na nju umjesto nove
 ponude. Predpopunjavanje: izvor po fazi (`UlazniMaterijal` → `UlazniMaterijal`, `LaserskoRezanje` →
 `Laser`, `HidraulicnoPresanje` → `Presanje`, `ZavrsnaKontrola` → `ZavrsnaKontrola`), nalog, lot,
-dobavljač lota, kontrola.
+dobavljač lota, kontrola. NC se veže samo za neponištenu kontrolu sa rezultatom `Neuskladjeno`.
 
 7.3 NC prelazi: `Otvorena → RadnjaUToku → ProvjeraEfektivnosti → Zatvorena`.
 - → `RadnjaUToku`: `ProductDecision ≠ CekaOdluku`.
