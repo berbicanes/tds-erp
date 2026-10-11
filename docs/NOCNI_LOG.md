@@ -1,6 +1,30 @@
 # Noćni log (autonomni rad)
 
-## STOP — 11.10.2026. oko 03:15 (gdje sam stala)
+## Nastavak 11.10.2026. (dan) — Docker restartovan
+
+- `dotnet test` nakon restarta: 433 (432 prošlo, 1 namjerno preskočen). Zapeli Ryuk kontejneri su nestali s restartom,
+  pa nije bilo šta da se ukloni.
+- Radni sati u Brzom unosu: obavezni, zadnja spremljena vrijednost se pamti na uređaju (`f1b7be0`), UI §4 bez oznake.
+- Caddyfile: `caddy validate` u kontejneru (`tds-erp-caddy` slika) → "Valid configuration". Putanja repoa i dalje ima
+  razmak ("tds erp"), pa sam umjesto bind mounta Caddyfile iz `.tmp/` poslala kroz stdin (`docker run -i … sh -c 'cat >
+  /tmp/Caddyfile && caddy validate …'`) — nijedna putanja sa hosta ne ide u kontejner. Kontejner je `--rm`, nije ostao.
+
+## Faza 5 — plan
+
+1. `/api/health` (anoniman): baza (upit) i disk (slobodan prostor na storage rootu), bez verzija, putanja i brojeva.
+   Docker healthcheck i rotacija logova u `docker-compose.yml` (json-file `max-size`/`max-file`, bez novih paketa).
+2. Lokalni restore test: `pg_dump` dev baze → nova prazna baza u TDS dev kontejneru → `pg_restore` → poređenje broja
+   redova po tabelama. Skripta `deploy/restore-test.sh`, rezultat u log.
+3. `docs/UPUTSTVO.md`: jedna strana — brzi unos, prijem lota, status naloga.
+4. Notion import: admin komanda `import-notion <folder> --dry-run | --apply`, jedna transakcija, izvještaj
+   (duplikati, konflikti, nepoznate enum vrijednosti, prazna obavezna polja), mapiranje po NOTION_SOURCE.md,
+   početno stanje kao `Korekcija` "Početno stanje iz Notiona", testovi na sintetičkim CSV fixtureima.
+   ROADMAP: "urađeno, netestirano sa stvarnim podacima".
+5. Na kraju `docs/NOCNI_IZVJESTAJ.md`: pregled svih faza + lista svega što čeka VPS, domen ili klijenta.
+
+### Faza 5 — odluke
+
+## STOP — 11.10.2026. oko 03:15 (riješeno restartom Dockera, vidi gore)
 
 **Razlog:** Docker Desktop više ne pokreće nove kontejnere. Svaki novi kontejner ostaje u stanju "Created":
 moja dva pokušaja provjere Caddyfile-a (03:00, 03:03) i Testcontainers Ryuk kontejneri iz testova. Postojeći kontejneri

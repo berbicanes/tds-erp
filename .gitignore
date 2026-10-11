@@ -26,3 +26,6 @@ storage/
 # Local dev
 .env.dev
 .dev-api.log
+
+# Scratch files for local checks (e.g. Caddyfile validation without spaces in the path)
+.tmp/
