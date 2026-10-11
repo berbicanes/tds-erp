@@ -1,5 +1,33 @@
 # Noćni log (autonomni rad)
 
+## STOP — 11.10.2026. oko 03:15 (gdje sam stala)
+
+**Razlog:** Docker Desktop više ne pokreće nove kontejnere. Svaki novi kontejner ostaje u stanju "Created":
+moja dva pokušaja provjere Caddyfile-a (03:00, 03:03) i Testcontainers Ryuk kontejneri iz testova. Postojeći kontejneri
+(TDS dev baza, vodostaji) i dalje rade. U logu Docker VM-a zadnji `POST …/start` je u 00:56 UTC, dakle zahtjevi za start
+ne stižu do VM-a: zapelo je na strani Docker Desktopa na Macu. Disk nije pun (Data volumen: 22 GiB slobodno; Docker VM:
+slike 28 GB). Najvjerovatniji okidač je moj `docker run` sa bind mountom putanje koja ima razmak ("tds erp").
+Prije toga (02:50) svi testovi su prolazili.
+
+**Posljedica:** backend testovi (Testcontainers) ne mogu da se pokrenu — svih 415 pada na startu kontejnera, ne zbog koda.
+Pravilo je "build i svi testovi zeleni prije svakog commita", pa backend rad (cijela Faza 5) ne mogu da commitujem.
+Popravka traži restart Docker Desktopa — to je izvan repoa i prekida i kontejnere projekta vodostaji, pa to ne radim
+bez tvog odobrenja. Po pravilu "nešto ugrožava okruženje → STANI" stajem.
+
+**Šta nisam dirala:** ništa izvan repoa, osim što sam uklonila dva Caddy kontejnera koje sam sama napravila i koji su
+zapeli (03:00 `lucid_cartwright`, 03:03 `tds-caddy-adapt`). Dva zapela `testcontainers-ryuk-*` kontejnera iz mojih
+test-pokretanja ostavila sam (bezopasni su; ukloni ih ili restartuj Docker Desktop kad odlučiš).
+
+**Greška koju sam napravila:** commit `ac30028` (samo ROADMAP i ovaj log, bez koda) je pushan dok su backend testovi
+padali — u lancu komandi `grep` je vratio uspjeh pa se commit izvršio. Kod se u tom commitu nije mijenjao; backend kod se
+nije mijenjao od `47a7ecb`, gdje je cijeli backend suite bio zelen (433, 1 namjerno preskočen).
+
+**Sljedeće (kad Docker radi):**
+1. Restart Docker Desktopa (ti), pa `dotnet test` — očekivano 433 zeleno.
+2. Faza 5 po planu iz upute: Notion import (admin komanda, `--dry-run`, jedna transakcija, izvještaj o konfliktima,
+   sintetički CSV fixture), lokalni restore test backupa, `docs/UPUTSTVO.md`, `/health`.
+3. Provjeriti Caddyfile (`caddy adapt`) kopiranjem u putanju bez razmaka.
+
 ## Faza 4 — plan
 
 1. Brzi unos `/brzi-unos` (UI §4): nalozi u proizvodnji kao velike stavke sa pretragom i zadnja 3 korištena na vrhu,
